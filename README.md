@@ -32,10 +32,13 @@ app/                    Routes (App Router)
 components/             Presentation only — no hardcoded copy, all data comes from data/
 data/                    Typed content — the single source of truth (mirrors CONTENT_BRIEF.md)
 lib/                     analytics.ts, vcard.ts, motion.ts, utils.ts
-hooks/                   useReducedMotion.ts
+hooks/                   useReducedMotion.ts, useAudioNarration.ts, useSpeechSynthesis.ts
+scripts/
+  generate-tour-audio.ts  One-time local script — renders data/guidedTour.ts into public/audio/*.mp3
 
 public/
   Lohith_Kovuri_Resume.pdf
+  audio/                 Pre-generated AI Pitch narration clips (see "AI Pitch" section below)
 ```
 
 ## Local setup
@@ -106,7 +109,35 @@ Wired via `lib/analytics.ts` (`track(event, props?)`), backed by `@vercel/analyt
 only anonymous event names and small string/number props (e.g. a project id):
 
 `qr_landing_view`, `careerfair_mode_view`, `resume_view_click`, `resume_download_click`, `github_click`,
-`linkedin_click`, `project_click`, `contact_click`, `recruiter_mode_open`, `vcard_download`, `terminal_open`
+`linkedin_click`, `project_click`, `contact_click`, `recruiter_mode_open`, `vcard_download`, `terminal_open`,
+`ai_pitch_start`, `ai_pitch_complete`, `ai_pitch_close`, `ai_pitch_skip`
+
+## AI Pitch (guided audio tour)
+
+A floating "Hear My Pitch" trigger (bottom-right, appears once you scroll past the hero) that auto-scrolls
+through Hero → Why Me → Projects → Skills → Experience → Contact while narrating a ~75-90s highlight reel.
+Never autoplays — only starts on an explicit click — and is fully controllable (pause/resume, skip, close)
+at any time.
+
+**How the audio works:** the narration script in `data/guidedTour.ts` is pre-rendered into static MP3s
+via ElevenLabs, *once*, by a local script — not called live per visitor. The deployed site just plays
+static files, so there's no runtime API cost, no API key shipped to the browser, and consistent voice
+quality on every device. A small glowing orb reacts to the real audio waveform (via the Web Audio API)
+while it talks. If the audio files are ever missing (e.g. a fresh clone before running the script), it
+falls back to the browser's built-in speech synthesis, and further falls back to silent timed captions if
+that's unsupported too — the tour always works, audio quality is just best with the pre-generated files.
+
+To (re)generate the narration after editing `data/guidedTour.ts`:
+
+```bash
+cp .env.example .env.local   # if you haven't already
+# add your own ELEVENLABS_API_KEY to .env.local (get one at elevenlabs.io)
+npm run generate:tour-audio
+```
+
+This writes `public/audio/tour-*.mp3` — commit those files so the deployed site has them. The whole script
+is ~1,000 characters total (well inside ElevenLabs' free tier), and generation is a one-time cost regardless
+of how many recruiters play the pitch afterward.
 
 ## Recruiter Mode
 

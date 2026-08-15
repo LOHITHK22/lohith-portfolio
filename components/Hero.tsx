@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Github, Linkedin, FileText, ArrowDown, Mail, Zap } from "lucide-react";
-import { profile, heroStats } from "@/data/profile";
+import { profile, heroStats, recruiterSummary } from "@/data/profile";
 import { track } from "@/lib/analytics";
 import { AnimatedCounter } from "./AnimatedCounter";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -26,7 +26,7 @@ export function Hero() {
           initial="hidden"
           animate="visible"
           variants={fadeUpVariants(reducedMotion)}
-          className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-slate-300"
+          className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-3 py-1.5 font-mono text-[9px] font-medium uppercase tracking-wide text-emerald-300/90 sm:mb-6 sm:px-3.5 sm:text-[11px] sm:tracking-wider"
         >
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
@@ -39,7 +39,7 @@ export function Hero() {
           initial="hidden"
           animate="visible"
           variants={fadeUpVariants(reducedMotion, 0.05)}
-          className="max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-5xl md:text-6xl"
+          className="text-glow max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-5xl md:text-6xl"
         >
           {profile.name}
         </motion.h1>
@@ -48,7 +48,7 @@ export function Hero() {
           initial="hidden"
           animate="visible"
           variants={fadeUpVariants(reducedMotion, 0.1)}
-          className="mt-4 max-w-2xl text-lg font-medium sm:text-xl"
+          className="mt-3 max-w-2xl text-lg font-medium sm:mt-4 sm:text-xl"
         >
           <span className="gradient-text">{profile.headline}</span>
         </motion.p>
@@ -62,11 +62,24 @@ export function Hero() {
           {profile.subIdentity}
         </motion.p>
 
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={fadeUpVariants(reducedMotion, 0.18)}
+          className="mt-3 flex flex-wrap gap-1.5 sm:mt-4 sm:gap-2"
+        >
+          {recruiterSummary.strongestSkills.slice(0, 5).map((skill) => (
+            <span key={skill} className="chip-sm">
+              {skill}
+            </span>
+          ))}
+        </motion.div>
+
         <motion.p
           initial="hidden"
           animate="visible"
           variants={fadeUpVariants(reducedMotion, 0.2)}
-          className="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg"
+          className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300 sm:mt-5 sm:text-base md:text-lg"
         >
           {profile.heroParagraph}
         </motion.p>
@@ -76,7 +89,7 @@ export function Hero() {
           initial="hidden"
           animate="visible"
           variants={fadeUpVariants(reducedMotion, 0.25)}
-          className="mt-8 flex flex-wrap items-center gap-3"
+          className="mt-5 flex flex-wrap items-center gap-3 sm:mt-8"
         >
           <a
             href={profile.resumeUrl}

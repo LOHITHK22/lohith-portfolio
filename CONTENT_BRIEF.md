@@ -283,7 +283,26 @@ essentials first.
 
 qr_landing_view, careerfair_mode_view, resume_view_click, resume_download_click, github_click,
 linkedin_click, project_click (with project id), contact_click, recruiter_mode_open, vcard_download,
-terminal_open
+terminal_open, ai_pitch_start, ai_pitch_complete, ai_pitch_close, ai_pitch_skip
+
+## AI Pitch guided tour (added post-launch)
+
+An optional floating trigger (bottom-right, appears once scrolled past the hero, all pages except
+/recruiter) that, only on explicit user click (never autoplay), auto-scrolls through Hero → Why Me →
+Projects (two flagship project stories: Multi-Tenant RAG API, VendorOps AI) → Skills → Experience →
+Contact while narrating a ~75-90s highlight script. Script lines are composed from data already in
+profile.ts / projects.ts (see data/guidedTour.ts) — no new claims.
+
+**Audio architecture:** narration is pre-rendered *once* via the ElevenLabs API into static MP3s under
+public/audio/ (see scripts/generate-tour-audio.ts, run manually with `npm run generate:tour-audio`,
+never at request time) — no runtime API cost, no API key shipped to the client, consistent voice
+quality on every device. A glowing orb reacts to the real audio waveform via the Web Audio API
+(hooks/useAudioNarration.ts). If a clip is ever missing, it falls back to the browser's built-in
+SpeechSynthesis (hooks/useSpeechSynthesis.ts), then to a silent timed caption-only tour if that's
+unsupported too — the tour always works, audio quality is just best with the pre-generated files.
+
+Fully user-controlled: pause/resume, skip, and close at any time; respects prefers-reduced-motion
+(instant scroll instead of smooth).
 
 ## Resume file
 

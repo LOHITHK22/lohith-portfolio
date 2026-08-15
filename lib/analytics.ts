@@ -13,7 +13,11 @@ export type AnalyticsEvent =
   | "contact_click"
   | "recruiter_mode_open"
   | "vcard_download"
-  | "terminal_open";
+  | "terminal_open"
+  | "ai_pitch_start"
+  | "ai_pitch_complete"
+  | "ai_pitch_close"
+  | "ai_pitch_skip";
 
 type AnalyticsProps = Record<string, string | number | boolean | null>;
 

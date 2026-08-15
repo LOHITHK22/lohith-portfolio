@@ -2,11 +2,32 @@
 
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
+// Deterministic seeded PRNG (mulberry32) so the star field is identical on
+// server and client render — Math.random() here would cause a hydration
+// mismatch. Computed once at module load, not per-render.
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+
+const rand = seededRandom(42);
+const stars = Array.from({ length: 90 }).map(() => ({
+  x: rand() * 100,
+  y: rand() * 100,
+  r: rand() * 1.3 + 0.4,
+  opacity: 0.25 + rand() * 0.55,
+  duration: 2.5 + rand() * 4,
+  delay: rand() * 5,
+}));
+
 /**
- * Lightweight animated grid/network background built with pure CSS + SVG —
- * no Three.js/WebGL. A static CSS grid, two slow-pulsing radial glows, and a
- * handful of SVG nodes/lines that drift gently. Disabled/stilled entirely
- * when the user prefers reduced motion.
+ * Lightweight animated starfield/network background built with pure CSS +
+ * SVG — no Three.js/WebGL. A twinkling star field, a static CSS grid, two
+ * slow-pulsing radial glows, and a handful of SVG nodes/lines that drift
+ * gently. Disabled/stilled entirely when the user prefers reduced motion.
  */
 export function GridBackground() {
   const reducedMotion = useReducedMotion();
@@ -34,7 +55,28 @@ export function GridBackground() {
   ];
 
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden bg-base-950">
+      {/* twinkling starfield */}
+      <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
+        {stars.map((s, i) => (
+          <circle
+            key={i}
+            cx={`${s.x}%`}
+            cy={`${s.y}%`}
+            r={s.r}
+            fill="#ffffff"
+            style={
+              reducedMotion
+                ? { opacity: s.opacity }
+                : {
+                    opacity: s.opacity,
+                    animation: `twinkle ${s.duration}s ease-in-out ${s.delay}s infinite`,
+                  }
+            }
+          />
+        ))}
+      </svg>
+
       {/* static dot/line grid */}
       <div className="absolute inset-0 bg-grid-pattern bg-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]" />
 

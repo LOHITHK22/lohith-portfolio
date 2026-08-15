@@ -11,6 +11,7 @@ import { Footer } from "@/components/Footer";
 import { CareerFairBanner } from "@/components/CareerFairBanner";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { TerminalLazy } from "@/components/TerminalLazy";
+import { AIPitchGuideLazy } from "@/components/AIPitchGuideLazy";
 
 export default function Home({
   searchParams,
@@ -36,6 +37,7 @@ export default function Home({
         <Contact />
       </main>
       <Footer />
+      <AIPitchGuideLazy />
     </>
   );
 }
