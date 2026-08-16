@@ -60,7 +60,30 @@
 
 @layer components {
   .glass-panel {
-    @apply border border-white/10 bg-white/[0.03] backdrop-blur-xl;
+    @apply relative overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-xl;
+  }
+
+  /* Cursor-following spotlight glow, driven by --spot-x/--spot-y set on
+     mousemove (see lib/spotlight.ts). No-ops harmlessly on touch devices,
+     since they never fire the mousemove that sets the CSS vars. */
+  .glass-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+      420px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+      rgba(99, 102, 241, 0.16),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .glass-panel:hover::after {
+    opacity: 1;
   }
 
   .section-shell {

@@ -12,6 +12,8 @@ import { CareerFairBanner } from "@/components/CareerFairBanner";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { TerminalLazy } from "@/components/TerminalLazy";
 import { AIPitchGuideLazy } from "@/components/AIPitchGuideLazy";
+import { CursorGlow } from "@/components/CursorGlow";
+import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 
 export default function Home({
   searchParams,
@@ -22,6 +24,8 @@ export default function Home({
 
   return (
     <>
+      <ScrollProgressBar />
+      <CursorGlow />
       <PageViewTracker careerFair={careerFair} />
       <Navigation />
       <main id="main-content">

@@ -5,6 +5,7 @@ import { Code2, Server, BrainCircuit, Cloud, Database, MonitorSmartphone, CheckS
 import { skillGroups } from "@/data/skills";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants, staggerContainer } from "@/lib/motion";
+import { onSpotlightMove } from "@/lib/utils";
 
 const groupIcons: Record<string, typeof Code2> = {
   languages: Code2,
@@ -47,6 +48,9 @@ export function Skills() {
             <motion.div
               key={group.id}
               variants={fadeUpVariants(reducedMotion)}
+              onMouseMove={onSpotlightMove}
+              whileHover={reducedMotion ? undefined : { y: -4 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
               className="glass-panel rounded-2xl p-5 transition-colors duration-300 hover:border-white/20 sm:p-6"
             >
               <div className="mb-4 flex items-center gap-2.5">

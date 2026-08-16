@@ -304,6 +304,23 @@ unsupported too — the tour always works, audio quality is just best with the p
 Fully user-controlled: pause/resume, skip, and close at any time; respects prefers-reduced-motion
 (instant scroll instead of smooth).
 
+## Desktop mouse interactions + motion polish (added post-launch)
+
+- **Scroll progress bar** (components/ScrollProgressBar.tsx): thin gradient bar pinned to the top of the
+  viewport, tracking scroll position via framer-motion's useScroll/useSpring.
+- **Cursor glow** (components/CursorGlow.tsx): a soft ambient glow that trails the cursor across the page.
+  Desktop-only — gated on `(hover: hover) and (pointer: fine)` via hooks/useCanHover.ts, so touch devices
+  never render it. Position is lerped via requestAnimationFrame with a direct style mutation (not React
+  state) to stay smooth without re-rendering.
+- **Cursor-spotlight glow on cards** (globals.css `.glass-panel::after` + lib/utils.ts `onSpotlightMove`):
+  every card (Why Me, Skills, Project cards) gets a soft radial glow that follows the cursor within the
+  card on hover, via a `--spot-x`/`--spot-y` CSS var set on mousemove.
+- **3D tilt on project cards** (components/ProjectCard.tsx): a subtle (~3-6°) perspective tilt that follows
+  the cursor, desktop-only, via framer-motion useMotionValue/useSpring on rotateX/rotateY.
+- All of the above fully respect prefers-reduced-motion (see the global override in globals.css that clamps
+  every animation/transition to ~0ms for users with that OS/browser accessibility setting) and are inert on
+  touch devices — no jank, no janky drag-triggered tilts.
+
 ## Resume file
 
 Use the file at C:\Lohith\Lohith Resumes\Lohith_Resume_Software_Engineer.pdf as the canonical downloadable

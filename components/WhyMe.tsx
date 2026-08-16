@@ -5,6 +5,7 @@ import { Shield, Layers, Gauge, FileCheck2, Award } from "lucide-react";
 import { whyMeSignals } from "@/data/profile";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants, staggerContainer } from "@/lib/motion";
+import { onSpotlightMove } from "@/lib/utils";
 
 const icons = [Shield, Layers, Gauge, FileCheck2, Award];
 
@@ -41,7 +42,10 @@ export function WhyMe() {
             <motion.div
               key={item.id}
               variants={fadeUpVariants(reducedMotion)}
-              className="glass-panel group relative overflow-hidden rounded-2xl p-6 transition-colors duration-300 hover:border-white/20"
+              onMouseMove={onSpotlightMove}
+              whileHover={reducedMotion ? undefined : { y: -4 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="glass-panel group rounded-2xl p-6 transition-colors duration-300 hover:border-white/20"
             >
               <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-accent/10 blur-2xl transition-opacity duration-300 group-hover:opacity-80" />
               <div className="relative flex items-start justify-between gap-4">
