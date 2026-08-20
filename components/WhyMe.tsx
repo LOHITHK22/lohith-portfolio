@@ -6,6 +6,7 @@ import { whyMeSignals } from "@/data/profile";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants, staggerContainer } from "@/lib/motion";
 import { onSpotlightMove } from "@/lib/utils";
+import { StackedSectionHeader } from "./StackedSectionHeader";
 
 const icons = [Shield, Layers, Gauge, FileCheck2, Award];
 
@@ -14,20 +15,12 @@ export function WhyMe() {
 
   return (
     <section id="why-me" className="section-shell py-16 sm:py-24">
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-80px" }}
-        variants={fadeUpVariants(reducedMotion)}
-      >
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent-cyan">Why me</p>
-        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
-          Evidence, not adjectives.
-        </h2>
-        <p className="mt-2 max-w-2xl text-sm text-slate-400 sm:text-base">
-          Five things I actually shipped, with the numbers that prove it.
-        </p>
-      </motion.div>
+      <StackedSectionHeader
+        index={1}
+        eyebrow="Why me"
+        title="Evidence, not adjectives."
+        description="Five things I actually shipped, with the numbers that prove it."
+      />
 
       <motion.div
         initial="hidden"

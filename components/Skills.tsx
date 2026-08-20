@@ -6,6 +6,7 @@ import { skillGroups } from "@/data/skills";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants, staggerContainer } from "@/lib/motion";
 import { onSpotlightMove } from "@/lib/utils";
+import { StackedSectionHeader } from "./StackedSectionHeader";
 
 const groupIcons: Record<string, typeof Code2> = {
   languages: Code2,
@@ -22,18 +23,12 @@ export function Skills() {
 
   return (
     <section id="skills" className="section-shell py-16 sm:py-24">
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-80px" }}
-        variants={fadeUpVariants(reducedMotion)}
-      >
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent-cyan">Toolbox</p>
-        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Skills &amp; technologies</h2>
-        <p className="mt-2 max-w-2xl text-sm text-slate-400 sm:text-base">
-          Grouped by category. No arbitrary percentage bars — just what I actually use.
-        </p>
-      </motion.div>
+      <StackedSectionHeader
+        index={2}
+        eyebrow="Toolbox"
+        title="Skills & technologies"
+        description="Grouped by category. No arbitrary percentage bars — just what I actually use."
+      />
 
       <motion.div
         initial="hidden"
