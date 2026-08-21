@@ -60,7 +60,7 @@ export const guidedTourSteps: GuideStep[] = [
     id: "experience",
     sectionId: "experience",
     eyebrow: "Right now",
-    line: "Right now, I'm a Software Engineer at Nordstrom, working remote — production backend and AI-assisted testing on retail event-ingestion systems.",
+    line: "Right now, I'm a Software Engineer at Mercury, working remote — production backend and AI-assisted testing on financial event-ingestion systems.",
     audioFile: "/audio/tour-experience.mp3",
   },
   {

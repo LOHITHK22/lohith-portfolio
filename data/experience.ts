@@ -13,15 +13,15 @@ export type ExperienceEntry = {
 // Most recent first, per brief.
 export const experience: ExperienceEntry[] = [
   {
-    id: "nordstrom",
+    id: "mercury",
     role: "Software Engineer",
-    company: "Nordstrom",
+    company: "Mercury",
     location: "Remote, USA",
     period: "Oct 2025 – Present",
     current: true,
     tech: ["AWS (ECS, S3, SQS/SNS, Lambda, CloudWatch)", "OpenAI API", "CI/CD"],
     summary:
-      "Operating fault-tolerant, high-throughput AWS event-ingestion infrastructure for a Fortune 100 retailer.",
+      "Operating fault-tolerant, high-throughput AWS event-ingestion infrastructure for a fintech platform.",
     bullets: [
       "Designed and operate a fault-tolerant ECS + SQS + S3 event-ingestion pipeline sustaining 99.9% write availability across 50,000+ events/day, including 8x traffic bursts, with zero data loss.",
       "Redesigned the SQS consumer with idempotent processing, deduplication keys, and exponential backoff — cut MTTR by 40% and eliminated a recurring class of duplicate-write incidents.",

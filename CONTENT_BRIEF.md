@@ -32,7 +32,7 @@ GitHub README where a public repo exists. Treat this file as final; do not "impr
 
 ## "Why Me" — 5 evidence-based signals (use verbatim numbers, do not round up further)
 
-1. Operate production AWS infrastructure at Nordstrom (a Fortune 100 retailer) sustaining **99.9% write
+1. Operate production AWS infrastructure at Mercury (a fintech platform) sustaining **99.9% write
    availability** across **50,000+ events/day**, including 8x traffic bursts, with zero data loss.
 2. Architected a multi-tenant RAG backend serving **200+ concurrent tenants** with per-tenant vector-store
    isolation — **zero cross-tenant data leaks** in stress testing — while cutting redundant LLM calls by
@@ -50,8 +50,8 @@ GitHub README where a public repo exists. Treat this file as final; do not "impr
 - Who: Lohith Kovuri, Software Engineer
 - Degree: M.S. Data Science, Rowan University (2023–2025); B.Tech Information Technology, Dr. MGR
   Educational and Research Institute (2019–2023)
-- Current status: Software Engineer at Nordstrom (Remote, USA) since Oct 2025 — production backend +
-  AI-assisted testing on retail event-ingestion systems
+- Current status: Software Engineer at Mercury (Remote, USA) since Oct 2025 — production backend +
+  AI-assisted testing on financial event-ingestion systems
 - Targeting: Software Engineer / Backend Engineer / Full-Stack / Data Engineer / AI-GenAI Engineer /
   Cloud Engineer roles
 - Strongest technical skills (pick 8 for the compact recruiter-mode chip list): Python, Java, AWS,
@@ -78,7 +78,7 @@ GitHub README where a public repo exists. Treat this file as final; do not "impr
 
 ## Experience Timeline (most recent first)
 
-### Software Engineer — Nordstrom — Remote, USA — Oct 2025 – Present
+### Software Engineer — Mercury — Remote, USA — Oct 2025 – Present
 Tech: AWS (ECS, S3, SQS/SNS, Lambda, CloudWatch), OpenAI API, CI/CD
 - Designed and operate a fault-tolerant ECS + SQS + S3 event-ingestion pipeline sustaining **99.9% write
   availability** across **50,000+ events/day**, including 8x traffic bursts, with zero data loss.
@@ -242,7 +242,7 @@ $ whoami
 Lohith Kovuri — Software Engineer (Backend, Distributed Systems, AI/LLM Platforms)
 
 $ status
-Currently: Software Engineer @ Nordstrom (Remote, USA)
+Currently: Software Engineer @ Mercury (Remote, USA)
 Previously: Rowan ACM Club (AI/Backend Eng.) · Roothoot Pvt Ltd (SWE Intern)
 
 $ skills --top
@@ -324,5 +324,5 @@ Fully user-controlled: pause/resume, skip, and close at any time; respects prefe
 ## Resume file
 
 Use the file at C:\Lohith\Lohith Resumes\Lohith_Resume_Software_Engineer.pdf as the canonical downloadable
-resume (most complete, most current version — includes Nordstrom, Education, and both flagship projects).
+resume (most complete, most current version — includes Mercury, Education, and both flagship projects).
 Copy it into the Next.js `public/` directory as `public/Lohith_Kovuri_Resume.pdf`.

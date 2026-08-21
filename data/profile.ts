@@ -38,7 +38,7 @@ export const profile = {
   ],
 
   currentStatus:
-    "Software Engineer at Nordstrom (Remote, USA) since Oct 2025 — production backend + AI-assisted testing on retail event-ingestion systems",
+    "Software Engineer at Mercury (Remote, USA) since Oct 2025 — production backend + AI-assisted testing on financial event-ingestion systems",
 
   contactCtaLine: "Let's talk about your engineering team.",
 } as const;
@@ -48,7 +48,7 @@ export const whyMeSignals = [
   {
     id: "aws-availability",
     signal:
-      "Operate production AWS infrastructure at Nordstrom (a Fortune 100 retailer) sustaining 99.9% write availability across 50,000+ events/day, including 8x traffic bursts, with zero data loss.",
+      "Operate production AWS infrastructure at Mercury (a fintech platform) sustaining 99.9% write availability across 50,000+ events/day, including 8x traffic bursts, with zero data loss.",
     stat: "99.9%",
     statLabel: "write availability",
   },
@@ -104,7 +104,7 @@ export const recruiterSummary = {
     "B.Tech Information Technology, Dr. MGR Educational and Research Institute (2019–2023)",
   ],
   currentStatus:
-    "Software Engineer at Nordstrom (Remote, USA) since Oct 2025 — production backend + AI-assisted testing on retail event-ingestion systems",
+    "Software Engineer at Mercury (Remote, USA) since Oct 2025 — production backend + AI-assisted testing on financial event-ingestion systems",
   targeting: [
     "Software Engineer",
     "Backend Engineer",

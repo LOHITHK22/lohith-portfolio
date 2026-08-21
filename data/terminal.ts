@@ -12,7 +12,7 @@ export const terminalCommands: TerminalCommand[] = [
   {
     command: "status",
     output: [
-      "Currently: Software Engineer @ Nordstrom (Remote, USA)",
+      "Currently: Software Engineer @ Mercury (Remote, USA)",
       "Previously: Rowan ACM Club (AI/Backend Eng.) · Roothoot Pvt Ltd (SWE Intern)",
     ],
   },
