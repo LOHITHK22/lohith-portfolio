@@ -61,6 +61,7 @@ export function ProjectCard({ project, isOpen, onToggle, reducedMotion, canHover
           aria-expanded={isOpen}
           aria-controls={panelId}
           onClick={onToggle}
+          data-cursor-label={isOpen ? "CLOSE" : "EXPLORE"}
           className="flex w-full items-start justify-between gap-4 px-5 py-5 text-left sm:px-6"
         >
           <span className="flex flex-1 flex-col gap-1.5">
@@ -142,6 +143,7 @@ export function ProjectCard({ project, isOpen, onToggle, reducedMotion, canHover
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-secondary self-start"
+                    data-cursor-label="OPEN"
                     onClick={() => track("github_click", { source: "project", project: project.id })}
                   >
                     <Github className="h-4 w-4" />

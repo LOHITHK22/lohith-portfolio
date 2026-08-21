@@ -14,6 +14,7 @@ import { TerminalLazy } from "@/components/TerminalLazy";
 import { AIPitchGuideLazy } from "@/components/AIPitchGuideLazy";
 import { CursorGlow } from "@/components/CursorGlow";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
+import { CommandPaletteLazy } from "@/components/CommandPaletteLazy";
 
 export default function Home({
   searchParams,
@@ -42,6 +43,7 @@ export default function Home({
       </main>
       <Footer />
       <AIPitchGuideLazy />
+      <CommandPaletteLazy />
     </>
   );
 }

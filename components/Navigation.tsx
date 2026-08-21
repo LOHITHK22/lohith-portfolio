@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Github, Linkedin, FileText, Zap, Menu, X } from "lucide-react";
+import { Github, Linkedin, FileText, Zap, Menu, X, Search } from "lucide-react";
 import { profile } from "@/data/profile";
 import { track } from "@/lib/analytics";
 
@@ -59,6 +59,15 @@ export function Navigation() {
         </div>
 
         <div className="hidden items-center gap-2 lg:flex">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("open-command-palette"))}
+            aria-label="Open command palette"
+            className="btn-ghost gap-1.5 !px-3 font-mono text-xs text-slate-400"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <kbd className="rounded border border-white/10 bg-white/5 px-1 py-0.5 text-[10px]">⌘K</kbd>
+          </button>
           <a
             href={profile.githubUrl}
             target="_blank"

@@ -17,7 +17,9 @@ export type AnalyticsEvent =
   | "ai_pitch_start"
   | "ai_pitch_complete"
   | "ai_pitch_close"
-  | "ai_pitch_skip";
+  | "ai_pitch_skip"
+  | "command_palette_open"
+  | "command_palette_select";
 
 type AnalyticsProps = Record<string, string | number | boolean | null>;
 

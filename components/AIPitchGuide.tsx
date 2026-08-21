@@ -114,6 +114,13 @@ export function AIPitchGuide() {
     goToStep(0, runId);
   };
 
+  // Lets the command palette (or anything else) trigger the pitch without
+  // needing to reach into this component's local state.
+  useEffect(() => {
+    window.addEventListener("open-ai-pitch", handlePlay);
+    return () => window.removeEventListener("open-ai-pitch", handlePlay);
+  });
+
   const stopEverything = () => {
     audioNarration.stop();
     speech.cancel();

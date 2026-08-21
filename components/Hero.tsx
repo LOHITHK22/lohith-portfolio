@@ -1,8 +1,9 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Github, Linkedin, FileText, ArrowDown, Mail, Zap } from "lucide-react";
+import { Github, Linkedin, FileText, ArrowDown, Mail, Zap, Volume2, VolumeX } from "lucide-react";
 import { profile, heroStats, recruiterSummary } from "@/data/profile";
 import { track } from "@/lib/analytics";
 import { AnimatedCounter } from "./AnimatedCounter";
@@ -16,6 +17,15 @@ const GridBackground = dynamic(() => import("./GridBackground").then((m) => m.Gr
 
 export function Hero() {
   const reducedMotion = useReducedMotion();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoMuted, setVideoMuted] = useState(true);
+
+  const toggleVideoSound = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setVideoMuted(video.muted);
+  };
 
   return (
     <section id="top" className="relative overflow-hidden pb-16 pt-10 sm:pb-24 sm:pt-16">
@@ -97,6 +107,7 @@ export function Hero() {
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary"
+            data-cursor-label="VIEW"
             onClick={() => track("resume_view_click", { source: "hero" })}
           >
             <FileText className="h-4 w-4" />
@@ -124,6 +135,7 @@ export function Hero() {
             target="_blank"
             rel="noopener noreferrer"
             className="btn-ghost gap-1.5 !px-3"
+            data-cursor-label="OPEN"
             onClick={() => track("github_click", { source: "hero" })}
           >
             <Github className="h-4 w-4" />
@@ -134,6 +146,7 @@ export function Hero() {
             target="_blank"
             rel="noopener noreferrer"
             className="btn-ghost gap-1.5 !px-3"
+            data-cursor-label="OPEN"
             onClick={() => track("linkedin_click", { source: "hero" })}
           >
             <Linkedin className="h-4 w-4" />
@@ -172,20 +185,38 @@ export function Hero() {
         initial="hidden"
         animate="visible"
         variants={fadeUpVariants(reducedMotion, 0.2)}
-        className="hidden lg:block"
+        className="relative hidden lg:block"
       >
-        <div className="glass-panel relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-3xl">
+        {/* Ambient glow behind the video so it reads as part of the same lit
+            scene as the rest of the hero, not a pasted-in rectangle. */}
+        <div className="absolute inset-0 -z-10 scale-110 rounded-full bg-accent/20 blur-[100px]" />
+        <div className="absolute inset-0 -z-10 scale-110 rounded-full bg-accent-cyan/10 blur-[120px]" />
+
+        <div className="group relative mx-auto aspect-square w-full max-w-md">
           <video
+            ref={videoRef}
             autoPlay
             muted
             loop
             playsInline
             className="h-full w-full object-cover"
             aria-hidden="true"
+            style={{
+              maskImage: "radial-gradient(circle at 50% 42%, black 52%, transparent 78%)",
+              WebkitMaskImage: "radial-gradient(circle at 50% 42%, black 52%, transparent 78%)",
+            }}
           >
             <source src="/videos/hero.mp4" type="video/mp4" />
           </video>
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-base-950/40 via-transparent to-transparent" />
+
+          <button
+            type="button"
+            onClick={toggleVideoSound}
+            aria-label={videoMuted ? "Unmute intro video" : "Mute intro video"}
+            className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-base-950/70 text-white backdrop-blur-sm transition-colors duration-200 hover:bg-base-950/90"
+          >
+            {videoMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          </button>
         </div>
       </motion.div>
       </div>

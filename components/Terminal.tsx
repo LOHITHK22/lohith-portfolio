@@ -60,6 +60,13 @@ export function Terminal() {
     track("terminal_open");
   };
 
+  // Lets the command palette trigger the terminal without needing to reach
+  // into this component's local state.
+  useEffect(() => {
+    window.addEventListener("open-terminal", handleOpen);
+    return () => window.removeEventListener("open-terminal", handleOpen);
+  });
+
   const handleClose = () => setOpen(false);
 
   const runCommand = (raw: string) => {

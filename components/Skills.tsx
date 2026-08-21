@@ -26,8 +26,8 @@ export function Skills() {
       <StackedSectionHeader
         index={2}
         eyebrow="Toolbox"
-        title="Skills & technologies"
-        description="Grouped by category. No arbitrary percentage bars — just what I actually use."
+        title="What I can do with it"
+        description="Organized by engineering capability, not a wall of logos. No arbitrary percentage bars — just what I actually use, and what it lets me build."
       />
 
       <motion.div
@@ -48,11 +48,14 @@ export function Skills() {
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
               className="glass-panel rounded-2xl p-5 transition-colors duration-300 hover:border-white/20 sm:p-6"
             >
-              <div className="mb-4 flex items-center gap-2.5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-accent-cyan">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-accent-cyan">
                   <Icon className="h-[18px] w-[18px]" />
                 </span>
-                <h3 className="text-sm font-semibold text-white">{group.label}</h3>
+                <div>
+                  <h3 className="text-lg font-bold leading-tight text-white">{group.verb}</h3>
+                  <p className="text-xs text-slate-500">{group.label}</p>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 {group.skills.map((skill) => (
