@@ -21,7 +21,8 @@ export function Hero() {
     <section id="top" className="relative overflow-hidden pb-16 pt-10 sm:pb-24 sm:pt-16">
       <GridBackground />
 
-      <div className="section-shell relative">
+      <div className="section-shell relative lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10">
+      <div>
         <motion.div
           initial="hidden"
           animate="visible"
@@ -165,6 +166,28 @@ export function Hero() {
             </div>
           ))}
         </motion.dl>
+      </div>
+
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeUpVariants(reducedMotion, 0.2)}
+        className="hidden lg:block"
+      >
+        <div className="glass-panel relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-3xl">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="h-full w-full object-cover"
+            aria-hidden="true"
+          >
+            <source src="/videos/hero.mp4" type="video/mp4" />
+          </video>
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-base-950/40 via-transparent to-transparent" />
+        </div>
+      </motion.div>
       </div>
     </section>
   );
