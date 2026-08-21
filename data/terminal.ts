@@ -12,8 +12,9 @@ export const terminalCommands: TerminalCommand[] = [
   {
     command: "status",
     output: [
-      "Currently: Software Engineer @ Mercury (Remote, USA)",
-      "Previously: Rowan ACM Club (AI/Backend Eng.) · Roothoot Pvt Ltd (SWE Intern)",
+      "Status: open to new full-time roles (backend, cloud, AI/GenAI)",
+      "Most recent: Software Engineer @ Mercury (Remote, USA), Oct 2025 – Jul 2026",
+      "Previously: Rowan ACM Engineering (Backend Eng., Contract) · Roothoot Pvt Ltd (Software Developer)",
     ],
   },
   {
@@ -23,9 +24,9 @@ export const terminalCommands: TerminalCommand[] = [
   {
     command: "projects --top",
     output: [
-      "1. Multi-Tenant RAG API        (200+ tenants, zero data leaks)",
+      "1. AI Code Review Agent        (85%+ defects caught, <$0.05/review)",
       "2. VendorOps AI                (LangGraph agents, github.com/LOHITHK22/vendorops-ai)",
-      "3. Distributed Job Scheduler   (2,000 jobs/min, p99 < 200ms)",
+      "3. High-Throughput Data Pipeline (1M+ records/hour, <1% failure rate)",
     ],
   },
   {

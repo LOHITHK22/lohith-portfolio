@@ -48,8 +48,8 @@ export function ProjectShowcase() {
         <p className="text-xs font-semibold uppercase tracking-widest text-accent-cyan">Project showcase</p>
         <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Engineering case studies</h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-400 sm:text-base">
-          Six systems I designed and built. Tap any card for the full problem → architecture → impact
-          breakdown.
+          {flagshipProjects.length} systems I designed and built. Tap any card for the full problem →
+          architecture → impact breakdown.
         </p>
       </motion.div>
 

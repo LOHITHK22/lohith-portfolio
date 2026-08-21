@@ -17,7 +17,7 @@ export type GuideStep = {
 };
 
 const [primarySignal] = whyMeSignals;
-const ragProject = flagshipProjects.find((p) => p.id === "multi-tenant-rag-api")!;
+const codeReviewProject = flagshipProjects.find((p) => p.id === "ai-code-review-agent")!;
 const vendorOpsProject = flagshipProjects.find((p) => p.id === "vendorops-ai")!;
 
 export const guidedTourSteps: GuideStep[] = [
@@ -39,11 +39,11 @@ export const guidedTourSteps: GuideStep[] = [
     audioFile: "/audio/tour-why-me.mp3",
   },
   {
-    id: "project-rag",
+    id: "project-code-review",
     sectionId: "projects",
     eyebrow: "What I've built",
-    line: `Take the ${ragProject.name}. The problem: a shared vector index could leak one company's private data into another's answers. The fix: isolating every tenant at the embedding layer itself. The result: 200-plus concurrent tenants, zero data leaks, and 62% fewer redundant AI calls.`,
-    audioFile: "/audio/tour-project-rag.mp3",
+    line: `Take the ${codeReviewProject.name}. The problem: most AI code review tools are single-shot — one failed step and the whole review restarts. The fix: a four-tool agent chain with retry and state checkpointing, so a mid-chain failure resumes instead of starting over. The result: it catches 85%+ of seeded defects, automatically, on every pull request, for under 5 cents a review.`,
+    audioFile: "/audio/tour-project-code-review.mp3",
   },
   {
     id: "project-vendorops",
@@ -63,7 +63,7 @@ export const guidedTourSteps: GuideStep[] = [
     id: "experience",
     sectionId: "experience",
     eyebrow: "Right now",
-    line: "Right now, I'm a Software Engineer at Mercury, working remote — production backend and AI-assisted testing on financial event-ingestion systems.",
+    line: "Most recently, I was a Software Engineer at Mercury, working remote on production backend and AI-assisted testing for financial event-ingestion systems. Right now, I'm open to new full-time roles.",
     audioFile: "/audio/tour-experience.mp3",
   },
   {

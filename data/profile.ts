@@ -12,8 +12,8 @@ export const profile = {
   linkedinLabel: "linkedin.com/in/contact-lohithkovuri",
   githubUrl: "https://github.com/LOHITHK22",
   githubLabel: "github.com/LOHITHK22",
-  location: "Glassboro, NJ, USA",
-  locationNote: "Currently working remote (US)",
+  location: "San Francisco, CA, USA",
+  locationNote: "Open to new opportunities",
   resumeUrl: "/Lohith_Kovuri_Resume.pdf",
   resumeFileName: "Lohith_Kovuri_Resume.pdf",
 
@@ -38,7 +38,7 @@ export const profile = {
   ],
 
   currentStatus:
-    "Software Engineer at Mercury (Remote, USA) since Oct 2025 — production backend + AI-assisted testing on financial event-ingestion systems",
+    "Most recently Software Engineer at Mercury (Remote, USA), Oct 2025 – Jul 2026 — now open to new full-time roles in backend, cloud, and AI/GenAI engineering",
 
   contactCtaLine: "Let's talk about your engineering team.",
 } as const;
@@ -48,7 +48,7 @@ export const whyMeSignals = [
   {
     id: "aws-availability",
     signal:
-      "Operate production AWS infrastructure at Mercury (a fintech platform) sustaining 99.9% write availability across 50,000+ events/day, including 8x traffic bursts, with zero data loss.",
+      "Operated production AWS infrastructure at Mercury (a fintech platform) sustaining 99.9% write availability across 50,000+ events/day, including 8x traffic bursts, with zero data loss.",
     stat: "99.9%",
     statLabel: "write availability",
   },
@@ -104,7 +104,7 @@ export const recruiterSummary = {
     "B.Tech Information Technology, Dr. MGR Educational and Research Institute (2019–2023)",
   ],
   currentStatus:
-    "Software Engineer at Mercury (Remote, USA) since Oct 2025 — production backend + AI-assisted testing on financial event-ingestion systems",
+    "Most recently Software Engineer at Mercury (Remote, USA), Oct 2025 – Jul 2026 — now open to new full-time roles in backend, cloud, and AI/GenAI engineering",
   targeting: [
     "Software Engineer",
     "Backend Engineer",
@@ -123,13 +123,13 @@ export const recruiterSummary = {
     "PostgreSQL",
     "Docker/Kubernetes",
   ],
-  topProjects: ["Multi-Tenant RAG API", "VendorOps AI", "Distributed Job Scheduler"],
+  topProjects: ["AI Code Review Agent", "VendorOps AI", "High-Throughput Data Pipeline"],
   certifications: [
     "AWS Certified Data Engineer – Associate",
     "AWS Certified Cloud Practitioner",
     "Microsoft Certified: Power BI Data Analyst Associate",
   ],
-  location: "Glassboro, NJ, USA / open to remote",
+  location: "San Francisco, CA, USA",
 } as const;
 
 // Career Fair Mode banner copy (?careerfair=true)

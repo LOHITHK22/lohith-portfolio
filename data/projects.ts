@@ -17,6 +17,23 @@ export type FlagshipProject = {
 // guessed) for projects the brief marks as closed-source / no public repo.
 export const flagshipProjects: FlagshipProject[] = [
   {
+    id: "ai-code-review-agent",
+    name: "AI Code Review Agent",
+    tagline: "Multi-tool agentic code reviewer wired into GitHub Actions — recovers mid-chain instead of restarting",
+    problem:
+      "Manual code review doesn't scale with PR volume, and most \"AI code review\" tools are single-shot LLM calls with no way to recover if one step fails partway through.",
+    solution:
+      "A multi-tool agent system — diff retriever, static analyzer, test generator, and PR commenter — with tool-call retry and state checkpointing, so a mid-chain failure resumes from the last completed tool instead of restarting the whole review.",
+    architecture:
+      "GitHub Actions (on pull_request) → Agent orchestrator (LangGraph, model-agnostic) → Diff retriever → Static analyzer → Test generator → PR commenter → GitHub PR comment API",
+    tech: ["Python", "LangGraph", "FastAPI", "OpenAI API", "GitHub Actions"],
+    challenge:
+      "Keeping the orchestration loop model-agnostic while making a 4-tool agent chain resilient to mid-run failures, via state checkpointing rather than an all-or-nothing retry.",
+    impact:
+      "Catches 85%+ of seeded defects in benchmark diffs, at under $0.05 per review, running automatically on every pull request.",
+    featured: true,
+  },
+  {
     id: "multi-tenant-rag-api",
     name: "Multi-Tenant RAG API",
     tagline: "Production RAG backend with tenant isolation enforced at the embedding layer",
@@ -43,11 +60,11 @@ export const flagshipProjects: FlagshipProject[] = [
       "A LangGraph-orchestrated pipeline that ingests documents, extracts structured fields with an LLM (or a mock extractor for offline dev), validates the output against business rules, persists it, and produces operational reports and analytics.",
     architecture:
       "Upload (PDF / CSV / TXT / EML) → Parser (normalizes to text + metadata + pages + tables) → LLM extraction layer (mock or OpenAI) → Validation rules engine → Storage (SQLAlchemy → SQLite / PostgreSQL) → Audit log + Analytics API → React dashboard",
-    tech: ["Python", "FastAPI", "LangGraph", "OpenAI API", "SQLAlchemy", "PostgreSQL", "Pydantic", "Docker", "React"],
+    tech: ["Python", "FastAPI", "LangGraph", "OpenAI API", "MCP", "SQLAlchemy", "PostgreSQL", "Pydantic", "Docker", "React", "TypeScript"],
     challenge:
       "Coordinating a multi-agent pipeline with supervisor retry logic and human-in-the-loop gates on low-confidence extractions, while keeping per-document LLM cost down.",
     impact:
-      "90%+ clause-extraction accuracy across 100+ CUAD benchmark contracts; ~60% lower LLM cost per document by routing classification to a small model and reserving frontier-model calls for complex extraction; blocked seeded prompt-injection attempts by isolating untrusted document content and validating structured outputs.",
+      "90%+ clause-extraction accuracy across 100+ CUAD benchmark contracts; ~60% lower LLM cost per document by routing classification to a small model and reserving frontier-model calls for complex extraction; blocked seeded prompt-injection attempts by isolating untrusted document content and validating structured outputs; exposed as an MCP server so external agents/tools can discover and call its capabilities without hardcoded integrations.",
     githubUrl: "https://github.com/LOHITHK22/vendorops-ai",
     featured: true,
   },
@@ -101,19 +118,19 @@ export const flagshipProjects: FlagshipProject[] = [
   },
   {
     id: "rust-polars-pipeline",
-    name: "Rust + Polars Data Pipeline",
-    tagline: "Memory-safe, vectorized CSV ingestion feeding BI dashboards",
+    name: "High-Throughput Data Pipeline",
+    tagline: "Zero-copy Rust ingestion engine processing 1M+ records/hour, instrumented end-to-end with Prometheus",
     problem:
-      "Needed a fast, memory-safe way to ingest and statistically summarize customer CSV data without the overhead of a JVM/Python runtime, and get it into a form BI tools can chart directly.",
+      "Needed a fast, memory-safe way to ingest and process high-volume customer data without the overhead of a garbage-collected runtime, with real visibility into exactly where a pipeline saturates under load.",
     solution:
-      "A modular Rust ingestion engine using the Polars DataFrame library for vectorized statistical analysis, writing results asynchronously into PostgreSQL for downstream visualization.",
+      "Learned Rust from scratch specifically for the zero-copy memory control a garbage-collected language couldn't offer, then built a modular ingestion engine (Polars for vectorized analysis) with async PostgreSQL writes and Prometheus instrumentation on every stage.",
     architecture:
-      "CSV source → Polars DataFrame (mean / std-dev / min / max on numeric columns) → async PostgreSQL writes (SQLx) → Tableau dashboards for visualization",
-    tech: ["Rust", "Polars", "PostgreSQL", "SQLx", "Tableau"],
+      "Data source → Rust ingestion engine (Polars, vectorized, zero-copy) → async PostgreSQL writes (SQLx) → Prometheus (query latency, retry rates, buffer utilization) → Tableau dashboards",
+    tech: ["Rust", "Polars", "PostgreSQL", "SQLx", "Prometheus", "Tableau"],
     challenge:
-      "Structuring ingestion, analysis, storage, and visualization as independently testable modules in Rust, with unit tests covering CSV parsing and the statistical operations.",
+      "Learning a new systems language specifically to get compile-time memory safety without garbage collection, then instrumenting every stage closely enough to catch failure modes before they became incidents.",
     impact:
-      "Working end-to-end Rust data pipeline with async DB writes and unit-tested statistical core; results feed Tableau dashboards.",
+      "1M+ records/hour at under 1% failure rate; caught and resolved 2 connection-pool saturation events under load before they breached write SLAs.",
     githubUrl: "https://github.com/LOHITHK22/rust_data_pipeline",
   },
 ];
@@ -151,7 +168,8 @@ export const secondaryProjects: SecondaryProject[] = [
 
 export const viewAllReposUrl = "https://github.com/LOHITHK22?tab=repositories";
 
-// Top 3 projects for Recruiter Mode / Career Fair Mode condensed views.
-export const topProjectIds = ["multi-tenant-rag-api", "vendorops-ai", "distributed-job-scheduler"];
+// Top 3 projects for Recruiter Mode / Career Fair Mode condensed views —
+// kept in sync with the 3 projects on the actual career-fair resume handout.
+export const topProjectIds = ["ai-code-review-agent", "vendorops-ai", "rust-polars-pipeline"];
 
 export const topProjects = flagshipProjects.filter((p) => topProjectIds.includes(p.id));

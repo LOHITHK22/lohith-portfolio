@@ -14,7 +14,7 @@ GitHub README where a public repo exists. Treat this file as final; do not "impr
 - Phone (vCard/Save Contact only — do NOT print in plain text anywhere else on the page): +1 (856) 652-4065
 - LinkedIn: https://linkedin.com/in/contact-lohithkovuri
 - GitHub: https://github.com/LOHITHK22
-- Location: Glassboro, NJ, USA — currently working remote (US)
+- Location: San Francisco, CA, USA — open to new opportunities
 - Work authorization: NOT specified in source material. Do not display a work-authorization line at all
   (do not guess, do not write "authorized to work in the US" or similar).
 
@@ -50,17 +50,18 @@ GitHub README where a public repo exists. Treat this file as final; do not "impr
 - Who: Lohith Kovuri, Software Engineer
 - Degree: M.S. Data Science, Rowan University (2023–2025); B.Tech Information Technology, Dr. MGR
   Educational and Research Institute (2019–2023)
-- Current status: Software Engineer at Mercury (Remote, USA) since Oct 2025 — production backend +
-  AI-assisted testing on financial event-ingestion systems
+- Current status: Most recently Software Engineer at Mercury (Remote, USA), Oct 2025 – Jul 2026 — now
+  open to new full-time roles in backend, cloud, and AI/GenAI engineering
 - Targeting: Software Engineer / Backend Engineer / Full-Stack / Data Engineer / AI-GenAI Engineer /
   Cloud Engineer roles
 - Strongest technical skills (pick 8 for the compact recruiter-mode chip list): Python, Java, AWS,
   FastAPI, LangChain/LangGraph, Kafka, PostgreSQL, Docker/Kubernetes
-- Top 3 projects: (1) Multi-Tenant RAG API, (2) VendorOps AI, (3) Distributed Job Scheduler
+- Top 3 projects (kept in sync with the actual career-fair resume handout): (1) AI Code Review Agent,
+  (2) VendorOps AI, (3) High-Throughput Data Pipeline
 - Certifications: AWS Certified Data Engineer – Associate; AWS Certified Cloud Practitioner; Microsoft
   Certified: Power BI Data Analyst Associate
 - Work authorization: not shown (see Identity section — omit, don't guess)
-- Location: Glassboro, NJ, USA / open to remote
+- Location: San Francisco, CA, USA
 - Resume download, LinkedIn, GitHub, Email CTA: always present, all four, no digging required
 
 ## Education
@@ -78,18 +79,18 @@ GitHub README where a public repo exists. Treat this file as final; do not "impr
 
 ## Experience Timeline (most recent first)
 
-### Software Engineer — Mercury — Remote, USA — Oct 2025 – Present
+### Software Engineer — Mercury — Remote, USA — Oct 2025 – Jul 2026 (most recent, role ended)
 Tech: AWS (ECS, S3, SQS/SNS, Lambda, CloudWatch), OpenAI API, CI/CD
-- Designed and operate a fault-tolerant ECS + SQS + S3 event-ingestion pipeline sustaining **99.9% write
-  availability** across **50,000+ events/day**, including 8x traffic bursts, with zero data loss.
-- Redesigned the SQS consumer with idempotent processing, deduplication keys, and exponential backoff —
-  cut **MTTR by 40%** and eliminated a recurring class of duplicate-write incidents.
-- Built an OpenAI-powered test-generation pipeline into CI, closing a full class of schema/input-validation
-  gaps across 3 services before they reached production.
+- Designed a fault-tolerant, distributed event-ingestion service on AWS with idempotent writes and
+  dead-letter replay, sustaining **99.9% write availability** across 8x traffic bursts.
+- Reduced **MTTR by 40%** by redesigning failure-recovery logic with exponential backoff and documenting
+  recovery procedures per failure mode.
+- Built an AI-powered test-generation system in CI that synthesizes edge cases from schema definitions
+  across 3 services, cutting development time by **60%**.
 - Instrumented CloudWatch multi-signal observability and anomaly-detection alarms, cutting mean incident
   detection time **from hours to minutes** and shifting the team from reactive to proactive response.
 
-### Software / AI Backend Engineer — Rowan ACM Club (MenuMatch AI) — Remote, USA — Jun 2025 – Oct 2025
+### Backend Engineer (Contract) — Rowan ACM Engineering — Remote, USA — Jun 2025 – Oct 2025
 Tech: Python, FastAPI, LangChain, OpenAI Vision, AWS ECS/Lambda, GitHub Actions
 - Architected a multi-tenant conversational AI backend (LangChain + RAG) serving **200+ concurrent
   tenants** with per-tenant FAISS namespace isolation and zero cross-tenant data leaks.
@@ -102,7 +103,7 @@ Tech: Python, FastAPI, LangChain, OpenAI Vision, AWS ECS/Lambda, GitHub Actions
 - Deployed a RAGAS evaluation harness that catches LLM quality/faithfulness drops before user impact, wired
   to automatic rollback in the release pipeline.
 
-### Software Developer Intern — Roothoot Pvt Ltd — Hyderabad, India — Sep 2022 – Dec 2022
+### Software Developer — Roothoot Pvt Ltd — Hyderabad, India — Sep 2022 – Aug 2023
 Tech: Kafka, Flink, Spring Boot, Airflow, AWS CloudWatch
 - Built Kafka–Flink streaming pipelines with tuned checkpointing and backpressure handling — improved
   throughput by **30%** and cut retry rates by **35%**.
@@ -110,7 +111,7 @@ Tech: Kafka, Flink, Spring Boot, Airflow, AWS CloudWatch
 - Automated Airflow ETL workflows with retry/alerting logic, cutting manual operational effort by **40%**.
 - Built CloudWatch dashboards for offsets, lag, and failure signatures, cutting incident triage time by **50%**.
 
-## Flagship Project Case Studies (6) — full detail for Project Showcase
+## Flagship Project Case Studies (7) — full detail for Project Showcase
 
 Each needs: Problem / Solution / Architecture / Tech / Engineering Challenge / Impact / Links.
 Architecture strings below use `→` and should be rendered as a small step diagram (not prose) per project.
@@ -289,7 +290,7 @@ terminal_open, ai_pitch_start, ai_pitch_complete, ai_pitch_close, ai_pitch_skip
 
 An optional floating trigger (bottom-right, appears once scrolled past the hero, all pages except
 /recruiter) that, only on explicit user click (never autoplay), auto-scrolls through Hero → Why Me →
-Projects (two flagship project stories: Multi-Tenant RAG API, VendorOps AI) → Skills → Experience →
+Projects (two flagship project stories: AI Code Review Agent, VendorOps AI) → Skills → Experience →
 Contact while narrating a ~75-90s highlight script. Script lines are composed from data already in
 profile.ts / projects.ts (see data/guidedTour.ts) — no new claims.
 
@@ -332,6 +333,32 @@ Fully user-controlled: pause/resume, skip, and close at any time; respects prefe
 
 ## Resume file
 
-Use the file at C:\Lohith\Lohith Resumes\Lohith_Resume_Software_Engineer.pdf as the canonical downloadable
-resume (most complete, most current version — includes Mercury, Education, and both flagship projects).
-Copy it into the Next.js `public/` directory as `public/Lohith_Kovuri_Resume.pdf`.
+**Superseded (2026-08-21):** the canonical resume is now the one supplied directly for the career fair,
+`C:\Users\Princ\Downloads\Lohith Resume.pdf`, copied into `public/Lohith_Kovuri_Resume.pdf`. It differs
+from the original resume this brief was built from in several material ways — see the update note below.
+
+## Career-fair resume update (2026-08-21)
+
+The user supplied the actual resume they're handing out at the career fair, which changed several facts
+from the original source material this brief was built from:
+
+- **Location**: San Francisco, CA (was Glassboro, NJ).
+- **Mercury role has an end date**: Oct 2025 – Jul 2026, i.e. it had already ended as of today
+  (2026-08-21). Every "current status" field site-wide now reads "most recently... now open to new
+  full-time roles" rather than implying ongoing employment — this is also *why* he's at a career fair.
+- **Roothoot dates**: Sep 2022 – Aug 2023 (was Sep 2022 – Dec 2022), title "Software Developer" (was
+  "... Intern").
+- **Rowan ACM role renamed**: "Backend Engineer (Contract)" at "Rowan ACM Engineering" (was "Software /
+  AI Backend Engineer" at "Rowan ACM Club (MenuMatch AI)").
+- **New flagship project added**: AI Code Review Agent (LangGraph, 4-tool agent chain with retry/state
+  checkpointing, 85%+ seeded-defect catch rate, <$0.05/review) — was on an earlier resume draft but never
+  made it onto the site until now. It's now the top-billed project.
+- **Top 3 projects changed**: the resume now features only AI Code Review Agent, VendorOps AI, and
+  High-Throughput Data Pipeline (renamed from "Rust + Polars Data Pipeline", reframed around learning
+  Rust for zero-copy control + Prometheus instrumentation). Multi-Tenant RAG API and Distributed Job
+  Scheduler are no longer on the resume — topProjectIds (Recruiter Mode / Career Fair Mode) was updated
+  to match the resume exactly, but both projects remain in the full flagshipProjects list and Project
+  Showcase section, since the website can show more depth than a one-page resume.
+- AI Pitch's "project-rag" narration step was swapped for "project-code-review" (AI Code Review Agent) to
+  stay consistent with the new top billing; its audio clip was regenerated, along with why-me (tense fix:
+  "Operate" → "Operated") and experience (no longer "Right now, I'm at Mercury").
