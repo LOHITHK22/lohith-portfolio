@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Github, Linkedin, FileText, ArrowDown, Mail, Zap, Volume2, VolumeX } from "lucide-react";
@@ -26,6 +26,46 @@ export function Hero() {
     video.muted = !video.muted;
     setVideoMuted(video.muted);
   };
+
+  // Bridge for the AI Pitch tour: it dispatches these instead of reaching
+  // into this component's refs directly, since the two components don't
+  // otherwise share state.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const onPlayWithSound = () => {
+      video.muted = false;
+      setVideoMuted(false);
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    };
+    const onEnded = () => {
+      window.dispatchEvent(new Event("hero-video-ended"));
+    };
+    const onPause = () => video.pause();
+    const onResume = () => video.play().catch(() => {});
+    const onStop = () => {
+      video.pause();
+      video.muted = true;
+      setVideoMuted(true);
+      video.currentTime = 0;
+    };
+
+    window.addEventListener("play-hero-video-with-sound", onPlayWithSound);
+    window.addEventListener("pause-hero-video", onPause);
+    window.addEventListener("resume-hero-video", onResume);
+    window.addEventListener("stop-hero-video", onStop);
+    video.addEventListener("ended", onEnded);
+
+    return () => {
+      window.removeEventListener("play-hero-video-with-sound", onPlayWithSound);
+      window.removeEventListener("pause-hero-video", onPause);
+      window.removeEventListener("resume-hero-video", onResume);
+      window.removeEventListener("stop-hero-video", onStop);
+      video.removeEventListener("ended", onEnded);
+    };
+  }, []);
 
   return (
     <section id="top" className="relative overflow-hidden pb-16 pt-10 sm:pb-24 sm:pt-16">
@@ -197,7 +237,6 @@ export function Hero() {
             ref={videoRef}
             autoPlay
             muted
-            loop
             playsInline
             className="h-full w-full object-cover"
             aria-hidden="true"

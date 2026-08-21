@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { flagshipProjects } from "@/data/projects";
 import { track } from "@/lib/analytics";
@@ -19,6 +19,23 @@ export function ProjectShowcase() {
     setOpenId(next);
     if (next) track("project_click", { project: id });
   };
+
+  // Bridge for "Ask about me": lets the Q&A feature open a specific project
+  // card and scroll to it without reaching into this component's state.
+  useEffect(() => {
+    const onOpenProject = (e: Event) => {
+      const id = (e as CustomEvent<{ id: string }>).detail?.id;
+      if (!id || !flagshipProjects.some((p) => p.id === id)) return;
+      setOpenId(id);
+      window.setTimeout(() => {
+        document
+          .getElementById(`project-header-${id}`)
+          ?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+      }, 50);
+    };
+    window.addEventListener("open-project", onOpenProject);
+    return () => window.removeEventListener("open-project", onOpenProject);
+  }, [reducedMotion]);
 
   return (
     <section id="projects" className="section-shell py-16 sm:py-24">

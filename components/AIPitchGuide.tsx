@@ -1,17 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, Pause, Play, SkipForward, Sparkles, Volume2, X } from "lucide-react";
+import { Bot, Loader2, MessageCircle, Pause, Play, Send, SkipForward, Sparkles, Volume2, X } from "lucide-react";
 import { guidedTourSteps } from "@/data/guidedTour";
 import { profile } from "@/data/profile";
 import { track } from "@/lib/analytics";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useAudioNarration } from "@/hooks/useAudioNarration";
 import { useSpeechSynthesis } from "@/hooks/useSpeechSynthesis";
+import { useAskLohith, MAX_QUESTIONS_PER_SESSION } from "@/hooks/useAskLohith";
 
 type Status = "idle" | "playing" | "paused" | "done";
-type Engine = "audio" | "speech";
+type Engine = "audio" | "speech" | "video";
+
+const HERO_VIDEO_FALLBACK_MS = 7000;
 
 const SCROLL_SETTLE_MS_MOTION = 550;
 const SCROLL_SETTLE_MS_REDUCED = 150;
@@ -24,6 +27,8 @@ export function AIPitchGuide() {
   const [status, setStatus] = useState<Status>("idle");
   const [stepIndex, setStepIndex] = useState(0);
   const [pastHero, setPastHero] = useState(false);
+  const [askInput, setAskInput] = useState("");
+  const askLohith = useAskLohith();
 
   const orbRef = useRef<HTMLSpanElement>(null);
   const runIdRef = useRef(0);
@@ -36,6 +41,10 @@ export function AIPitchGuide() {
   // Once a pre-generated clip 404s (not yet built for this deployment), stop
   // trying audio for the rest of the tour and use speech synthesis instead.
   const audioUnavailableRef = useRef(false);
+  // Bumped by stopEverything() to invalidate any in-flight hero-video-ended
+  // listener/fallback timeout — those aren't covered by runIdRef because
+  // skip intentionally keeps the same run id (see handleSkip).
+  const videoTokenRef = useRef(0);
 
   useEffect(() => {
     const heroEl = document.getElementById("top");
@@ -85,6 +94,30 @@ export function AIPitchGuide() {
             speech.speak(step.line, { onEnd: advance });
           };
 
+          // The intro is narrated by the hero video itself (plays once,
+          // with sound) rather than a pre-generated clip — a merged
+          // "video intro, then AI-narrated tour" experience instead of two
+          // separate features.
+          if (step.id === "intro") {
+            engineRef.current = "video";
+            let settled = false;
+            const startToken = videoTokenRef.current;
+            const onVideoEnded = () => {
+              if (settled || startToken !== videoTokenRef.current) return;
+              settled = true;
+              window.removeEventListener("hero-video-ended", onVideoEnded);
+              advance();
+            };
+            window.addEventListener("hero-video-ended", onVideoEnded);
+            window.dispatchEvent(new Event("play-hero-video-with-sound"));
+            // Safety net: if the video can't play for some reason, don't
+            // strand the tour on the first step.
+            window.setTimeout(() => {
+              if (runId === runIdRef.current) onVideoEnded();
+            }, HERO_VIDEO_FALLBACK_MS);
+            return;
+          }
+
           if (audioUnavailableRef.current) {
             fallbackToSpeech();
             return;
@@ -108,6 +141,7 @@ export function AIPitchGuide() {
 
   const handlePlay = () => {
     runIdRef.current += 1;
+    videoTokenRef.current += 1;
     const runId = runIdRef.current;
     setStatus("playing");
     track("ai_pitch_start");
@@ -124,6 +158,8 @@ export function AIPitchGuide() {
   const stopEverything = () => {
     audioNarration.stop();
     speech.cancel();
+    videoTokenRef.current += 1;
+    window.dispatchEvent(new Event("stop-hero-video"));
     setOrbLevel(0);
   };
 
@@ -139,13 +175,23 @@ export function AIPitchGuide() {
   const handlePauseResume = () => {
     if (status === "playing") {
       if (engineRef.current === "audio") audioNarration.pause();
+      else if (engineRef.current === "video") window.dispatchEvent(new Event("pause-hero-video"));
       else speech.pause();
       setStatus("paused");
     } else if (status === "paused") {
       if (engineRef.current === "audio") audioNarration.resume();
+      else if (engineRef.current === "video") window.dispatchEvent(new Event("resume-hero-video"));
       else speech.resume();
       setStatus("playing");
     }
+  };
+
+  const handleAskSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const question = askInput.trim();
+    if (!question || askLohith.pending || askLohith.limitReached) return;
+    setAskInput("");
+    askLohith.ask(question);
   };
 
   const handleSkip = () => {
@@ -315,6 +361,61 @@ export function AIPitchGuide() {
                 </>
               )}
             </div>
+
+            {/* "Ask about me" Q&A — only after the pitch finishes */}
+            {status === "done" && (
+              <div className="mt-4 border-t border-white/10 pt-4">
+                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent-cyan">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Have a question about him?
+                </p>
+
+                {askLohith.exchanges.length > 0 && (
+                  <div className="no-scrollbar mt-3 max-h-52 space-y-3 overflow-y-auto pr-1">
+                    {askLohith.exchanges.map((ex, i) => (
+                      <div key={i} className="text-sm">
+                        <p className="font-medium text-white">{ex.question}</p>
+                        <p className="mt-1 leading-relaxed text-slate-300">{ex.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {askLohith.limitReached ? (
+                  <p className="mt-3 text-xs text-slate-500">
+                    That&apos;s plenty of questions for now — use the contact section below to ask him directly.
+                  </p>
+                ) : (
+                  <form onSubmit={handleAskSubmit} className="mt-3 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={askInput}
+                      onChange={(e) => setAskInput(e.target.value)}
+                      placeholder="e.g. What's his strongest project?"
+                      aria-label="Ask a question about Lohith"
+                      disabled={askLohith.pending}
+                      className="w-full rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-accent-cyan disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!askInput.trim() || askLohith.pending}
+                      aria-label="Ask"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-cyan text-base-950 transition-opacity disabled:opacity-40"
+                    >
+                      {askLohith.pending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Send className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </form>
+                )}
+                <p className="mt-2 text-[10px] text-slate-600">
+                  {MAX_QUESTIONS_PER_SESSION - askLohith.questionsAsked} question
+                  {MAX_QUESTIONS_PER_SESSION - askLohith.questionsAsked === 1 ? "" : "s"} left this session
+                </p>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

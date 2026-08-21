@@ -25,7 +25,10 @@ export const guidedTourSteps: GuideStep[] = [
     id: "intro",
     sectionId: "top",
     eyebrow: "Who I am",
-    line: `Hi, I'm ${profile.name} — a Software Engineer focused on backend systems, distributed systems, and AI/LLM platforms.`,
+    // Narrated by the hero video itself (see Hero.tsx's play-hero-video-with-
+    // sound bridge) — audioFile below is only a fallback if the video can't
+    // play for some reason. Keep this in sync with the video's script.
+    line: `Hi, I'm ${profile.name}. Welcome to my world — backend, distributed systems, and AI. Take a look.`,
     audioFile: "/audio/tour-intro.mp3",
   },
   {

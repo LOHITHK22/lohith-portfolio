@@ -301,6 +301,15 @@ quality on every device. A glowing orb reacts to the real audio waveform via the
 SpeechSynthesis (hooks/useSpeechSynthesis.ts), then to a silent timed caption-only tour if that's
 unsupported too — the tour always works, audio quality is just best with the pre-generated files.
 
+**Merged video intro:** the first step ("intro") is narrated by the hero video itself instead of a
+pre-generated clip — clicking "Hear My Pitch" plays the hero video once with sound (it's silently
+muted/ambient otherwise), and only once it ends does the tour continue into Why Me and the rest of the
+narrated sequence. This is a single continuous user-initiated sequence, not two separate features, and
+deliberately isn't automatic end-to-end (video → pitch auto-starting) since unmuted audio autoplay is
+blocked by browsers without a user gesture, and auto-scrolling on page load without consent is exactly
+the "forced experience" this project has avoided throughout. See the play-hero-video-with-sound /
+hero-video-ended event bridge between components/Hero.tsx and components/AIPitchGuide.tsx.
+
 Fully user-controlled: pause/resume, skip, and close at any time; respects prefers-reduced-motion
 (instant scroll instead of smooth).
 
