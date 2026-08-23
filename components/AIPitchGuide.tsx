@@ -97,8 +97,16 @@ export function AIPitchGuide() {
           // The intro is narrated by the hero video itself (plays once,
           // with sound) rather than a pre-generated clip — a merged
           // "video intro, then AI-narrated tour" experience instead of two
-          // separate features.
-          if (step.id === "intro") {
+          // separate features. But the video panel is desktop-only (see
+          // Hero.tsx's `hidden lg:block`) — on mobile/tablet it's not in
+          // the layout at all, so playing it would be silent and pointless.
+          // Only use the video bridge when it's actually visible; otherwise
+          // fall straight through to the same audio/speech engine every
+          // other step uses.
+          const heroVideoEl = document.getElementById("hero-intro-video");
+          const heroVideoVisible = !!heroVideoEl && heroVideoEl.getClientRects().length > 0;
+
+          if (step.id === "intro" && heroVideoVisible) {
             engineRef.current = "video";
             let settled = false;
             const startToken = videoTokenRef.current;

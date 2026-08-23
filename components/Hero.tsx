@@ -234,6 +234,7 @@ export function Hero() {
 
         <div className="group relative mx-auto aspect-square w-full max-w-md">
           <video
+            id="hero-intro-video"
             ref={videoRef}
             autoPlay
             muted
