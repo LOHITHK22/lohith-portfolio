@@ -21,8 +21,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${profile.name} — ${profile.headline}`,
-    template: `%s — ${profile.name}`,
+    default: `${profile.name} | ${profile.headline}`,
+    template: `%s | ${profile.name}`,
   },
   description: profile.subIdentity + ". " + profile.heroParagraph,
   keywords: [
@@ -43,13 +43,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: siteUrl,
-    title: `${profile.name} — ${profile.headline}`,
+    title: `${profile.name} | ${profile.headline}`,
     description: profile.subIdentity,
-    siteName: `${profile.name} — Portfolio`,
+    siteName: `${profile.name} | Portfolio`,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${profile.name} — ${profile.headline}`,
+    title: `${profile.name} | ${profile.headline}`,
     description: profile.subIdentity,
   },
   robots: {

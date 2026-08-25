@@ -27,7 +27,7 @@ export function Skills() {
         index={2}
         eyebrow="Toolbox"
         title="What I can do with it"
-        description="Organized by engineering capability, not a wall of logos. No arbitrary percentage bars — just what I actually use, and what it lets me build."
+        description="Organized by engineering capability, not a wall of logos. No arbitrary percentage bars, just what I actually use and what it lets me build."
       />
 
       <motion.div

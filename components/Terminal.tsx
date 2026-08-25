@@ -31,7 +31,7 @@ const commandOutputMap: Record<string, string[]> = Object.fromEntries(
 );
 
 const welcomeLines = [
-  `${profile.name} — interactive terminal.`,
+  `${profile.name}: interactive terminal.`,
   "Type 'help' to see available commands, or 'clear' to reset.",
 ];
 

@@ -19,11 +19,11 @@ export const flagshipProjects: FlagshipProject[] = [
   {
     id: "ai-code-review-agent",
     name: "AI Code Review Agent",
-    tagline: "Multi-tool agentic code reviewer wired into GitHub Actions — recovers mid-chain instead of restarting",
+    tagline: "Multi-tool agentic code reviewer wired into GitHub Actions, recovers mid-chain instead of restarting",
     problem:
       "Manual code review doesn't scale with PR volume, and most \"AI code review\" tools are single-shot LLM calls with no way to recover if one step fails partway through.",
     solution:
-      "A multi-tool agent system — diff retriever, static analyzer, test generator, and PR commenter — with tool-call retry and state checkpointing, so a mid-chain failure resumes from the last completed tool instead of restarting the whole review.",
+      "A multi-tool agent system (diff retriever, static analyzer, test generator, and PR commenter) with tool-call retry and state checkpointing, so a mid-chain failure resumes from the last completed tool instead of restarting the whole review.",
     architecture:
       "GitHub Actions (on pull_request) → Agent orchestrator (LangGraph, model-agnostic) → Diff retriever → Static analyzer → Test generator → PR commenter → GitHub PR comment API",
     tech: ["Python", "LangGraph", "FastAPI", "OpenAI API", "GitHub Actions"],
@@ -53,7 +53,7 @@ export const flagshipProjects: FlagshipProject[] = [
   {
     id: "vendorops-ai",
     name: "VendorOps AI",
-    tagline: "Agentic contract & invoice intelligence — LangGraph pipeline with human-in-the-loop gates",
+    tagline: "Agentic contract & invoice intelligence, a LangGraph pipeline with human-in-the-loop gates",
     problem:
       "Vendor documents (contracts, invoices) arrive unstructured across PDFs, CSVs, and email, and need reliable structured extraction with a human check on anything the model isn't confident about.",
     solution:
@@ -71,7 +71,7 @@ export const flagshipProjects: FlagshipProject[] = [
   {
     id: "distributed-job-scheduler",
     name: "Distributed Job Scheduler",
-    tagline: "6-state job lifecycle with atomic distributed locks — exactly-once claim semantics",
+    tagline: "6-state job lifecycle with atomic distributed locks for exactly-once claim semantics",
     problem:
       "A naive job queue lets two workers grab and execute the same job under concurrent load, producing duplicate side effects (double charges, double emails, double writes).",
     solution:
@@ -105,7 +105,7 @@ export const flagshipProjects: FlagshipProject[] = [
     name: "RAG-Powered Document Chatbot",
     tagline: "Fully local, privacy-preserving document Q&A with cited sources",
     problem:
-      "Answering questions over your own PDFs usually means sending private document content to a third-party API — not always acceptable for sensitive documents.",
+      "Answering questions over your own PDFs usually means sending private document content to a third-party API. That's not always acceptable for sensitive documents.",
     solution:
       "A privacy-preserving document chatbot that runs the LLM locally via Ollama, so no document content ever leaves the machine, with source citations on every answer.",
     architecture:

@@ -17,13 +17,13 @@ export const profile = {
   resumeUrl: "/Lohith_Kovuri_Resume.pdf",
   resumeFileName: "Lohith_Kovuri_Resume.pdf",
 
-  headline: "Software Engineer — Backend, Distributed Systems & AI/LLM Platforms",
+  headline: "Software Engineer working across Backend, Distributed Systems & AI/LLM Platforms",
   subIdentity: "Backend • Distributed Systems • Cloud (AWS) • AI/LLM Platforms",
 
   heroParagraph:
-    "I build fault-tolerant backend systems and production AI/LLM platforms — event-driven AWS pipelines processing tens of thousands of events a day, and multi-tenant RAG systems serving hundreds of concurrent tenants without leaking a byte between them.",
+    "I build fault-tolerant backend systems and production AI/LLM platforms, including event-driven AWS pipelines that process tens of thousands of events a day, and multi-tenant RAG systems that serve hundreds of concurrent tenants without leaking a byte between them.",
 
-  careerFairTagline: "You scanned my shirt. Here's what I actually ship.",
+  careerFairTagline: "Here's what I actually ship.",
   recruiterModeCta: "Skip to the 30-second version.",
 
   targetRoles: [
@@ -38,7 +38,7 @@ export const profile = {
   ],
 
   currentStatus:
-    "Most recently Software Engineer at Mercury (Remote, USA), Oct 2025 – Jul 2026 — now open to new full-time roles in backend, cloud, and AI/GenAI engineering",
+    "Most recently Software Engineer at Mercury (Remote, USA), Oct 2025 to Jul 2026. Now open to new full-time roles in backend, cloud, and AI/GenAI engineering",
 
   contactCtaLine: "Let's talk about your engineering team.",
 } as const;
@@ -55,7 +55,7 @@ export const whyMeSignals = [
   {
     id: "multi-tenant-rag",
     signal:
-      "Architected a multi-tenant RAG backend serving 200+ concurrent tenants with per-tenant vector-store isolation — zero cross-tenant data leaks in stress testing — while cutting redundant LLM calls by 62% and dropping latency from 1.8s to 680ms.",
+      "Architected a multi-tenant RAG backend serving 200+ concurrent tenants with per-tenant vector-store isolation (zero cross-tenant data leaks in stress testing), while cutting redundant LLM calls by 62% and dropping latency from 1.8s to 680ms.",
     stat: "200+",
     statLabel: "concurrent tenants",
   },
@@ -104,7 +104,7 @@ export const recruiterSummary = {
     "B.Tech Information Technology, Dr. MGR Educational and Research Institute (2019–2023)",
   ],
   currentStatus:
-    "Most recently Software Engineer at Mercury (Remote, USA), Oct 2025 – Jul 2026 — now open to new full-time roles in backend, cloud, and AI/GenAI engineering",
+    "Most recently Software Engineer at Mercury (Remote, USA), Oct 2025 to Jul 2026. Now open to new full-time roles in backend, cloud, and AI/GenAI engineering",
   targeting: [
     "Software Engineer",
     "Backend Engineer",
@@ -134,6 +134,6 @@ export const recruiterSummary = {
 
 // Career Fair Mode banner copy (?careerfair=true)
 export const careerFairCopy = {
-  heading: "Welcome — you probably just scanned the QR code on my shirt.",
+  heading: "Welcome. Here's a quick look at what I build.",
   intro: profile.heroParagraph,
 } as const;

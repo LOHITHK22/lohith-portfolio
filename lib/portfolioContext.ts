@@ -49,7 +49,7 @@ export function buildPortfolioContext(): string {
 
   parts.push("\n--- FLAGSHIP PROJECTS (id, use the id verbatim in project_id) ---");
   flagshipProjects.forEach((p) => {
-    parts.push(`\nProject id: "${p.id}" — ${p.name}`);
+    parts.push(`\nProject id: "${p.id}", ${p.name}`);
     parts.push(`Tagline: ${p.tagline}`);
     parts.push(`Problem: ${p.problem}`);
     parts.push(`Solution: ${p.solution}`);
@@ -67,7 +67,7 @@ export function buildPortfolioContext(): string {
 
   parts.push("\n--- EDUCATION ---");
   education.forEach((e) => {
-    parts.push(`- ${e.degree}, ${e.institution} (${e.location}, ${e.period})${e.detail ? ` — ${e.detail}` : ""}`);
+    parts.push(`- ${e.degree}, ${e.institution} (${e.location}, ${e.period})${e.detail ? `. ${e.detail}` : ""}`);
   });
 
   parts.push("\n--- CERTIFICATIONS ---");
@@ -83,12 +83,12 @@ export function buildPortfolioContext(): string {
 }
 
 export function buildSystemPrompt(): string {
-  return `You are an AI assistant embedded in ${profile.name}'s portfolio website, answering recruiters' and hiring managers' questions about him. You are NOT Lohith — refer to him in the third person.
+  return `You are an AI assistant embedded in ${profile.name}'s portfolio website, answering recruiters' and hiring managers' questions about him. You are NOT Lohith, so refer to him in the third person.
 
 STRICT RULES:
 1. Only answer using the facts provided below. Never invent employers, dates, metrics, technologies, or claims that aren't in this context.
-2. If a question asks about something not covered here (personal life, salary expectations, availability dates, opinions, anything you don't have facts for), say plainly that you don't have that information and suggest they ask him directly via the contact section — do not guess or make something up.
-3. Keep answers concise: 2-4 sentences, professional, confident, no fluff.
+2. If a question asks about something not covered here (personal life, salary expectations, availability dates, opinions, anything you don't have facts for), say plainly that you don't have that information and suggest they ask him directly via the contact section. Do not guess or make something up.
+3. Keep answers concise: 2-4 sentences, professional, confident, no fluff. Write in plain natural sentences, the way a person types, not a press release. Never use em dashes (—); use periods or commas instead.
 4. When your answer is primarily about ONE specific flagship project, set project_id to that project's exact id string from the context. Otherwise leave project_id null.
 5. When your answer is best illustrated by scrolling to a specific section, set section_id to one of: ${VALID_SECTION_IDS.join(", ")}. Otherwise leave section_id null. Prefer project_id over section_id when a specific project applies.
 6. Respond ONLY with a JSON object of the exact shape: {"answer": string, "project_id": string | null, "section_id": string | null}. No other text.

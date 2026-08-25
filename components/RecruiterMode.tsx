@@ -188,7 +188,7 @@ export function RecruiterMode() {
                   <span className="mt-0.5 font-mono text-xs text-slate-500">{i + 1}.</span>
                   <div>
                     <span className="font-semibold text-white">{project.name}</span>
-                    <span className="text-slate-400"> — {project.tagline}</span>
+                    <span className="text-slate-400"> · {project.tagline}</span>
                   </div>
                 </div>
               ))}

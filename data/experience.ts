@@ -56,7 +56,7 @@ export const experience: ExperienceEntry[] = [
     summary:
       "Tuned streaming pipelines and REST services for throughput and latency, and automated operational workflows.",
     bullets: [
-      "Built Kafka–Flink streaming pipelines with tuned checkpointing and backpressure handling — improved throughput by 30% and cut retry rates by 35%.",
+      "Built Kafka and Flink streaming pipelines with tuned checkpointing and backpressure handling, improving throughput by 30% and cutting retry rates by 35%.",
       "Reduced P95 latency by 25% on Spring Boot REST services through SQL/index tuning and caching.",
       "Automated Airflow ETL workflows with retry/alerting logic, cutting manual operational effort by 40%.",
       "Built CloudWatch dashboards for offsets, lag, and failure signatures, cutting incident triage time by 50%.",

@@ -7,7 +7,7 @@ export type TerminalCommand = {
 export const terminalCommands: TerminalCommand[] = [
   {
     command: "whoami",
-    output: ["Lohith Kovuri — Software Engineer (Backend, Distributed Systems, AI/LLM Platforms)"],
+    output: ["Lohith Kovuri, Software Engineer (Backend, Distributed Systems, AI/LLM Platforms)"],
   },
   {
     command: "status",
@@ -32,8 +32,8 @@ export const terminalCommands: TerminalCommand[] = [
   {
     command: "education",
     output: [
-      "M.S. Data Science — Rowan University (2023–2025)",
-      "B.Tech Information Technology — Dr. MGR Educational and Research Institute (2019–2023)",
+      "M.S. Data Science, Rowan University (2023-2025)",
+      "B.Tech Information Technology, Dr. MGR Educational and Research Institute (2019-2023)",
     ],
   },
   {

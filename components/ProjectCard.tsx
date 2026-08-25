@@ -152,7 +152,7 @@ export function ProjectCard({ project, isOpen, onToggle, reducedMotion, canHover
                   </a>
                 ) : (
                   <p className="text-xs italic text-slate-500">
-                    Closed source — no public repository for this project.
+                    Closed source. No public repository for this project.
                   </p>
                 )}
               </div>

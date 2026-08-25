@@ -72,7 +72,7 @@ export function Contact() {
           </h2>
           <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-400">
             <MapPin className="h-4 w-4" />
-            {profile.location} — {profile.locationNote}
+            {profile.location}, {profile.locationNote}
           </p>
 
           <motion.div

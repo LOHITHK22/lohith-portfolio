@@ -391,7 +391,7 @@ export function AIPitchGuide() {
 
                 {askLohith.limitReached ? (
                   <p className="mt-3 text-xs text-slate-500">
-                    That&apos;s plenty of questions for now — use the contact section below to ask him directly.
+                    That&apos;s plenty of questions for now. Use the contact section below to ask him directly.
                   </p>
                 ) : (
                   <form onSubmit={handleAskSubmit} className="mt-3 flex items-center gap-2">
