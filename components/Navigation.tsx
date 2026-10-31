@@ -58,7 +58,7 @@ export function Navigation() {
       }`}
     >
       <nav aria-label="Primary" className="flex h-16 items-center justify-between px-5 sm:px-8 lg:px-12">
-        <Link href="#top" className="flex items-center gap-3 rounded-md" aria-label={`${profile.name}, back to top`}>
+        <Link href="#top" className="flex min-h-10 items-center gap-3 rounded-md" aria-label={`${profile.name}, back to top`}>
           <LogoMark />
           <span className="leading-none">
             <span className="block font-mono text-[13px] font-bold tracking-[0.06em] text-white">
@@ -105,9 +105,12 @@ export function Navigation() {
           <button
             type="button"
             onClick={() => meetTeam("mobile_bar")}
-            className="rounded-full bg-teal px-3.5 py-2 font-mono text-[10px] font-bold tracking-[0.1em] text-[#02201d]"
+            className="flex min-h-10 items-center rounded-full"
           >
-            AI TEAM
+            {/* Visual pill stays compact; the button itself provides a 40px-tall tap area. */}
+            <span className="rounded-full bg-teal px-3.5 py-2 font-mono text-[10px] font-bold tracking-[0.1em] text-[#02201d]">
+              AI TEAM
+            </span>
           </button>
           <button
             type="button"

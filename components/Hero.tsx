@@ -186,16 +186,19 @@ export function Hero() {
             variants={fadeUpVariants(reducedMotion, 0.26)}
             className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400"
           >
-            <a href="#experience" className="hover:text-white">
-              <span className="text-slate-100">Data Analyst</span> @ Uline
+            {/* min-h-10 gives 40px tap targets; -my-3 cancels the extra height so the row spacing is unchanged. */}
+            <a href="#experience" className="-my-3 inline-flex min-h-10 items-center hover:text-white">
+              <span>
+                <span className="text-slate-100">Data Analyst</span> @ Uline
+              </span>
             </a>
-            <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-white" onClick={() => track("github_click", { source: "hero" })}>
+            <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" className="-my-3 inline-flex min-h-10 min-w-10 items-center gap-1.5 hover:text-white" onClick={() => track("github_click", { source: "hero" })}>
               <Github className="h-3.5 w-3.5" /> GitHub
             </a>
-            <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-white" onClick={() => track("linkedin_click", { source: "hero" })}>
+            <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" className="-my-3 inline-flex min-h-10 min-w-10 items-center gap-1.5 hover:text-white" onClick={() => track("linkedin_click", { source: "hero" })}>
               <Linkedin className="h-3.5 w-3.5" /> LinkedIn
             </a>
-            <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-white" onClick={() => track("resume_view_click", { source: "hero" })}>
+            <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="-my-3 inline-flex min-h-10 min-w-10 items-center gap-1.5 hover:text-white" onClick={() => track("resume_view_click", { source: "hero" })}>
               <FileText className="h-3.5 w-3.5" /> Resume
             </a>
           </motion.div>
