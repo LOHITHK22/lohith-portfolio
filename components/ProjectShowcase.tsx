@@ -4,11 +4,14 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ExternalLink, Github } from "lucide-react";
-import { flagshipProjects } from "@/data/projects";
+import { flagshipProjects as allProjects } from "@/data/projects";
 import { track } from "@/lib/analytics";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants } from "@/lib/motion";
 import { ArchitectureFlow } from "./ArchitectureFlow";
+
+// PipelineMedic has its own chapter (FlagshipSystem); this shows the rest.
+const flagshipProjects = allProjects.filter((p) => p.id !== "pipelinemedic-ai");
 
 export function ProjectShowcase() {
   const reducedMotion = useReducedMotion();
@@ -62,8 +65,8 @@ export function ProjectShowcase() {
         className="flex flex-wrap items-end justify-between gap-4"
       >
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent-cyan">Project showcase</p>
-          <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-5xl">Engineering case studies</h2>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-teal">04 · Other systems</p>
+          <h2 className="mt-4 font-hero text-4xl font-black leading-[0.98] tracking-[-0.03em] text-white sm:text-6xl">More engineering <span className="text-teal">case studies</span></h2>
         </div>
         <p className="max-w-sm text-sm text-slate-400">
           Architecture, the key decision, and verified results for each system. Every number comes from the repository or resume.
@@ -143,7 +146,7 @@ export function ProjectShowcase() {
               className="relative p-5 sm:p-8"
             >
               <p className="font-mono text-[10px] uppercase tracking-[0.25em]" style={{ color: project.accent }}>
-                {project.githubUrl ? "Flagship · public repository" : "Flagship · details from resume"}
+                {project.githubUrl ? "Case study · public repository" : "Case study · details from resume"}
               </p>
               <h3 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">{project.name}</h3>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-300 sm:text-base">{project.tagline}</p>

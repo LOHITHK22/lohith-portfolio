@@ -17,8 +17,8 @@ export function EducationCertifications() {
         viewport={{ once: true, margin: "-80px" }}
         variants={fadeUpVariants(reducedMotion)}
       >
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent-cyan">Background</p>
-        <h2 id="education-heading" className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-teal">Background</p>
+        <h2 id="education-heading" className="mt-3 font-hero text-3xl font-black leading-tight tracking-[-0.02em] text-white sm:text-4xl">
           Education &amp; certifications
         </h2>
       </motion.div>

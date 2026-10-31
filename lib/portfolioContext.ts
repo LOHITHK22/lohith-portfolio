@@ -11,7 +11,8 @@ import { education, certifications } from "@/data/education";
 
 export const VALID_SECTION_IDS = [
   "top",
-  "why-me",
+  "pipelinemedic",
+  "ai-team",
   "projects",
   "ai-lab",
   "skills",

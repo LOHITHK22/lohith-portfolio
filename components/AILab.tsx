@@ -710,11 +710,11 @@ export function AILab() {
   return (
     <section id="ai-lab" className="section-shell py-16 sm:py-24">
       <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-80px" }} variants={fadeUpVariants(reducedMotion)}>
-        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent-cyan">
+        <p className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-teal">
           <FlaskConical className="h-3.5 w-3.5" aria-hidden="true" />
-          AI Lab
+          03 · AI Lab
         </p>
-        <h2 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">How these systems actually work</h2>
+        <h2 className="mt-4 font-hero text-4xl font-black leading-[0.98] tracking-[-0.03em] text-white sm:text-6xl">How these systems <span className="text-teal">actually work</span></h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-400 sm:text-base">
           Eight hands-on demos of the ideas behind PipelineMedic AI and RAG Sentinel, each tied to the real file it&apos;s
           based on.

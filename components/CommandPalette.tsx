@@ -16,7 +16,6 @@ import {
   GraduationCap,
   Users,
   FlaskConical,
-  TerminalSquare,
   Command as CommandIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -48,7 +47,7 @@ export function CommandPalette() {
   const commands: Command[] = useMemo(
     () => [
       { id: "top", label: "Go to top", hint: "Hero", icon: Home, action: () => scrollTo("top") },
-      { id: "why-me", label: "Why Me", hint: "Section", icon: Sparkles, action: () => scrollTo("why-me") },
+      { id: "pipelinemedic", label: "PipelineMedic AI", hint: "Flagship system", icon: Sparkles, keywords: "mcp incident agent", action: () => scrollTo("pipelinemedic") },
       {
         id: "projects",
         label: "Projects",
@@ -130,17 +129,7 @@ export function CommandPalette() {
         keywords: "audio voice agents tour",
         action: () => openAgentTeam(),
       },
-      {
-        id: "terminal",
-        label: "Open Terminal",
-        hint: "whoami, skills, projects...",
-        icon: TerminalSquare,
-        keywords: "cli command line",
-        action: () => {
-          scrollTo("terminal-heading");
-          window.dispatchEvent(new Event("open-terminal"));
-        },
-      },
+      { id: "event", label: "Launch AI Experience", hint: "45 seconds", icon: Zap, keywords: "event demo", action: () => (window.location.href = "/event") },
     ],
     []
   );

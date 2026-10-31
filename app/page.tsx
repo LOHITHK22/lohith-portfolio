@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/Navigation";
 import { Hero } from "@/components/Hero";
-import { WhyMe } from "@/components/WhyMe";
+import { FlagshipSystem } from "@/components/FlagshipSystem";
+import { TeamSection } from "@/components/TeamSection";
 import { ProjectShowcase } from "@/components/ProjectShowcase";
 import { GitHubProjects } from "@/components/GitHubProjects";
 import { Skills } from "@/components/Skills";
@@ -10,10 +11,8 @@ import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { CareerFairBanner } from "@/components/CareerFairBanner";
 import { PageViewTracker } from "@/components/PageViewTracker";
-import { TerminalLazy } from "@/components/TerminalLazy";
 import { AgentTeamLazy } from "@/components/AgentTeamLazy";
 import { AILab } from "@/components/AILab";
-import { CursorGlow } from "@/components/CursorGlow";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { CommandPaletteLazy } from "@/components/CommandPaletteLazy";
 
@@ -24,23 +23,23 @@ export default function Home({
 }) {
   const careerFair = searchParams?.careerfair === "true";
 
+  // Flow: hero → flagship system → AI team → lab → other systems → experience → contact.
   return (
     <>
       <ScrollProgressBar />
-      <CursorGlow />
       <PageViewTracker careerFair={careerFair} />
       <Navigation />
       <main id="main-content">
         {careerFair && <CareerFairBanner />}
         <Hero />
-        <WhyMe />
-        <ProjectShowcase />
+        <FlagshipSystem />
+        <TeamSection />
         <AILab />
+        <ProjectShowcase />
         <GitHubProjects />
-        <Skills />
         <ExperienceTimeline />
+        <Skills />
         <EducationCertifications />
-        <TerminalLazy />
         <Contact />
       </main>
       <Footer />

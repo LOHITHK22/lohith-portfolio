@@ -19,8 +19,8 @@ export function ExperienceTimeline() {
         viewport={{ once: true, margin: "-80px" }}
         variants={fadeUpVariants(reducedMotion)}
       >
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent-cyan">Experience</p>
-        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Where I&apos;ve shipped</h2>
+        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-teal">05 · Experience</p>
+        <h2 className="mt-4 font-hero text-4xl font-black leading-[0.98] tracking-[-0.03em] text-white sm:text-6xl">Where I&apos;ve <span className="text-teal">shipped</span></h2>
       </motion.div>
 
       <motion.ol

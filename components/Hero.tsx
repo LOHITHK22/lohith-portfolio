@@ -1,234 +1,229 @@
 "use client";
 
 import Image from "next/image";
-import dynamic from "next/dynamic";
-import { useEffect } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { ArrowDown, ArrowUpRight, FileText, Github, Mail, Radio } from "lucide-react";
-import { heroStats, profile } from "@/data/profile";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowRight, FileText, Github, Linkedin } from "lucide-react";
+import { profile } from "@/data/profile";
+import { agents } from "@/data/agentTeam";
 import { track } from "@/lib/analytics";
-import { AnimatedCounter } from "./AnimatedCounter";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import { useCanHover } from "@/hooks/useCanHover";
 import { fadeUpVariants } from "@/lib/motion";
 import { openAgentTeam } from "@/lib/agentTeamEvents";
+import { HeroScene } from "./HeroScene";
 
-// Decorative canvas network, kept out of SSR and the critical bundle.
-const NeuralField = dynamic(() => import("./NeuralField").then((m) => m.NeuralField), { ssr: false });
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const on = () => setDesktop(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return desktop;
+}
 
-/** PipelineMedic's real control flow, drawn as the animated "architecture" behind the portrait. */
-const FLOW = [
-  { id: "detect", label: "Detect", x: 40, y: 230 },
-  { id: "diagnose", label: "LLM diagnose", x: 190, y: 140 },
-  { id: "policy", label: "Policy", x: 340, y: 200 },
-  { id: "mcp", label: "MCP · 17 tools", x: 490, y: 110 },
-  { id: "validate", label: "Validate", x: 620, y: 170 },
-];
-const FLOW_PATH = "M40 230 C 110 230, 120 140, 190 140 S 280 200, 340 200 S 430 110, 490 110 S 580 170, 620 170";
+/** Floating "AI TEAM · 7 AGENTS" launcher; opens the narrated command center. */
+function AgentDock({ className = "" }: { className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        track("hero_cta_click", { cta: "ai_team_dock" });
+        openAgentTeam();
+      }}
+      className={`group flex items-center gap-3 rounded-2xl border border-teal/30 sm:gap-4 bg-ink-900/80 py-3 pl-4 pr-3 text-left shadow-[0_20px_60px_-20px_rgba(25,211,197,0.45)] backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-teal/70 hover:bg-ink-800/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal ${className}`}
+    >
+      <span className="flex shrink-0 -space-x-2.5 sm:-space-x-2" aria-hidden="true">
+        {agents.map((a, i) => (
+          <span
+            key={a.id}
+            className="dock-agent relative flex h-7 w-7 items-center justify-center rounded-full border-2 bg-ink-950 font-mono text-[9px] font-bold text-white sm:h-8 sm:w-8 sm:text-[10px]"
+            style={{ borderColor: a.color, animationDelay: `${i * 1.1}s`, ["--agent" as string]: a.color }}
+          >
+            {a.glyph}
+          </span>
+        ))}
+      </span>
+      <span className="flex min-w-0 flex-col whitespace-nowrap">
+        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-teal-glow sm:text-[11px] sm:tracking-[0.18em]">AI Team · 7 agents</span>
+        <span className="mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-200">
+          Meet the team <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </span>
+      <span className="relative ml-1 flex h-2.5 w-2.5" aria-hidden="true">
+        <span className="absolute inline-flex h-full w-full rounded-full bg-teal opacity-70 motion-safe:animate-ping" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-teal" />
+      </span>
+    </button>
+  );
+}
 
 export function Hero() {
   const reducedMotion = useReducedMotion();
-  const canHover = useCanHover();
-
-  // Gentle pointer parallax: portrait drifts with the cursor, the architecture
-  // layer drifts against it. Desktop with a mouse only, never under reduced motion.
-  const px = useMotionValue(0);
-  const py = useMotionValue(0);
-  const sx = useSpring(px, { stiffness: 60, damping: 20 });
-  const sy = useSpring(py, { stiffness: 60, damping: 20 });
-  const portraitX = useTransform(sx, (v) => v * 12);
-  const portraitY = useTransform(sy, (v) => v * 8);
-  const flowX = useTransform(sx, (v) => v * -18);
-  const flowY = useTransform(sy, (v) => v * -10);
-
-  useEffect(() => {
-    if (!canHover || reducedMotion) return;
-    const onMove = (e: PointerEvent) => {
-      px.set(e.clientX / window.innerWidth - 0.5);
-      py.set(e.clientY / window.innerHeight - 0.5);
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => window.removeEventListener("pointermove", onMove);
-  }, [canHover, reducedMotion, px, py]);
+  const desktop = useIsDesktop();
+  const portraitRef = useRef<HTMLDivElement>(null);
 
   return (
-    <section id="top" className="relative isolate overflow-hidden bg-base-950 lg:min-h-[calc(100svh-4rem)]">
-      {/* Scene lighting */}
+    <section
+      id="top"
+      className="relative isolate -mt-16 overflow-hidden bg-ink-950 lg:h-[100svh] lg:min-h-[680px] lg:max-h-[1240px]"
+    >
+      {/* Atmosphere */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-30"
+        className="absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(55% 60% at 72% 38%, rgba(139,92,246,0.22), transparent 70%), radial-gradient(40% 45% at 92% 70%, rgba(34,211,238,0.16), transparent 70%), radial-gradient(45% 50% at 10% 15%, rgba(34,211,238,0.07), transparent 70%), linear-gradient(180deg, #060a1a 0%, #050814 100%)",
+            "radial-gradient(38% 55% at 62% 38%, rgba(25,211,197,0.11), transparent 70%), radial-gradient(30% 40% at 92% 88%, rgba(25,211,197,0.08), transparent 70%), radial-gradient(60% 60% at 18% 18%, rgba(14,50,60,0.38), transparent 70%), #020608",
         }}
       />
-      <div aria-hidden="true" className="absolute inset-0 -z-20 opacity-50">
-        <NeuralField />
+
+      {/* Portrait: the scene itself. Mobile/tablet stacks it above the copy. */}
+      <div
+        ref={portraitRef}
+        className="hero-portrait absolute left-1/2 top-[calc(4rem-10.9vw)] z-[2] aspect-square w-[172vw] -translate-x-[47.1%] md:top-[calc(4rem-60px)] md:w-[1100px] lg:left-[60%] lg:top-[-2.2%] lg:h-[146%] lg:w-auto"
+      >
+        <Image
+          src={profile.heroPortrait.src}
+          alt={profile.heroPortrait.alt}
+          fill
+          priority
+          unoptimized
+          sizes="(min-width: 1024px) 146vh, 172vw"
+          className="hero-portrait-img object-contain"
+        />
+        {/* Warm key light on the face */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 mix-blend-screen"
+          style={{ background: "radial-gradient(16% 20% at 47% 33%, rgba(255,236,220,0.07), transparent 70%)" }}
+        />
+        {/* Light seam down the centre line: the border between human and system */}
+        <div aria-hidden="true" className="hero-seam absolute left-[47.1%] top-[6%] h-[48%] w-[2px]" />
       </div>
-      {/* Fine grid, fading out toward the edges */}
+
+      <HeroScene portraitRef={portraitRef} reducedMotion={reducedMotion} showLabels={desktop} />
+
+      {/* Grade: deep shadow on the copy side, floor and ceiling falloff */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-20 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(70%_60%_at_60%_40%,black,transparent)]"
+        className="pointer-events-none absolute inset-0 z-[6] hidden lg:block"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(2,6,8,0.97) 0%, rgba(2,6,8,0.86) 24%, rgba(2,6,8,0.25) 46%, transparent 60%), linear-gradient(0deg, rgba(2,6,8,0.96) 0%, transparent 26%), linear-gradient(180deg, rgba(2,6,8,0.85) 0%, transparent 14%)",
+        }}
       />
+      <div aria-hidden="true" className="hero-mobile-grade pointer-events-none absolute inset-0 z-[6] lg:hidden" />
+      <div aria-hidden="true" className="hero-grain pointer-events-none absolute inset-0 z-[7]" />
 
-      {/* ---------- Portrait (the main visual) ---------- */}
-      {/* Rendered visible in SSR HTML (no fade-in): it is the LCP element. */}
-      <motion.div
-        style={{ x: portraitX, y: portraitY }}
-        className="pointer-events-none relative mx-auto h-[min(108vw,30rem)] w-full max-w-xl sm:h-[34rem] lg:absolute lg:inset-y-0 lg:right-[-4%] lg:mx-0 lg:h-auto lg:w-[56%] lg:max-w-none xl:right-0 xl:w-[52%]"
-      >
-        <div className="hero-portrait-mask absolute inset-0">
-          <Image
-            src={profile.portrait.src}
-            alt={profile.portrait.alt}
-            fill
-            priority
-            sizes="(min-width: 1024px) 56vw, 100vw"
-            className="object-cover object-[50%_18%] [filter:contrast(1.06)_saturate(0.92)_brightness(0.96)]"
-          />
-          {/* Cinematic grade: cool rim light from the right, violet fill from the left, shadowed base */}
-          <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(270deg,rgba(34,211,238,0.28),transparent_38%)] mix-blend-screen" />
-          <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(90deg,rgba(91,33,182,0.35),transparent_45%)] mix-blend-multiply" />
-          <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(60%_55%_at_55%_30%,transparent_40%,rgba(5,8,20,0.55)_100%)]" />
-        </div>
-
-        {/* Viewfinder brackets around the subject */}
-        <div aria-hidden="true" className="absolute left-[22%] right-[18%] top-[10%] hidden h-[46%] lg:block">
-          {["left-0 top-0 border-l border-t", "right-0 top-0 border-r border-t", "left-0 bottom-0 border-l border-b", "right-0 bottom-0 border-r border-b"].map((c) => (
-            <span key={c} className={`absolute h-6 w-6 border-cyan-300/50 ${c}`} />
-          ))}
-          <span className="absolute -top-6 left-0 font-mono text-[10px] uppercase tracking-[0.25em] text-cyan-200/70">
-            {profile.name} · Data Analyst @ Uline
-          </span>
-        </div>
-      </motion.div>
-
-      {/* ---------- Animated architecture layer ---------- */}
-      <motion.svg
+      {/* Simulated trace fragments (desktop) */}
+      <p
         aria-hidden="true"
-        viewBox="0 0 720 280"
-        preserveAspectRatio="xMidYMid meet"
-        style={{ x: flowX, y: flowY }}
-        className="pointer-events-none absolute bottom-24 right-0 hidden w-[50%] mix-blend-screen max-w-[46rem] lg:block"
+        className="absolute bottom-[19%] right-10 z-[8] hidden whitespace-pre font-mono text-[11px] leading-relaxed text-teal-soft/60 xl:block"
       >
-        <defs>
-          <linearGradient id="hero-flow" x1="0" x2="1">
-            <stop offset="0%" stopColor="#22d3ee" stopOpacity="0" />
-            <stop offset="30%" stopColor="#22d3ee" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.55" />
-          </linearGradient>
-        </defs>
-        <path d={FLOW_PATH} fill="none" stroke="url(#hero-flow)" strokeWidth="1.2" strokeDasharray="3 7" />
-        {!reducedMotion &&
-          [0, 2.4, 4.8].map((delay) => (
-            <circle key={delay} r="3.2" fill="#e0f2fe" style={{ filter: "drop-shadow(0 0 6px #22d3ee)" }}>
-              <animateMotion dur="7.2s" begin={`${delay}s`} repeatCount="indefinite" path={FLOW_PATH} />
-            </circle>
-          ))}
-        {FLOW.map((n) => (
-          <g key={n.id}>
-            <circle cx={n.x} cy={n.y} r="5" fill="#050814" stroke="#67e8f9" strokeWidth="1.2" />
-            <text x={n.x + 10} y={n.y - 10} fill="#a5f3fc" fillOpacity="0.75" fontSize="11" fontFamily="var(--font-jetbrains-mono), monospace" letterSpacing="1.5">
-              {n.label.toUpperCase()}
-            </text>
-          </g>
-        ))}
-      </motion.svg>
+        {"tools/list → 10 read-only (default)\npolicy.evaluate(MEDIUM) → APPROVAL_REQUIRED\ncanary.validate → PASSED   · sample run"}
+      </p>
 
-      {/* ---------- Copy ---------- */}
-      <div className="section-shell relative -mt-24 pb-10 sm:-mt-28 lg:mt-0 lg:flex lg:min-h-[calc(100svh-4rem)] lg:flex-col lg:justify-center lg:pb-36 lg:pt-16">
-        <div className="max-w-[40rem]">
+      {/* Copy */}
+      <div className="relative z-20 px-5 pb-12 pt-[calc(92vw+4rem-0.5rem)] sm:px-8 md:pt-[calc(640px+4rem-3rem)] lg:absolute lg:inset-0 lg:flex lg:flex-col lg:justify-end lg:px-0 lg:pb-[5.5vh] lg:pl-[max(4rem,calc((100vw-1720px)/2))] lg:pt-0">
+        <div className="max-w-[44rem]">
           <motion.p
             initial="hidden"
             animate="visible"
             variants={fadeUpVariants(reducedMotion)}
-            className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-cyan-200/80 sm:text-[11px] sm:tracking-[0.28em]"
+            className="font-mono text-[11px] font-bold uppercase tracking-[0.28em] text-slate-100 sm:text-[13px] sm:tracking-[0.32em]"
           >
-            <span className="h-px w-8 bg-gradient-to-r from-transparent to-cyan-300" aria-hidden="true" />
-            Lohith Kovuri · AI &amp; Data Engineering
+            {profile.heroEyebrowLead} <span className="text-teal">{profile.heroEyebrowAccent}</span>
           </motion.p>
 
-          <h1 className="mt-5 font-display text-[clamp(2.6rem,7.4vw,5.6rem)] font-bold leading-[0.95] tracking-[-0.035em] text-white">
-            {profile.heroHeadlineLead}{" "}
-            <span className="hero-shimmer bg-gradient-to-r from-cyan-300 via-indigo-300 to-violet-400 bg-[length:200%_100%] bg-clip-text text-transparent">
-              {profile.heroHeadlineAccent}
-            </span>
+          <h1 className="mt-4 font-hero text-[19vw] font-black leading-[0.9] tracking-[-0.035em] text-[#eef6f6] md:text-[8.6rem] lg:mt-5 lg:text-[min(8.6vw,13.8vh)]">
+            Lohith
+            <span className="hero-name-accent block text-teal">Kovuri.</span>
           </h1>
 
           <motion.p
             initial="hidden"
             animate="visible"
             variants={fadeUpVariants(reducedMotion, 0.12)}
-            className="mt-6 max-w-lg text-base leading-relaxed text-slate-300 sm:text-lg"
+            className="mt-5 max-w-[32rem] text-base leading-relaxed text-slate-300 sm:text-[17px] lg:mt-6"
           >
-            {profile.heroSupporting}
+            {profile.heroStatement}
           </motion.p>
 
           <motion.div
             initial="hidden"
             animate="visible"
             variants={fadeUpVariants(reducedMotion, 0.2)}
-            className="mt-8 flex flex-wrap items-center gap-3"
+            className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center"
           >
-            <a href="#projects" className="btn-primary !px-6 !py-3.5" onClick={() => track("hero_cta_click", { cta: "explore" })}>
-              Explore My Work
-              <ArrowDown className="h-4 w-4" />
-            </a>
-            <button
-              type="button"
-              onClick={() => {
-                track("hero_cta_click", { cta: "ai_team" });
-                openAgentTeam();
-              }}
-              className="group relative inline-flex items-center gap-2.5 overflow-hidden rounded-full border border-violet-300/40 bg-violet-500/10 px-6 py-3.5 text-sm font-semibold text-violet-50 shadow-[0_0_40px_-10px_rgba(139,92,246,0.9)] transition-colors hover:bg-violet-500/20"
+            <Link
+              href="/event"
+              prefetch={false}
+              onClick={() => track("hero_cta_click", { cta: "launch_ai_experience" })}
+              className="hero-launch group relative inline-flex items-center gap-3 whitespace-nowrap rounded-2xl bg-teal py-3.5 pl-3.5 pr-4 font-hero text-base sm:gap-4 sm:pr-5 sm:text-[17px] font-extrabold text-[#021b19] transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
             >
-              <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-violet-300 opacity-60 motion-safe:animate-ping" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-violet-300" />
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#021b19]" aria-hidden="true">
+                <span className="ml-1 h-0 w-0 border-y-[7px] border-l-[11px] border-y-transparent border-l-teal transition-transform group-hover:scale-110" />
               </span>
-              Meet My AI Team
-            </button>
+              Launch AI Experience
+              <span className="ml-auto rounded-md bg-[#021b19]/15 px-1.5 py-1 font-mono text-[10px] font-bold tracking-[0.14em] sm:ml-0">45 SEC</span>
+            </Link>
+            <a
+              href="#pipelinemedic"
+              onClick={() => track("hero_cta_click", { cta: "pipelinemedic" })}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/[0.03] px-5 py-[1.05rem] text-[15px] font-semibold text-slate-100 transition-colors hover:border-teal/60 hover:text-white"
+            >
+              PipelineMedic AI <ArrowRight className="h-4 w-4" />
+            </a>
           </motion.div>
 
           <motion.div
             initial="hidden"
             animate="visible"
             variants={fadeUpVariants(reducedMotion, 0.26)}
-            className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-1 text-sm"
+            className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400"
           >
-            <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost gap-1.5 !px-3" onClick={() => track("resume_view_click", { source: "hero" })}>
-              <FileText className="h-4 w-4" /> View Resume
+            <a href="#experience" className="hover:text-white">
+              <span className="text-slate-100">Data Analyst</span> @ Uline
             </a>
-            <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost gap-1.5 !px-3" onClick={() => track("github_click", { source: "hero" })}>
-              <Github className="h-4 w-4" /> GitHub
+            <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-white" onClick={() => track("github_click", { source: "hero" })}>
+              <Github className="h-3.5 w-3.5" /> GitHub
             </a>
-            <a href="#contact" className="btn-ghost gap-1.5 !px-3" onClick={() => track("contact_click", { source: "hero" })}>
-              <Mail className="h-4 w-4" /> Contact
+            <a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-white" onClick={() => track("linkedin_click", { source: "hero" })}>
+              <Linkedin className="h-3.5 w-3.5" /> LinkedIn
             </a>
-            <a href="/event" className="btn-ghost gap-1.5 !px-3 text-cyan-200" onClick={() => track("hero_cta_click", { cta: "event" })}>
-              <Radio className="h-4 w-4" /> 45-sec demo <ArrowUpRight className="h-3.5 w-3.5" />
+            <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-white" onClick={() => track("resume_view_click", { source: "hero" })}>
+              <FileText className="h-3.5 w-3.5" /> Resume
             </a>
           </motion.div>
+
+          <AgentDock className="mt-8 w-full sm:w-auto lg:hidden" />
+
+          <p className="sr-only">
+            PipelineMedic AI control flow: detect (deterministic), diagnose (LLM), policy gate, MCP (17 typed tools, 10 read-only
+            listed by default), validate.
+          </p>
+          <ol className="mt-8 flex flex-wrap items-center gap-x-2 gap-y-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-soft lg:hidden" aria-hidden="true">
+            {["Detect", "Diagnose", "Policy", "MCP · 17", "Validate"].map((s, i) => (
+              <li key={s} className="flex items-center gap-2">
+                <span className="rounded border border-teal/30 bg-teal/5 px-2 py-1">{s}</span>
+                {i < 4 && <span className="text-teal/50">→</span>}
+              </li>
+            ))}
+          </ol>
         </div>
       </div>
 
-      {/* ---------- Evidence band ---------- */}
       <motion.div
         initial="hidden"
         animate="visible"
-        variants={fadeUpVariants(reducedMotion, 0.32)}
-        className="relative border-y border-white/10 bg-base-950/70 backdrop-blur-md lg:absolute lg:inset-x-0 lg:bottom-0"
+        variants={fadeUpVariants(reducedMotion, 0.4)}
+        className="absolute bottom-[4.5vh] right-10 z-20 hidden lg:block"
       >
-        <dl className="section-shell grid grid-cols-2 divide-white/10 sm:grid-cols-4 sm:divide-x">
-          {heroStats.map((stat) => (
-            <div key={stat.id} className="flex flex-col px-1 py-4 sm:px-5 sm:first:pl-0">
-              <dt className="order-2 mt-0.5 text-xs leading-snug text-slate-400">{stat.label}</dt>
-              <dd className="order-1 font-mono text-2xl font-semibold tracking-tight text-white sm:text-[1.7rem]">
-                <AnimatedCounter value={stat.value} suffix={stat.suffix} decimals={stat.decimals} />
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <AgentDock />
       </motion.div>
     </section>
   );

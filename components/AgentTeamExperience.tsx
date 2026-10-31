@@ -330,7 +330,7 @@ export function AgentTeamExperience({ onClose }: { onClose: () => void }) {
           transition={{ duration: reducedMotion ? 0.01 : 0.9 }}
           className="pointer-events-none fixed inset-0"
           style={{
-            background: `radial-gradient(45% 55% at 28% 45%, ${wash}2e, transparent 70%), radial-gradient(40% 45% at 85% 85%, ${wash}1a, transparent 70%), radial-gradient(60% 50% at 70% 10%, rgba(139,92,246,0.10), transparent 70%)`,
+            background: `radial-gradient(45% 55% at 28% 45%, ${wash}2e, transparent 70%), radial-gradient(40% 45% at 85% 85%, ${wash}1a, transparent 70%), radial-gradient(60% 50% at 70% 10%, rgba(25,211,197,0.06), transparent 70%)`,
           }}
         />
       </AnimatePresence>
@@ -414,11 +414,11 @@ export function AgentTeamExperience({ onClose }: { onClose: () => void }) {
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: reducedMotion ? 0.01 : 0.35 }}
                 >
-                  <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-cyan-300">7 roles · 1 handoff chain</p>
-                  <p className="mt-3 font-display text-4xl font-bold leading-[1.02] tracking-tight text-white sm:text-5xl">
+                  <p className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-teal">7 roles · 1 handoff chain</p>
+                  <p className="mt-3 font-hero text-4xl font-black leading-[0.98] tracking-[-0.03em] text-white sm:text-6xl">
                     The team behind
                     <br />
-                    <span className="bg-gradient-to-r from-cyan-300 to-violet-400 bg-clip-text text-transparent">this portfolio.</span>
+                    <span className="text-teal">this portfolio.</span>
                   </p>
                   <p className="mt-4 max-w-md text-base leading-relaxed text-slate-300">
                     Each agent introduces its part of the workflow, in its own voice, then hands control to the next.
@@ -522,7 +522,7 @@ export function AgentTeamExperience({ onClose }: { onClose: () => void }) {
                   transition={{ duration: reducedMotion ? 0.01 : 0.35 }}
                 >
                   <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-emerald-300">Handoff complete</p>
-                  <h3 className="mt-2 font-display text-4xl font-bold leading-tight text-white sm:text-5xl">You&apos;ve met the team.</h3>
+                  <h3 className="mt-2 font-hero text-4xl font-black leading-tight tracking-[-0.03em] text-white sm:text-5xl">You&apos;ve met the team.</h3>
                   <p className="mt-2 text-slate-300">Now look at the real work: architectures, decisions, and evidence.</p>
                   <div className="mt-5 flex flex-wrap gap-3">
                     <button type="button" onClick={() => exitTo("#projects")} className="btn-primary" data-autofocus>

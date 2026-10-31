@@ -248,13 +248,14 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
   return (
     <>
       {/* ---------- Landing ---------- */}
-      <div ref={landingRef} className="relative min-h-screen overflow-x-hidden bg-base-950 text-white">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(139,92,246,0.18),transparent_55%),radial-gradient(ellipse_at_left,rgba(34,211,238,0.12),transparent_50%)]" />
+      <div ref={landingRef} className="relative min-h-screen overflow-x-hidden bg-ink-950 text-white">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_72%_30%,rgba(25,211,197,0.14),transparent_55%),radial-gradient(ellipse_at_left,rgba(14,50,60,0.4),transparent_50%)]" />
+        <div aria-hidden="true" className="hero-grain pointer-events-none absolute inset-0" />
 
         {!kiosk && (
           <header className="section-shell relative flex items-center justify-between py-5">
-            <Link prefetch={false} href="/" className="font-display text-lg font-bold tracking-tight">
-              Lohith<span className="text-accent-cyan">.</span>
+            <Link prefetch={false} href="/" className="font-hero text-lg font-black tracking-tight">
+              Lohith<span className="text-teal">.</span>
             </Link>
             <nav aria-label="Event page" className="flex items-center gap-1 text-sm">
               <Link prefetch={false} href="/#projects" className="btn-ghost !px-3">Projects</Link>
@@ -267,13 +268,13 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
         <main id="main-content" className="relative">
           <section className={`section-shell grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr] ${kiosk ? "min-h-screen py-10" : "pb-14 pt-4 sm:pt-10"}`}>
             <div className="order-2 lg:order-1">
-              <p className="inline-flex items-center gap-2 rounded-full border border-accent-cyan/30 bg-accent-cyan/10 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.18em] text-accent-cyan">
+              <p className="inline-flex items-center gap-2 rounded-full border border-teal/30 bg-teal/10 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-teal">
                 AI Event Mode
               </p>
-              <h1 className={`mt-3 font-display font-bold leading-[1.02] tracking-tight sm:mt-4 ${big ? "text-6xl sm:text-7xl" : "text-4xl sm:text-6xl"}`}>
+              <h1 className={`mt-3 font-hero font-black leading-[0.95] tracking-[-0.03em] text-[#eef6f6] sm:mt-4 ${big ? "text-6xl sm:text-8xl" : "text-5xl sm:text-7xl"}`}>
                 {profile.name}
               </h1>
-              <p className={`mt-3 font-display font-medium text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-violet-300 ${big ? "text-3xl" : "text-xl sm:text-2xl"}`}>
+              <p className={`mt-3 font-mono font-bold uppercase tracking-[0.14em] text-teal ${big ? "text-2xl" : "text-sm sm:text-lg"}`}>
                 {SPECIALIZATION}
               </p>
               <p className={`mt-4 max-w-xl leading-relaxed text-slate-300 ${big ? "text-xl" : "text-base"}`}>{ROLE_LINE}</p>
@@ -283,7 +284,7 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
                 <button
                   type="button"
                   onClick={() => begin("audio")}
-                  className={`group inline-flex items-center justify-center gap-3 rounded-full bg-gradient-to-r from-cyan-300 to-violet-400 font-semibold text-base-950 shadow-[0_0_40px_-8px_rgba(34,211,238,0.7)] transition-transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-base-950 ${big ? "px-9 py-5 text-xl" : "px-7 py-4 text-base"}`}
+                  className={`group inline-flex items-center justify-center gap-3 hero-launch rounded-2xl bg-teal font-hero font-extrabold text-[#021b19] transition-transform hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-base-950 ${big ? "px-9 py-5 text-xl" : "px-7 py-4 text-base"}`}
                 >
                   <Play className="h-5 w-5 fill-current" aria-hidden="true" />
                   Start 45-Second AI Experience
@@ -322,18 +323,18 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
             <div className="order-1 lg:order-2">
               <div className="relative mx-auto flex max-w-md flex-col items-center">
                 <div className="relative w-28 sm:w-56 lg:w-full">
-                  <div aria-hidden="true" className="absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-cyan-400/40 via-transparent to-violet-500/40 blur-2xl" />
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-white/15 bg-base-900">
+                  <div aria-hidden="true" className="absolute -inset-3 rounded-[2rem] bg-[radial-gradient(closest-side,rgba(25,211,197,0.35),transparent)] blur-2xl" />
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-teal/25 bg-[radial-gradient(60%_50%_at_50%_35%,#0c252b,#020608)]">
                     <Image
-                      src={profile.portrait.src}
-                      alt={profile.portrait.alt}
+                      src={profile.heroPortrait.src}
+                      alt={profile.heroPortrait.alt}
                       fill
                       priority
                       unoptimized
                       sizes="(min-width: 1024px) 28rem, 14rem"
-                      className="object-cover object-top"
+                      className="object-cover object-[50%_0%] scale-[1.35] origin-top"
                     />
-                    <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-base-950/90 to-transparent" />
+                    <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-ink-950/90 to-transparent" />
                   </div>
                 </div>
                 <div className="mt-4 hidden flex-wrap justify-center gap-3 sm:flex" aria-label="The seven agents in this presentation">
@@ -352,14 +353,14 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
 
           {!kiosk && (
             <section aria-labelledby="top-projects" className="section-shell pb-14">
-              <h2 id="top-projects" className="font-display text-2xl font-semibold">Top projects</h2>
+              <h2 id="top-projects" className="font-hero text-2xl font-black">Top projects</h2>
               <div className="mt-5 grid gap-4 md:grid-cols-3">
                 {topProjects.map((p) => (
                   <article key={p.id} className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                     <h3 className="font-display text-lg font-semibold">{p.name}</h3>
                     <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-300">{p.tagline}</p>
                     <div className="mt-4 flex flex-wrap gap-3 text-sm">
-                      <Link prefetch={false} href={`/projects/${p.id}`} className="font-semibold text-accent-cyan hover:underline" onClick={() => track("event_cta_click", { cta: `case_${p.id}`, source: "landing" })}>
+                      <Link prefetch={false} href={`/projects/${p.id}`} className="font-semibold text-teal hover:underline" onClick={() => track("event_cta_click", { cta: `case_${p.id}`, source: "landing" })}>
                         Case study
                       </Link>
                       {p.githubUrl && (
@@ -435,9 +436,9 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduced ? 0.01 : 0.3 }}
-            className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-base-950 text-white focus:outline-none"
+            className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-ink-950 text-white focus:outline-none"
           >
-            <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(34,211,238,0.08),transparent_60%)]" />
+            <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(25,211,197,0.09),transparent_60%)]" />
 
             {/* Top bar */}
             <div className="relative flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
@@ -488,7 +489,7 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
                           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-cyan">{profile.name} · {SPECIALIZATION}</p>
                           <h2 className={`mt-2 font-display font-bold leading-tight ${big ? "text-5xl" : "text-3xl sm:text-4xl"}`}>
                             Built With Curiosity.{" "}
-                            <span className="bg-gradient-to-r from-cyan-300 to-violet-300 bg-clip-text text-transparent">Engineered With Evidence.</span>
+                            <span className="text-teal">Engineered With Evidence.</span>
                           </h2>
                           <div className="mt-5 flex flex-col items-center gap-6 sm:flex-row sm:items-center lg:items-start">
                             <EventQRCode size={big ? "lg" : "md"} />
@@ -536,7 +537,7 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
             )}
 
             {/* Captions + controls */}
-            <div className="sticky bottom-0 z-10 mt-auto border-t border-white/10 bg-base-950/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:px-6">
+            <div className="sticky bottom-0 z-10 mt-auto border-t border-white/10 bg-ink-950/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:px-6">
               <div className="mx-auto max-w-4xl">
                 {state.failedClips.length > 0 && state.mode === "audio" && (
                   <p className="mb-2 text-center text-xs text-amber-300" role="status">

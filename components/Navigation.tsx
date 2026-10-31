@@ -2,24 +2,35 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Github, Linkedin, FileText, Zap, Menu, X, Search } from "lucide-react";
+import { ArrowDownToLine, Github, Linkedin, Menu, Play, X, Zap } from "lucide-react";
 import { profile } from "@/data/profile";
 import { track } from "@/lib/analytics";
+import { openAgentTeam } from "@/lib/agentTeamEvents";
 
 const navLinks = [
-  { href: "#projects", label: "Projects" },
+  { href: "#pipelinemedic", label: "Projects" },
   { href: "#ai-lab", label: "AI Lab" },
-  { href: "#skills", label: "Skills" },
   { href: "#experience", label: "Experience" },
   { href: "#contact", label: "Contact" },
 ];
+
+/** Hexagonal node mark: a hub with six spokes, drawn in the accent teal. */
+function LogoMark() {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" stroke="#19d3c5" strokeWidth="1.6" className="h-7 w-7" aria-hidden="true">
+      <path d="M16 2 28 9v14L16 30 4 23V9z" />
+      <circle cx="16" cy="16" r="4" />
+      <path d="M16 2v10M28 9l-8.5 5M28 23l-8.5-5M16 30V20M4 23l8.5-5M4 9l8.5 5" opacity=".55" />
+    </svg>
+  );
+}
 
 export function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
+    const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -32,110 +43,117 @@ export function Navigation() {
     };
   }, [menuOpen]);
 
+  const meetTeam = (source: string) => {
+    setMenuOpen(false);
+    track("hero_cta_click", { cta: "ai_team_nav", source });
+    openAgentTeam();
+  };
+
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-colors duration-300 ${
-        scrolled ? "border-b border-white/10 bg-base-950/85 backdrop-blur-lg" : "bg-transparent"
+        scrolled || menuOpen
+          ? "border-b border-white/[0.07] bg-ink-950/85 backdrop-blur-lg"
+          : "border-b border-white/[0.05] bg-gradient-to-b from-ink-950/80 to-ink-950/10"
       }`}
     >
-      <nav aria-label="Primary" className="section-shell flex h-16 items-center justify-between">
-        <Link
-          href="#top"
-          className="flex items-center gap-2 rounded-md text-sm font-semibold tracking-tight text-white"
-        >
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 font-mono text-xs text-accent-cyan">
-            LK
+      <nav aria-label="Primary" className="flex h-16 items-center justify-between px-5 sm:px-8 lg:px-12">
+        <Link href="#top" className="flex items-center gap-3 rounded-md" aria-label={`${profile.name}, back to top`}>
+          <LogoMark />
+          <span className="leading-none">
+            <span className="block font-mono text-[13px] font-bold tracking-[0.06em] text-white">
+              <span className="text-teal">LOHITH</span> KOVURI
+            </span>
+            <span className="mt-1 hidden font-mono text-[9px] font-medium tracking-[0.22em] text-slate-400 sm:block">
+              AI &amp; DATA ENGINEERING
+            </span>
           </span>
-          <span className="hidden sm:inline">{profile.name}</span>
         </Link>
 
-        {/* Desktop links */}
-        <div className="hidden items-center gap-1 lg:flex">
+        <div className="hidden items-center gap-9 lg:flex">
           {navLinks.map((link) => (
-            <a key={link.href} href={link.href} className="btn-ghost">
+            <a
+              key={link.href}
+              href={link.href}
+              className="font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-slate-300 transition-colors hover:text-teal-glow"
+            >
               {link.label}
             </a>
           ))}
+          <span className="h-6 w-px bg-white/15" aria-hidden="true" />
+          <div className="flex items-center gap-3">
+            <a
+              href={profile.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-2 font-mono text-[11px] font-bold tracking-[0.1em] text-slate-100 transition-colors hover:border-teal/60"
+              onClick={() => track("resume_view_click", { source: "nav" })}
+            >
+              <ArrowDownToLine className="h-3.5 w-3.5" /> RESUME
+            </a>
+            <button
+              type="button"
+              onClick={() => meetTeam("desktop")}
+              className="rounded-full bg-teal px-4 py-2 font-mono text-[11px] font-bold tracking-[0.1em] text-[#02201d] shadow-[0_0_24px_-4px_rgba(25,211,197,0.6)] transition-shadow hover:shadow-[0_0_30px_-2px_rgba(25,211,197,0.9)]"
+            >
+              MEET AI TEAM
+            </button>
+          </div>
         </div>
 
-        <div className="hidden items-center gap-2 lg:flex">
+        <div className="flex items-center gap-2 lg:hidden">
           <button
             type="button"
-            onClick={() => window.dispatchEvent(new Event("open-command-palette"))}
-            aria-label="Open command palette"
-            className="btn-ghost gap-1.5 !px-3 font-mono text-xs text-slate-400"
+            onClick={() => meetTeam("mobile_bar")}
+            className="rounded-full bg-teal px-3.5 py-2 font-mono text-[10px] font-bold tracking-[0.1em] text-[#02201d]"
           >
-            <Search className="h-3.5 w-3.5" />
-            <kbd className="rounded border border-white/10 bg-white/5 px-1 py-0.5 text-[10px]">⌘K</kbd>
+            AI TEAM
           </button>
-          <a
-            href={profile.githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="GitHub profile"
-            className="btn-ghost !px-2.5"
-            onClick={() => track("github_click", { source: "nav" })}
+          <button
+            type="button"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            onClick={() => setMenuOpen((v) => !v)}
           >
-            <Github className="h-[18px] w-[18px]" />
-          </a>
-          <a
-            href={profile.linkedinUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="LinkedIn profile"
-            className="btn-ghost !px-2.5"
-            onClick={() => track("linkedin_click", { source: "nav" })}
-          >
-            <Linkedin className="h-[18px] w-[18px]" />
-          </a>
-          <a
-            href={profile.resumeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-secondary !px-4 !py-2 text-xs"
-            onClick={() => track("resume_view_click", { source: "nav" })}
-          >
-            <FileText className="h-3.5 w-3.5" />
-            Resume
-          </a>
-          <Link href="/recruiter" className="btn-primary !px-4 !py-2 text-xs">
-            <Zap className="h-3.5 w-3.5" />
-            Recruiter Mode
-          </Link>
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
-
-        {/* Mobile toggle */}
-        <button
-          type="button"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white lg:hidden"
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-menu"
-          onClick={() => setMenuOpen((v) => !v)}
-        >
-          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
       </nav>
 
-      {/* Mobile menu */}
       <div
         id="mobile-menu"
-        className={`fixed inset-x-0 top-16 z-40 origin-top border-b border-white/10 bg-base-950/98 backdrop-blur-xl transition-all duration-200 lg:hidden ${
-          menuOpen ? "visible max-h-[calc(100vh-4rem)] opacity-100" : "invisible max-h-0 opacity-0"
+        className={`fixed inset-x-0 top-16 z-40 border-b border-white/10 bg-ink-950/[0.98] backdrop-blur-xl transition-all duration-200 lg:hidden ${
+          menuOpen ? "visible max-h-[calc(100vh-4rem)] overflow-y-auto opacity-100" : "invisible max-h-0 opacity-0"
         }`}
       >
-        <div className="section-shell flex flex-col gap-1 py-4">
+        <div className="flex flex-col gap-1 px-5 py-5 sm:px-8">
+          <Link
+            href="/event"
+            prefetch={false}
+            onClick={() => {
+              setMenuOpen(false);
+              track("hero_cta_click", { cta: "launch_ai_experience", source: "mobile_nav" });
+            }}
+            className="mb-3 flex items-center justify-between rounded-2xl bg-teal px-4 py-3.5 font-hero text-base font-extrabold text-[#021b19]"
+          >
+            <span className="flex items-center gap-2">
+              <Play className="h-4 w-4 fill-current" /> Launch AI Experience
+            </span>
+            <span className="font-mono text-[10px] tracking-[0.14em]">45 SEC</span>
+          </Link>
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
               onClick={() => setMenuOpen(false)}
-              className="rounded-lg px-3 py-3 text-base font-medium text-slate-200 hover:bg-white/5"
+              className="border-b border-white/[0.06] px-1 py-3.5 font-mono text-sm font-bold uppercase tracking-[0.14em] text-slate-200"
             >
               {link.label}
             </a>
           ))}
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-2 gap-2">
             <a
               href={profile.resumeUrl}
               target="_blank"
@@ -143,12 +161,10 @@ export function Navigation() {
               className="btn-secondary"
               onClick={() => track("resume_view_click", { source: "mobile_nav" })}
             >
-              <FileText className="h-4 w-4" />
-              Resume
+              <ArrowDownToLine className="h-4 w-4" /> Resume
             </a>
-            <Link href="/recruiter" className="btn-primary" onClick={() => setMenuOpen(false)}>
-              <Zap className="h-4 w-4" />
-              Recruiter Mode
+            <Link href="/recruiter" className="btn-secondary" onClick={() => setMenuOpen(false)}>
+              <Zap className="h-4 w-4" /> Recruiter Mode
             </Link>
             <a
               href={profile.githubUrl}
@@ -157,8 +173,7 @@ export function Navigation() {
               className="btn-secondary"
               onClick={() => track("github_click", { source: "mobile_nav" })}
             >
-              <Github className="h-4 w-4" />
-              GitHub
+              <Github className="h-4 w-4" /> GitHub
             </a>
             <a
               href={profile.linkedinUrl}
@@ -167,8 +182,7 @@ export function Navigation() {
               className="btn-secondary"
               onClick={() => track("linkedin_click", { source: "mobile_nav" })}
             >
-              <Linkedin className="h-4 w-4" />
-              LinkedIn
+              <Linkedin className="h-4 w-4" /> LinkedIn
             </a>
           </div>
         </div>

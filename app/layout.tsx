@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { Inter, JetBrains_Mono, Montserrat, Space_Grotesk } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { profile } from "@/data/profile";
 import "./globals.css";
@@ -13,6 +13,14 @@ const inter = Inter({
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-display",
+  display: "swap",
+});
+
+// Heavy display face for the cinematic hero name.
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["800", "900"],
+  variable: "--font-hero",
   display: "swap",
 });
 
@@ -76,7 +84,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} ${montserrat.variable}`}>
       <body className="min-h-screen bg-base-950 font-sans">
         <a
           href="#main-content"

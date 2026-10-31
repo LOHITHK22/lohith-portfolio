@@ -5,8 +5,6 @@ import { Code2, Workflow, BrainCircuit, Database, BarChart3 } from "lucide-react
 import { skillGroups } from "@/data/skills";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants, staggerContainer } from "@/lib/motion";
-import { onSpotlightMove } from "@/lib/utils";
-import { StackedSectionHeader } from "./StackedSectionHeader";
 
 const groupIcons: Record<string, typeof Code2> = {
   languages: Code2,
@@ -21,19 +19,19 @@ export function Skills() {
 
   return (
     <section id="skills" className="section-shell py-16 sm:py-24">
-      <StackedSectionHeader
-        index={2}
-        eyebrow="Toolbox"
-        title="What I can do with it"
-        description="Organized by capability, not a wall of logos. No arbitrary percentage bars, just what I actually use and what it lets me build."
-      />
+      <p className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-teal">Toolbox</p>
+      <h2 className="mt-3 font-hero text-3xl font-black leading-tight tracking-[-0.02em] text-white sm:text-4xl">What I can do with it</h2>
+      <p className="mt-3 max-w-2xl text-sm text-slate-400 sm:text-base">
+        Organized by capability, not a wall of logos: what I actually use and what it lets me build.
+      </p>
 
-      <motion.div
+      {/* A spec sheet, not another card grid. */}
+      <motion.dl
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-80px" }}
         variants={staggerContainer(reducedMotion)}
-        className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2"
+        className="mt-10 divide-y divide-white/[0.07] border-y border-white/[0.07]"
       >
         {skillGroups.map((group) => {
           const Icon = groupIcons[group.id] ?? Code2;
@@ -41,31 +39,22 @@ export function Skills() {
             <motion.div
               key={group.id}
               variants={fadeUpVariants(reducedMotion)}
-              onMouseMove={onSpotlightMove}
-              whileHover={reducedMotion ? undefined : { y: -4 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="glass-panel rounded-2xl p-5 transition-colors duration-300 hover:border-white/20 sm:p-6"
+              className="grid gap-3 py-5 sm:grid-cols-[14rem_minmax(0,1fr)] sm:items-center sm:gap-8"
             >
-              <div className="mb-4 flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-accent-cyan">
-                  <Icon className="h-[18px] w-[18px]" />
-                </span>
-                <div>
-                  <h3 className="text-lg font-bold leading-tight text-white">{group.verb}</h3>
-                  <p className="text-xs text-slate-500">{group.label}</p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
+              <dt className="flex items-center gap-3">
+                <Icon className="h-4 w-4 shrink-0 text-teal" aria-hidden="true" />
+                <span className="font-hero text-lg font-extrabold text-white">{group.verb}</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">{group.label}</span>
+              </dt>
+              <dd className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-slate-300">
                 {group.skills.map((skill) => (
-                  <span key={skill} className="chip">
-                    {skill}
-                  </span>
+                  <span key={skill}>{skill}</span>
                 ))}
-              </div>
+              </dd>
             </motion.div>
           );
         })}
-      </motion.div>
+      </motion.dl>
     </section>
   );
 }

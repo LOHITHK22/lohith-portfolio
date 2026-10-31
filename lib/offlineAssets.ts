@@ -12,6 +12,7 @@ export const STATIC_EVENT_ASSETS = [
   "/event/qr-event.png",
   "/event/lohith-kovuri.vcf",
   profile.portrait.src,
+  profile.heroPortrait.src,
   profile.resumeUrl,
   ...eventScenes.map((s) => s.audioFile),
 ];

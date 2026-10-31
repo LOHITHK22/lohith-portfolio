@@ -66,8 +66,8 @@ export function Contact() {
         <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent/15 blur-[100px]" />
 
         <div className="relative">
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent-cyan">Get in touch</p>
-          <h2 className="mt-2 max-w-lg text-2xl font-bold text-white sm:text-3xl">
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-teal">06 · Contact</p>
+          <h2 className="max-w-xl mt-4 font-hero text-4xl font-black leading-[0.98] tracking-[-0.03em] text-white sm:text-6xl">
             {profile.contactCtaLine}
           </h2>
           <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-400">

@@ -20,8 +20,8 @@ export function GitHubProjects() {
         className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
       >
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent-cyan">Also on GitHub</p>
-          <h2 id="github-projects-heading" className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-teal">Also on GitHub</p>
+          <h2 id="github-projects-heading" className="mt-3 font-hero text-3xl font-black leading-tight tracking-[-0.02em] text-white sm:text-4xl">
             Actively-maintained side projects
           </h2>
         </div>

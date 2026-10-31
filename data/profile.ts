@@ -32,6 +32,18 @@ export const profile = {
     src: "/images/lohith-portrait-2026.webp",
     alt: "Portrait of Lohith Kovuri",
   },
+  // Design A hero: the same headshot with the backdrop removed and a teal-black
+  // grade (scripts/make-cinematic-portrait.py). Features are not altered.
+  heroPortrait: {
+    src: "/images/lohith-cinematic.webp",
+    alt: "Portrait of Lohith Kovuri",
+    width: 1254,
+    height: 1254,
+  },
+  heroEyebrowLead: "Applied AI &",
+  heroEyebrowAccent: "Data Engineering",
+  heroStatement:
+    "I build AI systems that detect, decide, and act safely: MCP tool servers, LLM evaluation, and streaming data pipelines.",
 
   careerFairTagline: "Here's what I actually ship.",
   recruiterModeCta: "Skip to the 30-second version.",

@@ -11,24 +11,29 @@ const config: Config = {
     extend: {
       colors: {
         // Midnight-blue / charcoal scale for the AI-lab look.
+        // Teal-black scale shared with the Design A hero.
         base: {
-          950: "#050814",
-          900: "#080d1c",
-          850: "#0b1124",
-          800: "#10172d",
-          700: "#182039",
-          600: "#242e4d",
-          500: "#36416a",
+          950: "#03080b",
+          900: "#061015",
+          850: "#08151b",
+          800: "#0b1c23",
+          700: "#12262e",
+          600: "#1c3640",
+          500: "#2c4b57",
         },
+        // Design A: teal-black cinematic palette.
+        ink: { 950: "#020608", 900: "#041014", 800: "#071a1f", 700: "#0c252b" },
+        teal: { DEFAULT: "#19d3c5", soft: "#5eead4", glow: "#a0fff0" },
         accent: {
           DEFAULT: "#6366f1",
-          cyan: "#22d3ee",
+          cyan: "#19d3c5",
           violet: "#8b5cf6",
           emerald: "#34d399",
           amber: "#fbbf24",
         },
       },
       fontFamily: {
+        hero: ["var(--font-hero)", "var(--font-display)", "ui-sans-serif", "sans-serif"],
         display: ["var(--font-display)", "var(--font-inter)", "ui-sans-serif", "sans-serif"],
         sans: [
           "var(--font-inter)",
