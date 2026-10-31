@@ -6,7 +6,7 @@ on:
     paths: ["scripts/agents/**", "agents/**", ".github/workflows/portfolio-agents.yml"]
   push:
     branches: [main]
-    paths: ["scripts/agents/**", "agents/**"]
+    paths: ["scripts/agents/**", "agents/**", ".github/workflows/agents-tests.yml"]
 
 permissions:
   contents: read
@@ -14,7 +14,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,4 +22,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund --ignore-scripts
       - run: node --test scripts/agents/tests/*.test.mjs
