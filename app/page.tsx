@@ -11,7 +11,8 @@ import { Footer } from "@/components/Footer";
 import { CareerFairBanner } from "@/components/CareerFairBanner";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { TerminalLazy } from "@/components/TerminalLazy";
-import { AIPitchGuideLazy } from "@/components/AIPitchGuideLazy";
+import { AgentTeamLazy } from "@/components/AgentTeamLazy";
+import { AILab } from "@/components/AILab";
 import { CursorGlow } from "@/components/CursorGlow";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { CommandPaletteLazy } from "@/components/CommandPaletteLazy";
@@ -34,6 +35,7 @@ export default function Home({
         <Hero />
         <WhyMe />
         <ProjectShowcase />
+        <AILab />
         <GitHubProjects />
         <Skills />
         <ExperienceTimeline />
@@ -42,7 +44,7 @@ export default function Home({
         <Contact />
       </main>
       <Footer />
-      <AIPitchGuideLazy />
+      <AgentTeamLazy />
       <CommandPaletteLazy />
     </>
   );

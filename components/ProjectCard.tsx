@@ -1,8 +1,9 @@
 "use client";
 
 import { type MouseEvent } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
-import { ChevronDown, Github, ExternalLink, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown, Github, ExternalLink, Sparkles } from "lucide-react";
 import type { FlagshipProject } from "@/data/projects";
 import { track } from "@/lib/analytics";
 import { onSpotlightMove } from "@/lib/utils";
@@ -137,24 +138,34 @@ export function ProjectCard({ project, isOpen, onToggle, reducedMotion, canHover
                     ))}
                   </div>
                 </div>
-                {project.githubUrl ? (
-                  <a
-                    href={project.githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-secondary self-start"
-                    data-cursor-label="OPEN"
-                    onClick={() => track("github_click", { source: "project", project: project.id })}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/projects/${project.id}`}
+                    className="btn-primary self-start"
+                    onClick={() => track("project_click", { source: "project_card_case_study", project: project.id })}
                   >
-                    <Github className="h-4 w-4" />
-                    View repository
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                ) : (
-                  <p className="text-xs italic text-slate-500">
-                    Closed source. No public repository for this project.
-                  </p>
-                )}
+                    Full case study
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  {project.githubUrl ? (
+                    <a
+                      href={project.githubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary self-start"
+                      data-cursor-label="OPEN"
+                      onClick={() => track("github_click", { source: "project", project: project.id })}
+                    >
+                      <Github className="h-4 w-4" />
+                      View repository
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  ) : (
+                    <p className="text-xs italic text-slate-500">
+                      No public repository yet. Details come from the resume.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>

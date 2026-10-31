@@ -13,6 +13,7 @@ export const VALID_SECTION_IDS = [
   "top",
   "why-me",
   "projects",
+  "ai-lab",
   "skills",
   "experience",
   "education-heading",

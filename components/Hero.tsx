@@ -1,265 +1,214 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import { Github, Linkedin, FileText, ArrowDown, Mail, Zap, Volume2, VolumeX } from "lucide-react";
-import { profile, heroStats, recruiterSummary } from "@/data/profile";
+import { Github, FileText, ArrowDown, Mail, Users, Briefcase, Cpu } from "lucide-react";
+import { profile, heroStats } from "@/data/profile";
 import { track } from "@/lib/analytics";
 import { AnimatedCounter } from "./AnimatedCounter";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants } from "@/lib/motion";
-import dynamic from "next/dynamic";
+import { openAgentTeam } from "@/lib/agentTeamEvents";
 
-const GridBackground = dynamic(() => import("./GridBackground").then((m) => m.GridBackground), {
-  ssr: true,
-});
+// The network is decorative and canvas-driven: keep it out of the SSR HTML and
+// the critical bundle so it never delays the portrait/headline paint.
+const NeuralField = dynamic(() => import("./NeuralField").then((m) => m.NeuralField), { ssr: false });
 
 export function Hero() {
   const reducedMotion = useReducedMotion();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoMuted, setVideoMuted] = useState(true);
-
-  const toggleVideoSound = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    setVideoMuted(video.muted);
-  };
-
-  // Bridge for the AI Pitch tour: it dispatches these instead of reaching
-  // into this component's refs directly, since the two components don't
-  // otherwise share state.
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const onPlayWithSound = () => {
-      video.muted = false;
-      setVideoMuted(false);
-      video.currentTime = 0;
-      video.play().catch(() => {});
-    };
-    const onEnded = () => {
-      window.dispatchEvent(new Event("hero-video-ended"));
-    };
-    const onPause = () => video.pause();
-    const onResume = () => video.play().catch(() => {});
-    const onStop = () => {
-      video.pause();
-      video.muted = true;
-      setVideoMuted(true);
-      video.currentTime = 0;
-    };
-
-    window.addEventListener("play-hero-video-with-sound", onPlayWithSound);
-    window.addEventListener("pause-hero-video", onPause);
-    window.addEventListener("resume-hero-video", onResume);
-    window.addEventListener("stop-hero-video", onStop);
-    video.addEventListener("ended", onEnded);
-
-    return () => {
-      window.removeEventListener("play-hero-video-with-sound", onPlayWithSound);
-      window.removeEventListener("pause-hero-video", onPause);
-      window.removeEventListener("resume-hero-video", onResume);
-      window.removeEventListener("stop-hero-video", onStop);
-      video.removeEventListener("ended", onEnded);
-    };
-  }, []);
 
   return (
-    <section id="top" className="relative overflow-hidden pb-16 pt-10 sm:pb-24 sm:pt-16">
-      <GridBackground />
-
-      <div className="section-shell relative lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10">
-      <div>
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeUpVariants(reducedMotion)}
-          className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/[0.06] px-3 py-1.5 font-mono text-[9px] font-medium uppercase tracking-wide text-emerald-300/90 sm:mb-6 sm:px-3.5 sm:text-[11px] sm:tracking-wider"
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-          </span>
-          {profile.careerFairTagline}
-        </motion.div>
-
-        <motion.h1
-          initial="hidden"
-          animate="visible"
-          variants={fadeUpVariants(reducedMotion, 0.05)}
-          className="text-glow max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-5xl md:text-6xl"
-        >
-          {profile.name}
-        </motion.h1>
-
-        <motion.p
-          initial="hidden"
-          animate="visible"
-          variants={fadeUpVariants(reducedMotion, 0.1)}
-          className="mt-3 max-w-2xl text-lg font-medium sm:mt-4 sm:text-xl"
-        >
-          <span className="gradient-text">{profile.headline}</span>
-        </motion.p>
-
-        <motion.p
-          initial="hidden"
-          animate="visible"
-          variants={fadeUpVariants(reducedMotion, 0.15)}
-          className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-400 sm:text-base"
-        >
-          {profile.subIdentity}
-        </motion.p>
-
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeUpVariants(reducedMotion, 0.18)}
-          className="mt-3 flex flex-wrap gap-1.5 sm:mt-4 sm:gap-2"
-        >
-          {recruiterSummary.strongestSkills.slice(0, 5).map((skill) => (
-            <span key={skill} className="chip-sm">
-              {skill}
-            </span>
-          ))}
-        </motion.div>
-
-        <motion.p
-          initial="hidden"
-          animate="visible"
-          variants={fadeUpVariants(reducedMotion, 0.2)}
-          className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300 sm:mt-5 sm:text-base md:text-lg"
-        >
-          {profile.heroParagraph}
-        </motion.p>
-
-        {/* Primary CTAs */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeUpVariants(reducedMotion, 0.25)}
-          className="mt-5 flex flex-wrap items-center gap-3 sm:mt-8"
-        >
-          <a
-            href={profile.resumeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary"
-            data-cursor-label="VIEW"
-            onClick={() => track("resume_view_click", { source: "hero" })}
-          >
-            <FileText className="h-4 w-4" />
-            View Resume
-          </a>
-          <Link href="/recruiter" className="btn-secondary">
-            <Zap className="h-4 w-4" />
-            Recruiter Mode
-          </Link>
-          <a href="#projects" className="btn-secondary">
-            Explore Projects
-            <ArrowDown className="h-4 w-4" />
-          </a>
-        </motion.div>
-
-        {/* Secondary CTAs */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeUpVariants(reducedMotion, 0.3)}
-          className="mt-3 flex flex-wrap items-center gap-3"
-        >
-          <a
-            href={profile.githubUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-ghost gap-1.5 !px-3"
-            data-cursor-label="OPEN"
-            onClick={() => track("github_click", { source: "hero" })}
-          >
-            <Github className="h-4 w-4" />
-            GitHub
-          </a>
-          <a
-            href={profile.linkedinUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-ghost gap-1.5 !px-3"
-            data-cursor-label="OPEN"
-            onClick={() => track("linkedin_click", { source: "hero" })}
-          >
-            <Linkedin className="h-4 w-4" />
-            LinkedIn
-          </a>
-          <a
-            href="#contact"
-            className="btn-ghost gap-1.5 !px-3"
-            onClick={() => track("contact_click", { source: "hero" })}
-          >
-            <Mail className="h-4 w-4" />
-            Contact Me
-          </a>
-        </motion.div>
-
-        {/* Stat counters */}
-        <motion.dl
-          initial="hidden"
-          animate="visible"
-          variants={fadeUpVariants(reducedMotion, 0.35)}
-          className="mt-14 grid grid-cols-2 gap-x-6 gap-y-8 border-t border-white/10 pt-8 sm:grid-cols-4"
-        >
-          {heroStats.map((stat) => (
-            <div key={stat.id}>
-              <dt className="sr-only">{stat.label}</dt>
-              <dd className="font-mono text-2xl font-bold text-white sm:text-3xl">
-                <AnimatedCounter value={stat.value} suffix={stat.suffix} decimals={stat.decimals} />
-              </dd>
-              <p className="mt-1 text-xs text-slate-400 sm:text-sm">{stat.label}</p>
-            </div>
-          ))}
-        </motion.dl>
+    <section id="top" className="relative isolate overflow-hidden pb-16 pt-8 sm:pb-24 sm:pt-14">
+      {/* Midnight-blue scene lighting: cyan key light left, violet rim light right. */}
+      <div aria-hidden="true" className="absolute inset-0 -z-20 bg-base-950" />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-20"
+        style={{
+          background:
+            "radial-gradient(60% 50% at 18% 20%, rgba(34,211,238,0.10), transparent 70%), radial-gradient(50% 55% at 85% 35%, rgba(139,92,246,0.16), transparent 70%), linear-gradient(180deg, #070c1d 0%, #050814 70%)",
+        }}
+      />
+      <div aria-hidden="true" className="absolute inset-0 -z-10 opacity-70">
+        <NeuralField />
       </div>
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-b from-transparent to-base-950"
+      />
 
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={fadeUpVariants(reducedMotion, 0.2)}
-        className="relative hidden lg:block"
-      >
-        {/* Ambient glow behind the video so it reads as part of the same lit
-            scene as the rest of the hero, not a pasted-in rectangle. */}
-        <div className="absolute inset-0 -z-10 scale-110 rounded-full bg-accent/20 blur-[100px]" />
-        <div className="absolute inset-0 -z-10 scale-110 rounded-full bg-accent-cyan/10 blur-[120px]" />
-
-        <div className="group relative mx-auto aspect-square w-full max-w-md">
-          <video
-            id="hero-intro-video"
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            className="h-full w-full object-cover"
-            aria-hidden="true"
-            style={{
-              maskImage: "radial-gradient(circle at 50% 42%, black 52%, transparent 78%)",
-              WebkitMaskImage: "radial-gradient(circle at 50% 42%, black 52%, transparent 78%)",
-            }}
-          >
-            <source src="/videos/hero.mp4" type="video/mp4" />
-          </video>
-
-          <button
-            type="button"
-            onClick={toggleVideoSound}
-            aria-label={videoMuted ? "Unmute intro video" : "Mute intro video"}
-            className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-base-950/70 text-white backdrop-blur-sm transition-colors duration-200 hover:bg-base-950/90"
-          >
-            {videoMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </button>
+      <div className="section-shell grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
+        {/* Portrait first on mobile so identity lands immediately. */}
+        {/* Portrait and headline render visible in the SSR HTML (no fade-in):
+            they're the LCP candidates, so they must not wait for hydration. */}
+        <div className="relative order-first mx-auto w-full max-w-[19rem] sm:max-w-sm lg:order-last lg:max-w-md">
+          <PortraitFrame />
         </div>
-      </motion.div>
+
+        <div>
+          <motion.p
+            initial="hidden"
+            animate="visible"
+            variants={fadeUpVariants(reducedMotion)}
+            className="mb-5 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-accent-cyan/20 bg-accent-cyan/[0.06] px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-wider text-cyan-200/90 sm:text-[11px]"
+          >
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-cyan opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-cyan" />
+            </span>
+            {profile.name}
+            <span className="text-slate-500">/</span>
+            Data Analyst @ Uline
+          </motion.p>
+
+          <h1
+            className="font-display text-[2.35rem] font-bold leading-[1.04] tracking-tight text-white sm:text-6xl lg:text-[4.1rem]"
+          >
+            {profile.heroHeadlineLead}{" "}
+            <span className="bg-gradient-to-r from-accent-cyan via-indigo-400 to-accent-violet bg-clip-text text-transparent">
+              {profile.heroHeadlineAccent}
+            </span>
+          </h1>
+
+          <motion.p
+            initial="hidden"
+            animate="visible"
+            variants={fadeUpVariants(reducedMotion, 0.14)}
+            className="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg"
+          >
+            {profile.heroSupporting}
+          </motion.p>
+
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeUpVariants(reducedMotion, 0.2)}
+            className="mt-7 flex flex-wrap items-center gap-3"
+          >
+            <a href="#projects" className="btn-primary" onClick={() => track("hero_cta_click", { cta: "explore" })}>
+              Explore My Work
+              <ArrowDown className="h-4 w-4" />
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                track("hero_cta_click", { cta: "ai_team" });
+                openAgentTeam();
+              }}
+              className="group relative inline-flex items-center gap-2 rounded-full border border-accent-violet/40 bg-accent-violet/10 px-5 py-2.5 text-sm font-semibold text-violet-100 shadow-[0_0_30px_-8px_rgba(139,92,246,0.7)] transition-colors hover:bg-accent-violet/20"
+            >
+              <Users className="h-4 w-4" />
+              Meet My AI Team
+            </button>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeUpVariants(reducedMotion, 0.25)}
+            className="mt-3 flex flex-wrap items-center gap-2"
+          >
+            <a
+              href={profile.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost gap-1.5 !px-3"
+              onClick={() => track("resume_view_click", { source: "hero" })}
+            >
+              <FileText className="h-4 w-4" />
+              View Resume
+            </a>
+            <a
+              href={profile.githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost gap-1.5 !px-3"
+              onClick={() => track("github_click", { source: "hero" })}
+            >
+              <Github className="h-4 w-4" />
+              GitHub
+            </a>
+            <a
+              href="#contact"
+              className="btn-ghost gap-1.5 !px-3"
+              onClick={() => track("contact_click", { source: "hero" })}
+            >
+              <Mail className="h-4 w-4" />
+              Contact
+            </a>
+          </motion.div>
+
+          <motion.dl
+            initial="hidden"
+            animate="visible"
+            variants={fadeUpVariants(reducedMotion, 0.3)}
+            className="mt-10 grid grid-cols-2 gap-x-6 gap-y-6 border-t border-white/10 pt-7 sm:grid-cols-4"
+          >
+            {heroStats.map((stat) => (
+              <div key={stat.id} className="flex flex-col">
+                <dt className="order-2 mt-1 text-xs text-slate-400 sm:text-sm">{stat.label}</dt>
+                <dd className="order-1 font-mono text-2xl font-bold text-white sm:text-3xl">
+                  <AnimatedCounter value={stat.value} suffix={stat.suffix} decimals={stat.decimals} />
+                </dd>
+              </div>
+            ))}
+          </motion.dl>
+        </div>
       </div>
     </section>
+  );
+}
+
+function PortraitFrame() {
+  return (
+    <div className="relative">
+      {/* Lighting behind the portrait. */}
+      <div aria-hidden="true" className="absolute -inset-8 -z-10 rounded-full bg-accent-violet/25 blur-[80px]" />
+      <div aria-hidden="true" className="absolute -left-10 top-10 -z-10 h-40 w-40 rounded-full bg-accent-cyan/20 blur-[70px]" />
+
+      {/* Orbit ring with nodes. */}
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 400 400"
+        className="absolute -inset-[12%] -z-10 h-[124%] w-[124%] animate-spin-slow opacity-60 [animation-duration:60s]"
+      >
+        <circle cx="200" cy="200" r="190" fill="none" stroke="rgba(148,163,184,0.18)" strokeDasharray="2 8" />
+        <circle cx="200" cy="10" r="3.5" fill="#22d3ee" />
+        <circle cx="390" cy="200" r="2.5" fill="#8b5cf6" />
+        <circle cx="66" cy="334" r="3" fill="#22d3ee" />
+      </svg>
+
+      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-accent-cyan/60 via-indigo-500/30 to-accent-violet/60 p-px shadow-2xl shadow-black/60">
+        <div className="relative overflow-hidden rounded-[calc(2rem-1px)] bg-base-900">
+          <Image
+            src={profile.portrait.src}
+            alt={profile.portrait.alt}
+            width={1200}
+            height={1500}
+            priority
+            sizes="(min-width: 1024px) 448px, (min-width: 640px) 384px, 304px"
+            className="h-auto w-full"
+          />
+          {/* Fade the bottom into the scene and add a subtle cyan rim. */}
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-base-950 via-transparent to-transparent" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-tr from-accent-cyan/10 via-transparent to-accent-violet/15 mix-blend-screen" />
+        </div>
+      </div>
+
+      {/* Floating evidence chips: both facts are on the page below. */}
+      <div className="absolute -left-3 bottom-16 flex items-center gap-2 rounded-xl border border-white/10 bg-base-900/80 px-3 py-2 text-xs text-slate-200 shadow-lg backdrop-blur-md sm:-left-8">
+        <Briefcase className="h-3.5 w-3.5 text-accent-cyan" aria-hidden="true" />
+        <span>
+          Data Analyst <span className="text-slate-400">· Uline</span>
+        </span>
+      </div>
+      <div className="absolute -right-3 top-10 flex items-center gap-2 rounded-xl border border-white/10 bg-base-900/80 px-3 py-2 text-xs text-slate-200 shadow-lg backdrop-blur-md sm:-right-8">
+        <Cpu className="h-3.5 w-3.5 text-accent-violet" aria-hidden="true" />
+        <span>
+          PipelineMedic AI <span className="text-slate-400">· 17 MCP tools</span>
+        </span>
+      </div>
+    </div>
   );
 }

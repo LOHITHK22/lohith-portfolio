@@ -14,7 +14,8 @@ import {
   Wrench,
   Briefcase,
   GraduationCap,
-  Volume2,
+  Users,
+  FlaskConical,
   TerminalSquare,
   Command as CommandIcon,
   type LucideIcon,
@@ -22,6 +23,7 @@ import {
 import { profile } from "@/data/profile";
 import { track } from "@/lib/analytics";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { openAgentTeam } from "@/lib/agentTeamEvents";
 
 type Command = {
   id: string;
@@ -54,6 +56,14 @@ export function CommandPalette() {
         icon: Wrench,
         keywords: "case studies engineering",
         action: () => scrollTo("projects"),
+      },
+      {
+        id: "ai-lab",
+        label: "AI Lab",
+        hint: "Interactive demos",
+        icon: FlaskConical,
+        keywords: "mcp rag tool calling orchestration demo",
+        action: () => scrollTo("ai-lab"),
       },
       { id: "skills", label: "Skills", hint: "Section", icon: Wrench, action: () => scrollTo("skills") },
       {
@@ -113,15 +123,12 @@ export function CommandPalette() {
         },
       },
       {
-        id: "pitch",
-        label: "Hear My Pitch",
-        hint: "AI-narrated highlight tour",
-        icon: Volume2,
-        keywords: "audio voice tour ai",
-        action: () => {
-          scrollTo("top");
-          window.dispatchEvent(new Event("open-ai-pitch"));
-        },
+        id: "ai-team",
+        label: "Meet My AI Team",
+        hint: "Narrated agent introduction",
+        icon: Users,
+        keywords: "audio voice agents tour",
+        action: () => openAgentTeam(),
       },
       {
         id: "terminal",

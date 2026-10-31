@@ -7,8 +7,8 @@ import { profile } from "@/data/profile";
 import { track } from "@/lib/analytics";
 
 const navLinks = [
-  { href: "#why-me", label: "Why Me" },
   { href: "#projects", label: "Projects" },
+  { href: "#ai-lab", label: "AI Lab" },
   { href: "#skills", label: "Skills" },
   { href: "#experience", label: "Experience" },
   { href: "#contact", label: "Contact" },

@@ -1,7 +1,6 @@
 import { track as vercelTrack } from "@vercel/analytics";
 
-// Exact event list from CONTENT_BRIEF.md. Keep this union in sync with it —
-// it exists so every call site is type-checked against the approved list.
+// Approved event list. It exists so every call site is type-checked against it.
 export type AnalyticsEvent =
   | "qr_landing_view"
   | "careerfair_mode_view"
@@ -14,10 +13,14 @@ export type AnalyticsEvent =
   | "recruiter_mode_open"
   | "vcard_download"
   | "terminal_open"
-  | "ai_pitch_start"
-  | "ai_pitch_complete"
-  | "ai_pitch_close"
-  | "ai_pitch_skip"
+  | "ai_team_open"
+  | "ai_team_start"
+  | "ai_team_complete"
+  | "ai_team_close"
+  | "ai_team_jump"
+  | "hero_cta_click"
+  | "case_study_view"
+  | "lab_demo_run"
   | "command_palette_open"
   | "command_palette_select"
   | "ask_question";

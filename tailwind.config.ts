@@ -10,14 +10,15 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Midnight-blue / charcoal scale for the AI-lab look.
         base: {
-          950: "#05060a",
-          900: "#0a0c14",
-          850: "#0d0f1a",
-          800: "#12141f",
-          700: "#1a1d2b",
-          600: "#262a3c",
-          500: "#3a3f57",
+          950: "#050814",
+          900: "#080d1c",
+          850: "#0b1124",
+          800: "#10172d",
+          700: "#182039",
+          600: "#242e4d",
+          500: "#36416a",
         },
         accent: {
           DEFAULT: "#6366f1",
@@ -28,6 +29,7 @@ const config: Config = {
         },
       },
       fontFamily: {
+        display: ["var(--font-display)", "var(--font-inter)", "ui-sans-serif", "sans-serif"],
         sans: [
           "var(--font-inter)",
           "ui-sans-serif",

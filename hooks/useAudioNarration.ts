@@ -10,8 +10,8 @@ type PlayOptions = {
 };
 
 /**
- * Plays pre-generated narration MP3s (see data/guidedTour.ts +
- * scripts/generate-tour-audio.ts) through a single reused <audio> element,
+ * Plays pre-generated narration MP3s (see data/agentTeam.ts +
+ * scripts/generate-team-audio.ts) through a single reused <audio> element,
  * and taps a Web Audio AnalyserNode so the caller can drive a reactive
  * "speaking" visualization off the real waveform instead of a canned loop.
  *
@@ -87,22 +87,33 @@ export function useAudioNarration() {
     audioCtxRef.current?.resume().catch(() => {});
     onLevelRef.current = onLevel;
 
-    audio.onended = () => {
-      stopLevelLoop();
-      onLevel?.(0);
-      onEnd?.();
-    };
-    audio.onerror = () => {
+    // A clip can fail via both `onerror` and the play() promise; report once.
+    let failed = false;
+    const fail = () => {
+      if (failed) return;
+      failed = true;
       stopLevelLoop();
       onLevel?.(0);
       onError?.();
     };
 
+    audio.onended = () => {
+      stopLevelLoop();
+      onLevel?.(0);
+      onEnd?.();
+    };
+    audio.onerror = fail;
+
     audio.src = src;
     audio
       .play()
       .then(() => startLevelLoop(onLevel))
-      .catch(() => onError?.());
+      .catch((err: unknown) => {
+        // pause()/stop() before playback starts rejects with AbortError. That's
+        // the user pausing, not a broken clip, so don't fall back.
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        fail();
+      });
   }, [ensureGraph]);
 
   const pause = useCallback(() => {
@@ -131,5 +142,16 @@ export function useAudioNarration() {
     stopLevelLoop();
   }, []);
 
-  return { play, pause, resume, stop };
+  const setMuted = useCallback((muted: boolean) => {
+    if (audioRef.current) audioRef.current.muted = muted;
+  }, []);
+
+  /** 0-1 position within the current clip (0 when unknown). */
+  const getProgress = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration || !isFinite(audio.duration)) return 0;
+    return audio.currentTime / audio.duration;
+  }, []);
+
+  return { play, pause, resume, stop, setMuted, getProgress };
 }

@@ -23,6 +23,16 @@ export const profile = {
   heroParagraph:
     "I turn messy supply chain and payments data into reports, checks, and forecasts people trust. On my own time I build AWS data pipelines in PySpark and Kafka, an LLM evaluation framework, and an agent that repairs data pipelines with human approval.",
 
+  // Portrait-led hero (components/Hero.tsx).
+  heroHeadlineLead: "I Build AI Systems That",
+  heroHeadlineAccent: "Think, Act, and Evolve.",
+  heroSupporting:
+    "Exploring the engineering behind autonomous AI agents, LLM applications, MCP integrations, reliable data platforms, and intelligent automation.",
+  portrait: {
+    src: "/images/lohith-portrait-1200.webp",
+    alt: "Portrait of Lohith Kovuri",
+  },
+
   careerFairTagline: "Here's what I actually ship.",
   recruiterModeCta: "Skip to the 30-second version.",
 

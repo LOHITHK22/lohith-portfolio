@@ -30,15 +30,17 @@ app/                    Routes (App Router)
   globals.css             Tailwind layers + base styles
 
 components/             Presentation only — no hardcoded copy, all data comes from data/
-data/                    Typed content — the single source of truth (mirrors CONTENT_BRIEF.md)
+data/                    Typed content — the single source of truth (sourced from the resume + public repos)
 lib/                     analytics.ts, vcard.ts, motion.ts, utils.ts
 hooks/                   useReducedMotion.ts, useAudioNarration.ts, useSpeechSynthesis.ts
+app/projects/[id]/       Case-study pages (content in data/caseStudies.ts)
 scripts/
-  generate-tour-audio.ts  One-time local script — renders data/guidedTour.ts into public/audio/*.mp3
+  generate-team-audio.ts  One-time local script — renders data/agentTeam.ts into public/audio/team/*.mp3
 
 public/
   Lohith_Kovuri_Resume.pdf
-  audio/                 Pre-generated AI Pitch narration clips (see "AI Pitch" section below)
+  images/                Portrait (lohith-portrait-1200.webp; next/image builds responsive sizes)
+  audio/team/            Pre-generated "Meet My AI Team" narration clips (see below)
 ```
 
 ## Local setup
@@ -110,34 +112,40 @@ only anonymous event names and small string/number props (e.g. a project id):
 
 `qr_landing_view`, `careerfair_mode_view`, `resume_view_click`, `resume_download_click`, `github_click`,
 `linkedin_click`, `project_click`, `contact_click`, `recruiter_mode_open`, `vcard_download`, `terminal_open`,
-`ai_pitch_start`, `ai_pitch_complete`, `ai_pitch_close`, `ai_pitch_skip`
+`ai_team_open`, `ai_team_start`, `ai_team_complete`, `ai_team_close`, `ai_team_jump`, `hero_cta_click`,
+`case_study_view`, `lab_demo_run`, `command_palette_open`, `command_palette_select`, `ask_question`
 
-## AI Pitch (guided audio tour)
+## Meet My AI Team (narrated agent introduction)
 
-A floating "Hear My Pitch" trigger (bottom-right, appears once you scroll past the hero) that auto-scrolls
-through Hero → Why Me → Projects → Skills → Experience → Contact while narrating a ~75-90s highlight reel.
-Never autoplays — only starts on an explicit click — and is fully controllable (pause/resume, skip, close)
-at any time.
+Opened from the hero's "Meet My AI Team" button, the floating launcher, or the command palette. A full-screen
+"command center" introduces seven illustrative roles (ASTRA, NOVA, FORGE, ATLAS, PULSE, SENTINEL, ECHO) in a
+handoff chain, with a signal animating along each connection as one agent passes to the next. It is a
+scripted presentation, not live AI, and the UI says so.
 
-**How the audio works:** the narration script in `data/guidedTour.ts` is pre-rendered into static MP3s
-via ElevenLabs, *once*, by a local script — not called live per visitor. The deployed site just plays
-static files, so there's no runtime API cost, no API key shipped to the browser, and consistent voice
-quality on every device. A small glowing orb reacts to the real audio waveform (via the Web Audio API)
-while it talks. If the audio files are ever missing (e.g. a fresh clone before running the script), it
-falls back to the browser's built-in speech synthesis, and further falls back to silent timed captions if
-that's unsupported too — the tour always works, audio quality is just best with the pre-generated files.
+- Never autoplays: the visitor picks "Start with voices" or "Read without audio".
+- Controls: pause/resume, previous/next, replay, mute, captions, full transcript, text-only mode, skip intro,
+  jump to any agent from the ring or the progress bar. Escape closes; focus is trapped and restored.
+- Captions highlight the sentence being spoken (approximate sync from playback position).
+- If a clip fails to load, it continues as a captioned presentation.
+- The closing screen hosts the grounded "Ask about me" Q&A.
 
-To (re)generate the narration after editing `data/guidedTour.ts`:
+**Audio:** each line in `data/agentTeam.ts` is pre-rendered with OpenAI `gpt-4o-mini-tts`, using stock voices
+plus per-agent acting direction (the same casting approach as AutoTube AI Studio). The deployed site only plays
+static files. To regenerate after editing a line:
 
 ```bash
-cp .env.example .env.local   # if you haven't already
-# add your own ELEVENLABS_API_KEY to .env.local (get one at elevenlabs.io)
-npm run generate:tour-audio
+npm run generate:team-audio            # all clips (needs OPENAI_API_KEY in .env.local)
+npm run generate:team-audio -- nova    # just the steps whose id contains "nova"
 ```
 
-This writes `public/audio/tour-*.mp3` — commit those files so the deployed site has them. The whole script
-is ~1,000 characters total (well inside ElevenLabs' free tier), and generation is a one-time cost regardless
-of how many recruiters play the pitch afterward.
+Commit `public/audio/team/*.mp3`.
+
+## AI Lab and case studies
+
+`components/AILab.tsx` holds eight in-browser simulations (agent orchestration, MCP, tool calling, RAG
+evaluation, human approval, pipeline monitoring, observability, testing), each linked to the real
+PipelineMedic AI file it's based on and labelled as simulated. `/projects/[id]` pages add an interactive
+architecture explorer, engineering decisions, evidence links, and stated limitations.
 
 ## Recruiter Mode
 

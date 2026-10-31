@@ -6,7 +6,7 @@ export function Footer() {
 
   return (
     <footer className="border-t border-white/10 py-10">
-      <div className="section-shell flex flex-col items-center justify-between gap-4 text-sm text-slate-500 sm:flex-row">
+      <div className="section-shell flex flex-col items-center justify-between gap-4 text-sm text-slate-400 sm:flex-row">
         <p>
           © {year} {profile.name}. Built with Next.js.
         </p>
