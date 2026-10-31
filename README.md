@@ -113,7 +113,9 @@ only anonymous event names and small string/number props (e.g. a project id):
 `qr_landing_view`, `careerfair_mode_view`, `resume_view_click`, `resume_download_click`, `github_click`,
 `linkedin_click`, `project_click`, `contact_click`, `recruiter_mode_open`, `vcard_download`, `terminal_open`,
 `ai_team_open`, `ai_team_start`, `ai_team_complete`, `ai_team_close`, `ai_team_jump`, `hero_cta_click`,
-`case_study_view`, `lab_demo_run`, `command_palette_open`, `command_palette_select`, `ask_question`
+`case_study_view`, `lab_demo_run`, `command_palette_open`, `command_palette_select`, `ask_question`,
+`event_view`, `event_start`, `event_complete`, `event_exit`, `event_cta_click`, `event_architecture_open`,
+`event_offline_ready`
 
 ## Meet My AI Team (narrated agent introduction)
 
@@ -139,6 +141,23 @@ npm run generate:team-audio -- nova    # just the steps whose id contains "nova"
 ```
 
 Commit `public/audio/team/*.mp3`.
+
+## AI Event Mode (`/event`)
+
+A 45-second narrated walkthrough for in-person events: seven voiced agents hand off to each other, ATLAS walks
+through a recorded, simulated PipelineMedic incident (detect → context → diagnose → policy → approve → MCP call
+→ validate), and the closing screen shows a real QR code to `lohithkovuri.store/event?source=ai-event`. Includes
+kiosk mode (`/event?kiosk=true`), a "Prepare for Offline Demo" service-worker cache, and a no-JavaScript
+emergency page (`/event/emergency.html`). Resume, GitHub, LinkedIn and contact are one tap away without
+watching anything.
+
+```bash
+npm run generate:event-audio     # narration + measured durations (needs OPENAI_API_KEY in .env.local)
+npm run generate:event-assets    # QR SVG/PNG/print PNG + vCard, with decode check
+npm run build && npm run test:e2e
+```
+
+Full details, offline options and the event-day checklist: [`docs/AI_EVENT_MODE.md`](docs/AI_EVENT_MODE.md).
 
 ## AI Lab and case studies
 

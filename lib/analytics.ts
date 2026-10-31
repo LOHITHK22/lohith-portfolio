@@ -23,7 +23,14 @@ export type AnalyticsEvent =
   | "lab_demo_run"
   | "command_palette_open"
   | "command_palette_select"
-  | "ask_question";
+  | "ask_question"
+  | "event_view"
+  | "event_start"
+  | "event_complete"
+  | "event_exit"
+  | "event_cta_click"
+  | "event_architecture_open"
+  | "event_offline_ready";
 
 type AnalyticsProps = Record<string, string | number | boolean | null>;
 

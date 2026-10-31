@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lohith Kovuri · AI Event (offline fallback)</title>
+<meta name="description" content="Static, no-JavaScript fallback for Lohith Kovuri's AI event presentation.">
+<style>
+  :root { --bg:#050814; --panel:#0b1124; --line:rgba(255,255,255,.12); --text:#e2e8f0; --muted:#94a3b8; --cyan:#22d3ee; --violet:#a78bfa; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:28px 18px 48px; }
+  .eyebrow { font:600 11px/1 ui-monospace,Consolas,monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--cyan); }
+  h1 { font-size:clamp(2.2rem,7vw,3.6rem); line-height:1.05; margin:.4rem 0 .3rem; color:#fff; }
+  h2 { font-size:1.35rem; color:#fff; margin:2.2rem 0 .8rem; }
+  .lead { font-size:1.15rem; color:#c4b5fd; margin:0 0 .6rem; }
+  p { margin:.4rem 0; }
+  .muted { color:var(--muted); font-size:.9rem; }
+  .hero { display:grid; gap:22px; align-items:center; grid-template-columns:1fr; }
+  @media (min-width:720px) { .hero { grid-template-columns:1.3fr .7fr; } }
+  .portrait { width:100%; max-width:260px; aspect-ratio:4/5; object-fit:cover; object-position:top; border-radius:22px; border:1px solid var(--line); justify-self:center; }
+  .links { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .links a { color:#fff; text-decoration:none; border:1px solid var(--line); background:rgba(255,255,255,.05); padding:9px 14px; border-radius:999px; font-weight:600; font-size:.9rem; }
+  .grid { display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; }
+  .card b { color:#fff; }
+  .agent { border-left:3px solid var(--c); }
+  .agent b { color:var(--c); font-family:ui-monospace,Consolas,monospace; letter-spacing:.08em; }
+  svg { width:100%; height:auto; display:block; }
+  .qr { display:flex; gap:22px; align-items:center; flex-wrap:wrap; }
+  .qr img { width:180px; height:180px; background:#fff; padding:8px; border-radius:14px; }
+  code { font-family:ui-monospace,Consolas,monospace; font-size:.85em; color:#a5f3fc; }
+</style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">AI Event · offline fallback</div>
+      <h1>Lohith Kovuri</h1>
+      <p class="lead">Applied AI &amp; Data Engineering</p>
+      <p>Data Analyst at Uline. Builds agentic AI and data systems: MCP tool servers, LLM evaluation, and streaming pipelines.</p>
+      <div class="links">
+        <a href="https://lohithkovuri.store/event">lohithkovuri.store/event</a>
+        <a href="https://github.com/LOHITHK22">GitHub</a>
+        <a href="https://linkedin.com/in/contact-lohithkovuri">LinkedIn</a>
+        <a href="mailto:lohithkovuri321@gmail.com">lohithkovuri321@gmail.com</a>
+        <a href="lohith-kovuri.vcf" download>Save contact</a>
+        <a href="../Lohith_Kovuri_Resume.pdf">Resume</a>
+      </div>
+    </div>
+    <img class="portrait" src="../images/lohith-portrait-1200.webp" alt="Portrait of Lohith Kovuri">
+  </section>
+
+  <h2>The seven agents (scripted roles)</h2>
+  <div class="grid">
+    <div class="card agent" style="--c:#22d3ee"><b>ASTRA</b><p>Orchestration. "Welcome to Lohith's AI lab. Meet the team behind this experience."</p></div>
+    <div class="card agent" style="--c:#a78bfa"><b>NOVA</b><p>Design. "I turn complex ideas into clear interfaces."</p></div>
+    <div class="card agent" style="--c:#f59e0b"><b>FORGE</b><p>Frontend engineering. "I build the interactive systems you can explore."</p></div>
+    <div class="card agent" style="--c:#34d399"><b>ATLAS</b><p>AI architecture. Walks through how PipelineMedic detects, diagnoses, gates, and validates a repair.</p></div>
+    <div class="card agent" style="--c:#f472b6"><b>PULSE</b><p>Performance. "I keep the experience fast and responsive."</p></div>
+    <div class="card agent" style="--c:#60a5fa"><b>SENTINEL</b><p>Testing and reliability. "I verify tests, safety, and system behavior."</p></div>
+    <div class="card agent" style="--c:#fb7185"><b>ECHO</b><p>Voice and communication. "Explore the projects, or scan to connect with Lohith."</p></div>
+  </div>
+  <p class="muted">These are illustrative roles in a scripted presentation, not autonomous agents.</p>
+
+  <h2>PipelineMedic AI architecture</h2>
+  <svg viewBox="0 0 900 250" role="img" aria-label="PipelineMedic flow: detect, collect context, LLM diagnosis, policy gateway, human approval, MCP server and typed tools, validate or roll back, with an audit log">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#64748b"/></marker></defs>
+    <g font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#e2e8f0" text-anchor="middle">
+      <g stroke-width="1.5" fill="#0b1124">
+        <rect x="10" y="30" width="150" height="56" rx="10" stroke="#60a5fa"/>
+        <rect x="190" y="30" width="150" height="56" rx="10" stroke="#60a5fa"/>
+        <rect x="370" y="30" width="150" height="56" rx="10" stroke="#22d3ee"/>
+        <rect x="550" y="30" width="150" height="56" rx="10" stroke="#a78bfa"/>
+        <rect x="730" y="30" width="160" height="56" rx="10" stroke="#a78bfa"/>
+        <rect x="550" y="150" width="150" height="56" rx="10" stroke="#34d399"/>
+        <rect x="370" y="150" width="150" height="56" rx="10" stroke="#f59e0b"/>
+        <rect x="190" y="150" width="150" height="56" rx="10" stroke="#a78bfa"/>
+        <rect x="10" y="150" width="150" height="56" rx="10" stroke="#94a3b8"/>
+      </g>
+      <text x="85" y="55">Deterministic</text><text x="85" y="73">detectors</text>
+      <text x="265" y="55">Context</text><text x="265" y="73">(read-only tools)</text>
+      <text x="445" y="55">LLM diagnosis</text><text x="445" y="73">typed repair plan</text>
+      <text x="625" y="55">Policy gateway</text><text x="625" y="73">LOW/MED/HIGH/CRIT</text>
+      <text x="810" y="55">Human approval</text><text x="810" y="73">single-use grant</text>
+      <text x="625" y="175">MCP server</text><text x="625" y="193">17 typed tools</text>
+      <text x="445" y="175">Kafka · Flink</text><text x="445" y="193">Airflow · Postgres</text>
+      <text x="265" y="175">Validate</text><text x="265" y="193">or roll back</text>
+      <text x="85" y="175">Audit log</text><text x="85" y="193">every decision</text>
+      <g stroke="#64748b" stroke-width="1.5" marker-end="url(#a)" fill="none">
+        <path d="M160 58H186"/><path d="M340 58H366"/><path d="M520 58H546"/><path d="M700 58H726"/>
+        <path d="M810 86V178H704"/><path d="M550 178H524"/><path d="M370 178H344"/><path d="M190 178H164"/>
+      </g>
+    </g>
+  </svg>
+  <p class="muted">Detection never uses an LLM. LOW-risk repairs run automatically, MEDIUM/HIGH wait for a human, and 5 destructive operations are never registered. The MCP server (official Python SDK, stdio) has 17 typed tools but lists only the 10 read-only ones by default.</p>
+
+  <h2>Project highlights</h2>
+  <div class="grid">
+    <div class="card"><b>PipelineMedic AI</b><p>17 typed MCP tools (10 read-only listed by default), single-use approvals, audit logging, 121 pytest tests (63 for MCP).</p></div>
+    <div class="card"><b>RAG Sentinel</b><p>LLM judge validated at 0.82 Cohen's kappa; hallucination-risk classifier at 0.89 ROC-AUC.</p></div>
+    <div class="card"><b>AWS Streaming Data Platform</b><p>Kafka to S3/Iceberg lakehouse, Glue PySpark jobs, Kimball model in Athena and dbt.</p></div>
+    <div class="card"><b>RetailBench</b><p>PySpark on EMR over 100+ GB of TPC-H data; job runtime cut 44% (24.6 to 13.8 min).</p></div>
+  </div>
+
+  <h2>Connect</h2>
+  <div class="qr">
+    <img src="qr-event.svg" alt="QR code linking to lohithkovuri.store/event">
+    <div>
+      <p><b>lohithkovuri.store/event</b></p>
+      <p class="muted">Scanning needs internet on the visitor's phone.</p>
+      <p><code>lohithkovuri321@gmail.com</code></p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -24,20 +24,10 @@ import { track } from "@/lib/analytics";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useAudioNarration } from "@/hooks/useAudioNarration";
 import { AskPanel } from "./AskPanel";
+import { AgentConstellation } from "./event/AgentConstellation";
 
 type Mode = "audio" | "text";
 type Phase = "gate" | "playing" | "paused" | "handoff" | "done";
-
-// Ring geometry for the command-center diagram (SVG user units).
-const VIEW = 400;
-const CENTER = VIEW / 2;
-const RADIUS = 150;
-
-function agentPoint(id: AgentId) {
-  const i = agents.findIndex((a) => a.id === id);
-  const angle = (i / agents.length) * Math.PI * 2 - Math.PI / 2;
-  return { x: CENTER + RADIUS * Math.cos(angle), y: CENTER + RADIUS * Math.sin(angle) };
-}
 
 /** Splits a caption into sentences so we can highlight the one being spoken. */
 function sentences(text: string) {
@@ -312,10 +302,10 @@ export function AgentTeamExperience({ onClose }: { onClose: () => void }) {
   }, [captionSentences, progress]);
 
   const running = phase === "playing" || phase === "paused" || phase === "handoff";
-  const activeEdge =
-    phase === "handoff" && handoffFrom !== null
-      ? { from: teamSteps[handoffFrom].agentId, to: teamSteps[handoffFrom + 1].agentId }
-      : null;
+  const ringIndex = agents.findIndex((a) => a.id === agent.id);
+  // The closing ASTRA step and the end screen light the whole team.
+  const wholeTeam = phase === "gate" || phase === "done" || (running && stepIndex === teamSteps.length - 1);
+  const wash = phase === "gate" || phase === "done" ? "#22d3ee" : agent.color;
 
   return (
     <motion.div
@@ -326,26 +316,61 @@ export function AgentTeamExperience({ onClose }: { onClose: () => void }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: reducedMotion ? 0.01 : 0.25 }}
-      className="fixed inset-0 z-[60] overflow-y-auto bg-base-950/95 backdrop-blur-xl"
+      transition={{ duration: reducedMotion ? 0.01 : 0.35 }}
+      className="fixed inset-0 z-[60] overflow-y-auto bg-[#03050d]"
     >
+      {/* Agent-colored light wash, crossfading on every handoff */}
+      <AnimatePresence>
+        <motion.div
+          key={wash}
+          aria-hidden="true"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reducedMotion ? 0.01 : 0.9 }}
+          className="pointer-events-none fixed inset-0"
+          style={{
+            background: `radial-gradient(45% 55% at 28% 45%, ${wash}2e, transparent 70%), radial-gradient(40% 45% at 85% 85%, ${wash}1a, transparent 70%), radial-gradient(60% 50% at 70% 10%, rgba(139,92,246,0.10), transparent 70%)`,
+          }}
+        />
+      </AnimatePresence>
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0"
-        style={{
-          background:
-            "radial-gradient(50% 40% at 30% 20%, rgba(34,211,238,0.08), transparent 70%), radial-gradient(50% 50% at 75% 70%, rgba(139,92,246,0.12), transparent 70%)",
-        }}
+        className="pointer-events-none fixed inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:radial-gradient(70%_70%_at_50%_45%,black,transparent)]"
       />
+      {/* Giant outlined agent name behind the stage */}
+      {running && (
+        <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-[38%] hidden select-none overflow-hidden text-center lg:block">
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={agent.id}
+              initial={{ opacity: 0, y: reducedMotion ? 0 : 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: reducedMotion ? 0 : -30 }}
+              transition={{ duration: reducedMotion ? 0.01 : 0.6 }}
+              className="block whitespace-nowrap font-display text-[19vw] font-black leading-none tracking-[-0.06em] text-transparent"
+              style={{ WebkitTextStroke: `1px ${agent.color}22` }}
+            >
+              {agent.name}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+      )}
 
-      <div className="relative mx-auto flex min-h-full max-w-6xl flex-col px-4 py-5 sm:px-6 sm:py-8">
+      <div className="relative mx-auto flex min-h-full max-w-7xl flex-col px-4 py-4 sm:px-8 sm:py-6">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent-cyan">AI engineering command center</p>
-            <h2 id="ai-team-title" className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">
-              Meet My AI Team
-            </h2>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-70 ${running && !reducedMotion ? "animate-ping" : ""}`} />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-slate-400">AI engineering command center</p>
+              <h2 id="ai-team-title" className="font-display text-lg font-semibold text-white sm:text-xl">
+                Meet My AI Team
+              </h2>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {running && (
@@ -365,120 +390,46 @@ export function AgentTeamExperience({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <div className="mt-6 grid flex-1 gap-6 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-10">
-          {/* Command-center diagram */}
-          <div className="relative mx-auto w-full max-w-[22rem] sm:max-w-md">
-            <svg viewBox={`0 0 ${VIEW} ${VIEW}`} className="h-auto w-full" role="img" aria-label="Agent handoff ring: Astra, Nova, Forge, Atlas, Pulse, Sentinel, Echo, then back to Astra">
-              <circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke="rgba(148,163,184,0.12)" strokeDasharray="3 6" />
-              {agents.map((a, i) => {
-                const b = agents[(i + 1) % agents.length];
-                const p = agentPoint(a.id);
-                const q = agentPoint(b.id);
-                const isActive = activeEdge?.from === a.id && activeEdge?.to === b.id;
-                const isUpcoming = !activeEdge && running && a.id === agent.id && nextAgent?.id === b.id;
-                return (
-                  <line
-                    key={a.id}
-                    x1={p.x}
-                    y1={p.y}
-                    x2={q.x}
-                    y2={q.y}
-                    stroke={isActive ? a.color : isUpcoming ? `${a.color}80` : "rgba(148,163,184,0.18)"}
-                    strokeWidth={isActive ? 2.5 : 1.2}
-                    style={{ transition: "stroke 200ms" }}
-                  />
-                );
-              })}
-              {/* Handoff signal travelling along the active connection. */}
-              {activeEdge && (
-                <motion.circle
-                  key={`${activeEdge.from}-${activeEdge.to}`}
-                  r={5}
-                  fill={agentById[activeEdge.from].color}
-                  initial={{ cx: agentPoint(activeEdge.from).x, cy: agentPoint(activeEdge.from).y, opacity: 0 }}
-                  animate={{ cx: agentPoint(activeEdge.to).x, cy: agentPoint(activeEdge.to).y, opacity: [0, 1, 1, 0] }}
-                  transition={{ duration: handoffMs / 1000, ease: "easeInOut" }}
-                  style={{ filter: `drop-shadow(0 0 6px ${agentById[activeEdge.from].color})` }}
-                />
-              )}
-              {/* Center: current speaker. */}
-              <circle cx={CENTER} cy={CENTER} r={58} fill="rgba(8,13,28,0.9)" stroke={`${agent.color}66`} />
-              <text x={CENTER} y={CENTER - 4} textAnchor="middle" className="fill-white font-display" fontSize="22" fontWeight="700">
-                {phase === "done" ? "TEAM" : agent.name}
-              </text>
-              <text x={CENTER} y={CENTER + 18} textAnchor="middle" fill="#94a3b8" fontSize="10" className="font-mono">
-                {phase === "done" ? "handoff complete" : phase === "gate" ? "standing by" : agent.short.toLowerCase()}
-              </text>
-            </svg>
+        <div className="mt-4 grid flex-1 items-center gap-6 lg:mt-2 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-12">
+          {/* Constellation: Lohith at the center, seven agents in the handoff ring */}
+          <AgentConstellation
+            index={ringIndex}
+            phase={phase === "handoff" ? "handoff" : "scene"}
+            speaking={phase === "playing" && !reducedMotion}
+            handoffMs={handoffMs}
+            reducedMotion={reducedMotion}
+            allActive={wholeTeam}
+            onSelect={(i) => jumpToAgent(agents[i].id)}
+            size="max-w-[17rem] sm:max-w-[26rem] lg:max-w-[34rem]"
+          />
 
-            {/* Agent avatars, positioned over the SVG ring. */}
-            {agents.map((a) => {
-              const p = agentPoint(a.id);
-              const isCurrent = running && a.id === agent.id;
-              const dim = running && !isCurrent;
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => jumpToAgent(a.id)}
-                  aria-label={`Go to ${a.name}, ${a.role}`}
-                  aria-current={isCurrent ? "step" : undefined}
-                  className="group absolute -translate-x-1/2 -translate-y-1/2 focus-visible:outline-none"
-                  style={{ left: `${(p.x / VIEW) * 100}%`, top: `${(p.y / VIEW) * 100}%` }}
-                >
-                  <span
-                    className="relative flex h-11 w-11 items-center justify-center rounded-full border-2 font-display text-sm font-bold text-white transition-all duration-300 group-focus-visible:ring-2 group-focus-visible:ring-white sm:h-14 sm:w-14 sm:text-base"
-                    style={{
-                      borderColor: a.color,
-                      background: `radial-gradient(circle at 30% 25%, ${a.color}55, rgba(8,13,28,0.95) 70%)`,
-                      opacity: dim ? 0.38 : 1,
-                      transform: isCurrent ? "scale(1.18)" : "scale(1)",
-                      boxShadow: isCurrent ? `0 0 28px -2px ${a.color}` : "none",
-                    }}
-                  >
-                    {isCurrent && (
-                      <span
-                        ref={levelRef}
-                        aria-hidden="true"
-                        className="absolute -inset-1.5 rounded-full border-2"
-                        style={{ borderColor: a.color, opacity: 0.3, transition: "transform 80ms linear" }}
-                      />
-                    )}
-                    {a.glyph}
-                  </span>
-                  <span
-                    className="mt-1 block whitespace-nowrap text-center font-mono text-[9px] uppercase tracking-wider sm:text-[10px]"
-                    style={{ color: dim ? "#64748b" : a.color }}
-                  >
-                    {a.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Info panel */}
+          {/* Agent stage */}
           <div className="min-w-0">
             <AnimatePresence mode="wait">
               {phase === "gate" && (
                 <motion.div
                   key="gate"
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: reducedMotion ? 0.01 : 0.25 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: reducedMotion ? 0.01 : 0.35 }}
                 >
-                  <p className="text-lg leading-relaxed text-slate-200">
-                    Seven specialist roles, one handoff chain. Each agent introduces its part of the workflow behind this
-                    portfolio, then passes control to the next.
+                  <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-cyan-300">7 roles · 1 handoff chain</p>
+                  <p className="mt-3 font-display text-4xl font-bold leading-[1.02] tracking-tight text-white sm:text-5xl">
+                    The team behind
+                    <br />
+                    <span className="bg-gradient-to-r from-cyan-300 to-violet-400 bg-clip-text text-transparent">this portfolio.</span>
                   </p>
-                  <p className="mt-3 text-sm text-slate-400">About 3½ minutes. You can pause, skip, or jump to any agent.</p>
+                  <p className="mt-4 max-w-md text-base leading-relaxed text-slate-300">
+                    Each agent introduces its part of the workflow, in its own voice, then hands control to the next.
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">About 3½ minutes. Pause, skip, or tap any agent to jump.</p>
                   <div className="mt-6 flex flex-wrap gap-3">
-                    <button type="button" onClick={() => begin("audio")} className="btn-primary" data-autofocus>
+                    <button type="button" onClick={() => begin("audio")} className="btn-primary !px-6 !py-3.5" data-autofocus>
                       <Headphones className="h-4 w-4" />
                       Start with voices
                     </button>
-                    <button type="button" onClick={() => begin("text")} className="btn-secondary">
+                    <button type="button" onClick={() => begin("text")} className="btn-secondary !py-3.5">
                       <Type className="h-4 w-4" />
                       Read without audio
                     </button>
@@ -489,40 +440,75 @@ export function AgentTeamExperience({ onClose }: { onClose: () => void }) {
               {running && (
                 <motion.div
                   key={`step-${stepIndex}`}
-                  initial={{ opacity: 0, x: reducedMotion ? 0 : 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: reducedMotion ? 0 : -16 }}
-                  transition={{ duration: reducedMotion ? 0.01 : 0.25 }}
+                  initial={{ opacity: 0, y: reducedMotion ? 0 : 18, filter: reducedMotion ? "none" : "blur(6px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, y: reducedMotion ? 0 : -18, filter: reducedMotion ? "none" : "blur(6px)" }}
+                  transition={{ duration: reducedMotion ? 0.01 : 0.45, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider" style={{ color: agent.color }}>
+                  <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em]" style={{ color: agent.color }}>
                     <SpeakingBars active={phase === "playing" && !reducedMotion} color={agent.color} />
-                    {phase === "handoff" ? `Handing off to ${nextAgent?.name}` : phase === "paused" ? "Paused" : "Now speaking"}
-                    <span className="text-slate-400">· {stepIndex + 1}/{teamSteps.length}</span>
+                    {phase === "paused" ? "Paused" : "Now speaking"}
+                    <span className="text-slate-500">
+                      {String(stepIndex + 1).padStart(2, "0")} / {String(teamSteps.length).padStart(2, "0")}
+                    </span>
                   </p>
-                  <h3 className="mt-2 font-display text-3xl font-bold text-white">{agent.name}</h3>
-                  <p className="text-sm font-medium text-slate-300">{agent.role}</p>
-                  <ul className="mt-3 space-y-1 text-sm text-slate-400">
+
+                  <div className="mt-4 flex items-center gap-4 sm:gap-5">
+                    <span
+                      className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border font-display text-xl font-bold text-white sm:h-20 sm:w-20 sm:text-2xl"
+                      style={{
+                        borderColor: `${agent.color}aa`,
+                        background: `radial-gradient(circle at 30% 20%, ${agent.color}66, rgba(5,8,20,0.96) 72%)`,
+                        boxShadow: `0 0 50px -10px ${agent.color}`,
+                      }}
+                    >
+                      <span
+                        ref={levelRef}
+                        aria-hidden="true"
+                        className="absolute -inset-2 rounded-[1.2rem] border"
+                        style={{ borderColor: agent.color, opacity: 0.25, transition: "transform 80ms linear" }}
+                      />
+                      {agent.glyph}
+                    </span>
+                    <div className="min-w-0">
+                      <h3
+                        className="font-display text-5xl font-black leading-none tracking-[-0.04em] text-transparent sm:text-7xl"
+                        style={{ backgroundImage: `linear-gradient(100deg, #fff 35%, ${agent.color})`, WebkitBackgroundClip: "text", backgroundClip: "text" }}
+                      >
+                        {agent.name}
+                      </h3>
+                      <p className="mt-1.5 text-sm font-medium text-slate-300 sm:text-base">{agent.role}</p>
+                    </div>
+                  </div>
+
+                  <ul className="mt-5 flex flex-wrap gap-2">
                     {agent.responsibilities.map((r) => (
-                      <li key={r} className="flex gap-2">
-                        <span aria-hidden="true" style={{ color: agent.color }}>▸</span>
+                      <li
+                        key={r}
+                        className="rounded-full border px-3 py-1 text-xs text-slate-200"
+                        style={{ borderColor: `${agent.color}40`, background: `${agent.color}10` }}
+                      >
                         {r}
                       </li>
                     ))}
                   </ul>
 
-                  {captionsOn && (
-                    <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4" aria-live="polite">
-                      <p className="text-[15px] leading-relaxed">
-                        {captionSentences.map((s, i) => (
-                          <span
-                            key={i}
-                            className="transition-colors duration-300"
-                            style={{ color: i === activeSentence ? "#f8fafc" : i < activeSentence ? "#94a3b8" : "#64748b" }}
-                          >
-                            {s}{" "}
-                          </span>
-                        ))}
-                      </p>
+                  {/* Handoff: who has control next */}
+                  {nextAgent && (
+                    <div className="mt-6 flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em]">
+                      <span style={{ color: agent.color }}>{agent.name}</span>
+                      <span className="relative h-px max-w-[10rem] flex-1 overflow-hidden bg-white/10">
+                        <motion.span
+                          className="absolute inset-y-0 left-0 w-full origin-left"
+                          style={{ background: `linear-gradient(90deg, ${agent.color}, ${nextAgent.color})` }}
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: phase === "handoff" ? 1 : progress }}
+                          transition={{ duration: phase === "handoff" && !reducedMotion ? handoffMs / 1000 : 0.1, ease: "linear" }}
+                        />
+                      </span>
+                      <span style={{ color: phase === "handoff" ? nextAgent.color : "#64748b" }}>
+                        {phase === "handoff" ? `Handing off to ${nextAgent.name}` : `Next: ${nextAgent.name}`}
+                      </span>
                     </div>
                   )}
                 </motion.div>
@@ -531,11 +517,12 @@ export function AgentTeamExperience({ onClose }: { onClose: () => void }) {
               {phase === "done" && (
                 <motion.div
                   key="done"
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: reducedMotion ? 0.01 : 0.25 }}
+                  transition={{ duration: reducedMotion ? 0.01 : 0.35 }}
                 >
-                  <h3 className="font-display text-3xl font-bold text-white">You&apos;ve met the team.</h3>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-emerald-300">Handoff complete</p>
+                  <h3 className="mt-2 font-display text-4xl font-bold leading-tight text-white sm:text-5xl">You&apos;ve met the team.</h3>
                   <p className="mt-2 text-slate-300">Now look at the real work: architectures, decisions, and evidence.</p>
                   <div className="mt-5 flex flex-wrap gap-3">
                     <button type="button" onClick={() => exitTo("#projects")} className="btn-primary" data-autofocus>
@@ -565,6 +552,23 @@ export function AgentTeamExperience({ onClose }: { onClose: () => void }) {
             )}
           </div>
         </div>
+
+        {/* Film-style subtitles */}
+        {running && captionsOn && (
+          <div className="mx-auto mt-6 w-full max-w-4xl text-center" aria-live={mode === "text" || muted ? "polite" : "off"}>
+            <p className="inline rounded-lg bg-black/55 px-3 py-1 text-base leading-[1.9] [box-decoration-break:clone] sm:text-xl sm:leading-[1.85]">
+              {captionSentences.map((s, i) => (
+                <span
+                  key={i}
+                  className="transition-colors duration-300"
+                  style={{ color: i === activeSentence ? "#f8fafc" : i < activeSentence ? "#94a3b8" : "#64748b" }}
+                >
+                  {s}{" "}
+                </span>
+              ))}
+            </p>
+          </div>
+        )}
 
         {/* Progress + controls */}
         {running && (

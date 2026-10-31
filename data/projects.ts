@@ -11,6 +11,10 @@ export type FlagshipProject = {
   impact: string;
   githubUrl?: string;
   featured?: boolean;
+  /** Headline numbers, each one stated in `impact` or the resume. Never estimates. */
+  metrics: { value: string; label: string }[];
+  /** Accent color for the showcase stage. */
+  accent: string;
 };
 
 // The 4 flagship case studies, matching the Personal Projects section of
@@ -26,14 +30,20 @@ export const flagshipProjects: FlagshipProject[] = [
     solution:
       "A Python and FastAPI agent for a Kafka, Flink, PostgreSQL, and Airflow pipeline. Deterministic detectors flag the failure before any LLM is involved, the LLM diagnoses the cause and proposes a typed repair plan, and a risk policy runs low-risk repairs automatically while routing riskier ones to a human.",
     architecture:
-      "Kafka / Flink / Airflow pipeline → Deterministic detectors (schema drift, poison messages, consumer lag, task failures) → LLM diagnosis → Typed repair plan → Risk policy (auto-run low risk, human approval for high risk) → Validate repair, roll back on failure → MCP server (17 typed tools, audit log)",
+      "Kafka / Flink / Airflow pipeline → Deterministic detectors (schema drift, poison messages, consumer lag, task failures) → LLM diagnosis → Typed repair plan → Risk policy (auto-run low risk, human approval for medium and high risk) → Validate repair, roll back on failure → MCP server (17 typed tools, audit log)",
     tech: ["Python", "FastAPI", "Kafka", "Flink", "PostgreSQL", "Airflow", "LLM APIs", "MCP (Python SDK)", "pytest"],
     challenge:
       "Keeping the LLM out of detection entirely and putting a risk policy, single-use approvals, and rollback between its suggestions and the real pipeline.",
     impact:
-      "Every repair is validated and rolled back if it fails; 17 typed tools exposed through an MCP server (official Python SDK, stdio) with single-use approvals, audit logging, and 63 MCP tests.",
+      "Every repair is validated and rolled back if it fails; 17 typed tools behind an MCP server (official Python SDK, stdio; 10 read-only tools listed by default) with single-use approvals, audit logging, and 63 MCP tests.",
     githubUrl: "https://github.com/LOHITHK22/PipelineMedic-AI",
     featured: true,
+    accent: "#22d3ee",
+    metrics: [
+      { value: "17", label: "typed MCP tools" },
+      { value: "10", label: "read-only by default" },
+      { value: "121", label: "pytest tests (63 MCP)" },
+    ],
   },
   {
     id: "rag-sentinel",
@@ -51,6 +61,12 @@ export const flagshipProjects: FlagshipProject[] = [
     impact:
       "0.82 Cohen's kappa between the LLM judge and human labels; found a 12% relative faithfulness drop on multi-part questions; hallucination-risk classifier at 0.89 ROC-AUC.",
     featured: true,
+    accent: "#a78bfa",
+    metrics: [
+      { value: "0.82", label: "Cohen's kappa vs humans" },
+      { value: "0.89", label: "ROC-AUC, risk classifier" },
+      { value: "1,000", label: "human-labeled responses" },
+    ],
   },
   {
     id: "aws-streaming-platform",
@@ -68,6 +84,12 @@ export const flagshipProjects: FlagshipProject[] = [
     impact:
       "End-to-end layered pipeline from Kafka to a Kimball reporting model, with Airflow data checks and error quarantine, fully defined in Terraform.",
     featured: true,
+    accent: "#34d399",
+    metrics: [
+      { value: "4", label: "lakehouse layers" },
+      { value: "Iceberg", label: "table format on S3" },
+      { value: "Terraform", label: "infrastructure as code" },
+    ],
   },
   {
     id: "retailbench",
@@ -83,6 +105,12 @@ export const flagshipProjects: FlagshipProject[] = [
     challenge: "Finding where the job actually spent its time and fixing partitioning, join strategy, and skew.",
     impact: "Cut job runtime from 24.6 to 13.8 minutes (44%) by tuning partitioning, broadcast joins, and skew handling.",
     featured: true,
+    accent: "#f59e0b",
+    metrics: [
+      { value: "44%", label: "faster job runtime" },
+      { value: "24.6→13.8", label: "minutes per run" },
+      { value: "100+ GB", label: "TPC-H data" },
+    ],
   },
 ];
 

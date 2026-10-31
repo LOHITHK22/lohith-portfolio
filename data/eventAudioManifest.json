@@ -1,0 +1,41 @@
+{
+  "generatedAt": "2026-10-31T01:13:46.738Z",
+  "model": "gpt-4o-mini-tts (stock voices), 64 kbps mono, RMS -20 dBFS",
+  "clips": {
+    "welcome": {
+      "file": "/audio/event/01-astra.mp3",
+      "durationMs": 6274,
+      "bytes": 50688
+    },
+    "design": {
+      "file": "/audio/event/02-nova.mp3",
+      "durationMs": 4605,
+      "bytes": 37248
+    },
+    "engineering": {
+      "file": "/audio/event/03-forge.mp3",
+      "durationMs": 4456,
+      "bytes": 36096
+    },
+    "pipelinemedic": {
+      "file": "/audio/event/04-atlas.mp3",
+      "durationMs": 13664,
+      "bytes": 109824
+    },
+    "performance": {
+      "file": "/audio/event/05-pulse.mp3",
+      "durationMs": 4109,
+      "bytes": 33408
+    },
+    "testing": {
+      "file": "/audio/event/06-sentinel.mp3",
+      "durationMs": 4718,
+      "bytes": 38208
+    },
+    "closing": {
+      "file": "/audio/event/07-echo.mp3",
+      "durationMs": 4129,
+      "bytes": 33600
+    }
+  }
+}
