@@ -68,7 +68,7 @@ test("rules: mobile tap targets, small text, overflow, unused code and SENTINEL 
   assert.ok(ids.includes("remove-unused-components"));
   assert.ok(!ids.some((i) => i.startsWith("perf-")), "within thresholds: no performance prompt");
   for (let i = 1; i < recs.length; i++) assert.ok(recs[i - 1].priority >= recs[i].priority);
-  for (const r of recs) assert.ok(r.evidence.length && r.acceptance.length, `${r.id} has evidence and acceptance criteria`);
+  for (const r of recs) assert.ok(r.evidence.length && r.acceptance.length && r.impact, `${r.id} has impact, evidence and acceptance criteria`);
 });
 
 test("rules: no evidence means no recommendations", () => {
@@ -78,7 +78,7 @@ test("rules: no evidence means no recommendations", () => {
 test("prompt: complete Claude Code brief with constraints, criteria, tests and the dedupe marker", () => {
   const [rec] = buildRecommendations({ screens: [], drift: [], code: { unused: ["components/A.tsx"], large: [], todos: [] }, sentinel: { failures: [] }, pulse: null, sync: { repos: [] } }, T);
   const md = renderPrompt(rec, { site: config.site, runUrl: "https://github.com/x/actions/runs/1", evidenceBase: "https://github.com/x/tree/agent-data/prism/2026-11-02/" });
-  for (const part of ["## Context", "## Evidence", "## Files to inspect first", "## Expected changes", "## Constraints", "## Acceptance criteria", "## Tests to run", "npx playwright test", "Do not merge or deploy", "<!-- prism:id=remove-unused-components -->", "Do not invent metrics", "`components/A.tsx`"])
+  for (const part of ["## Context", "## Impact on visitors", "## Evidence", "## Before / after screenshots", "## Files to inspect first", "## Expected changes", "## Constraints", "## Acceptance criteria", "## Tests to run", "npx playwright test", "Do not merge or deploy", "<!-- prism:id=remove-unused-components -->", "Do not invent metrics", "`components/A.tsx`"])
     assert.ok(md.includes(part), `prompt contains ${part}`);
 });
 
@@ -98,7 +98,7 @@ const okResponse = (recs) => ({
   usage: { input_tokens: 12_000, output_tokens: 3_000 },
   content: [{ type: "text", text: JSON.stringify({ recommendations: recs }) }],
 });
-const sampleRec = { id: "Hero Contrast!", category: "visual", priority: 80, title: "Raise hero label contrast", problem: "p", evidence: ["e"], files: ["components/Hero.tsx"], changes: ["c"], acceptance: ["a"] };
+const sampleRec = { id: "Hero Contrast!", category: "visual", priority: 80, title: "Raise hero label contrast", problem: "p", impact: "i", evidence: ["e"], files: ["components/Hero.tsx"], changes: ["c"], acceptance: ["a"] };
 
 test("claude: request uses structured output, adaptive thinking, fallbacks; cost comes from usage", async () => {
   const calls = [];

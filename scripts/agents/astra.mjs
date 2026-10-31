@@ -214,7 +214,8 @@ async function main() {
   const prismIndex = readJson(prismIndexFile, { updatedAt: null, items: [] });
   const prismDue = only ? only.includes("prism") : new Date(now).getUTCDay() === prismCfg.weekday || Boolean(args.force);
   let prismIssues = null;
-  if (env.GITHUB_TOKEN && (prismDue || enabled("prism"))) {
+  // Cheap (two API calls), so every run refreshes approval / PR state.
+  if (env.GITHUB_TOKEN) {
     prismIssues = await refreshPrismStatus({ gh, repo: config.repo, label: prismCfg.issueLabel, approvalLabel: prismCfg.approvalLabel }).catch((e) => {
       console.log(`PRISM: status refresh failed: ${e.message}`);
       return null;
@@ -247,7 +248,8 @@ async function main() {
     );
     agents.push(prism);
     const known = new Map(prismIndex.items.map((i) => [i.id, i]));
-    for (const r of prism.recommendations ?? []) known.set(r.id, { ...known.get(r.id), ...r, proposedAt: now.slice(0, 10), runUrl });
+    for (const r of prism.recommendations ?? [])
+      known.set(r.id, { ...known.get(r.id), ...r, proposedAt: now.slice(0, 10), runUrl, ...(r.issue ? { state: "awaiting-approval" } : {}) });
     prismIndex.items = [...known.values()];
     prismIndex.lastRun = { at: now, status: prism.status, summary: prism.summary, llm: prism.llm ?? null, dryRun, drift: prism.drift ?? [] };
   } else {
