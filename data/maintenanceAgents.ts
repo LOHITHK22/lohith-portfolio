@@ -59,6 +59,14 @@ export const maintenanceAgents: MaintenanceAgent[] = [
     file: "scripts/agents/forge.mjs",
   },
   {
+    id: "prism",
+    name: "PRISM",
+    role: "Prompt engineer",
+    does: "Weekly, compares live screenshots with the approved design, audits mobile layout, code and the other agents' results, and writes ranked implementation prompts for Claude Code as GitHub issues.",
+    never: "Change code itself. Claude Code implements a prompt only after I approve it, on a separate branch, and the pull request still needs my review.",
+    file: "scripts/agents/prism.mjs",
+  },
+  {
     id: "scribe",
     name: "SCRIBE",
     role: "Activity reporter",

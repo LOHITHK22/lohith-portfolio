@@ -1,4 +1,4 @@
-# Portfolio maintenance agents (ASTRA, SCOUT, SYNC, SENTINEL, PULSE, FORGE, SCRIBE).
+# Portfolio maintenance agents (ASTRA, SCOUT, SYNC, SENTINEL, PULSE, FORGE, PRISM, SCRIBE).
 # Runs on GitHub-hosted runners, so it keeps working while the owner's PC is off.
 #
 # Safety model:
@@ -6,7 +6,9 @@
 #   AGENTS_SCHEDULE_ENABLED is "true". Manual dispatch always works.
 # - The agents never push to main. They write to the data-only `agent-data`
 #   branch and to `agent/*` proposal branches (enforced in scripts/agents/astra.mjs).
-# - No paid API keys are used. GITHUB_TOKEN is the only credential.
+# - GITHUB_TOKEN is the only required credential. PRISM (weekly, Mondays)
+#   optionally uses the ANTHROPIC_API_KEY secret, under dollar caps set in
+#   agents/config.json; without it PRISM writes rule-based prompts at $0.
 name: Portfolio agents
 
 on:
@@ -19,7 +21,7 @@ on:
         type: boolean
         default: false
       only:
-        description: "Comma-separated agents to run (scout,sync,sentinel,pulse,forge). Empty = all"
+        description: "Comma-separated agents to run (scout,sync,sentinel,pulse,forge,prism). Empty = all; prism runs on Mondays"
         type: string
         default: ""
       skip_ci:
@@ -40,61 +42,13 @@ concurrency:
 
 jobs:
   ci:
-    name: SENTINEL · build and tests
+    name: SENTINEL
     if: >-
       (github.event_name == 'schedule' && vars.AGENTS_SCHEDULE_ENABLED == 'true') ||
       (github.event_name == 'workflow_dispatch' && !inputs.skip_ci)
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
+    uses: ./.github/workflows/sentinel-checks.yml
     permissions:
       contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci --no-audit --no-fund
-      - id: lint
-        continue-on-error: true
-        run: npm run lint
-      - id: typecheck
-        continue-on-error: true
-        run: npx tsc --noEmit
-      - id: agent_unit_tests
-        continue-on-error: true
-        run: node --test scripts/agents/tests/*.test.mjs
-      - id: build
-        continue-on-error: true
-        run: npm run build
-      - id: e2e
-        if: steps.build.outcome == 'success'
-        continue-on-error: true
-        run: npx playwright test
-      - name: Record outcomes
-        if: always()
-        env:
-          LINT: ${{ steps.lint.outcome }}
-          TYPECHECK: ${{ steps.typecheck.outcome }}
-          UNIT: ${{ steps.agent_unit_tests.outcome }}
-          BUILD: ${{ steps.build.outcome }}
-          E2E: ${{ steps.e2e.outcome }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          node -e '
-            const e = process.env;
-            const steps = { lint: e.LINT, typecheck: e.TYPECHECK, "agent unit tests": e.UNIT, build: e.BUILD, "e2e tests": e.E2E || "skipped" };
-            require("fs").writeFileSync("check-results.json", JSON.stringify({ steps, runUrl: e.RUN_URL, sha: process.env.GITHUB_SHA }, null, 2));
-            console.log(steps);
-          '
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: check-results
-          path: check-results.json
-          retention-days: 14
 
   agents:
     name: ASTRA · run agents
@@ -107,7 +61,7 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write # agent-data branch + agent/* proposal branches only (enforced in code)
-      issues: write # SENTINEL / FORGE issues
+      issues: write # SENTINEL / FORGE / PRISM issues
       pull-requests: write # FORGE resource-library proposals
     steps:
       - uses: actions/checkout@v4
@@ -126,6 +80,7 @@ jobs:
       - name: Run agents
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           AGENTS_DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
           CHECK_RESULTS: ${{ needs.ci.result != 'skipped' && 'check-results.json' || '' }}
           ONLY: ${{ inputs.only }}

@@ -9,9 +9,10 @@ test.describe("agent activity center", () => {
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto("/agents");
     await expect(page.getByRole("heading", { level: 1, name: /Agent Activity Center/ })).toBeVisible();
-    for (const name of ["ASTRA", "SCOUT", "SYNC", "SENTINEL", "PULSE", "FORGE", "SCRIBE"]) {
+    for (const name of ["ASTRA", "SCOUT", "SYNC", "SENTINEL", "PULSE", "FORGE", "PRISM", "SCRIBE"]) {
       await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
     }
+    await expect(page.getByRole("heading", { level: 2, name: /Improvement prompts · PRISM/ })).toBeVisible();
     const hasHistory = await page.getByRole("table").count();
     if (!hasHistory) await expect(page.getByText(/No cloud runs have been recorded yet|could not be loaded/)).toBeVisible();
     await expect(page.locator("body")).not.toContainText("local-20");

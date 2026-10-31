@@ -27,6 +27,10 @@ function publicAgent(a) {
   if (a.agent === "SCOUT") out.sources = (a.sources ?? []).map(({ id, status, items, kept, error }) => ({ id, status, items, kept, error }));
   if (a.agent === "SYNC") out.repos = (a.repos ?? []).map(({ repo, status, commits, release, ci, error }) => ({ repo, status, commits: commits?.length ?? 0, release, ci, error }));
   if (a.agent === "FORGE") out.issues = a.issues ?? [];
+  if (a.agent === "PRISM") {
+    out.recommendations = (a.recommendations ?? []).map(({ id, title, category, priority, source, ownerAction, prompt, issue }) => ({ id, title, category, priority, source, ownerAction, prompt, issue }));
+    out.llm = a.llm ?? null;
+  }
   return out;
 }
 
@@ -48,7 +52,7 @@ export function buildRunRecord({ id, startedAt, finishedAt, trigger, runUrl, com
   };
 }
 
-export const AGENT_ORDER = ["ASTRA", "SCOUT", "SYNC", "SENTINEL", "PULSE", "FORGE", "SCRIBE"];
+export const AGENT_ORDER = ["ASTRA", "SCOUT", "SYNC", "SENTINEL", "PULSE", "FORGE", "PRISM", "SCRIBE"];
 
 export function toMarkdown(run) {
   const icon = { success: "✅", "no-change": "➖", partial: "⚠️", failure: "❌", skipped: "⏭️" };

@@ -104,5 +104,49 @@
   "forge": {
     "recurringThreshold": 3,
     "issueLabel": "forge"
+  },
+
+  "prism": {
+    "$comment": "PRISM writes implementation prompts weekly. It never edits code itself; Claude Code implements a prompt only after the owner adds the approval label.",
+    "weekday": 1,
+    "maxRecommendationsPerRun": 3,
+    "repeatAfterDays": 28,
+    "issueLabel": "prism",
+    "approvalLabel": "prism:approved",
+    "keepWeeks": 8,
+    "screens": [
+      { "id": "home-desktop", "path": "/", "width": 1440, "height": 900, "reference": "agents/prism/reference/design-a-1440x900.png" },
+      { "id": "home-mobile", "path": "/", "width": 390, "height": 844 },
+      { "id": "event-desktop", "path": "/event", "width": 1440, "height": 900 }
+    ],
+    "thresholds": {
+      "designDriftRegion": 0.16,
+      "minTapTargetPx": 40,
+      "minFontPx": 11,
+      "smallTextAllowance": 12,
+      "largeFileLines": 650,
+      "lcpMs": 2500,
+      "transferKB": 1500,
+      "cls": 0.1
+    },
+    "llm": {
+      "$comment": "Used only when the ANTHROPIC_API_KEY secret exists. One request per weekly run, hard dollar caps.",
+      "enabled": true,
+      "model": "claude-opus-5-5",
+      "effort": "high",
+      "maxTokens": 16000,
+      "maxInputChars": 60000,
+      "inputUsdPerMTok": 4,
+      "outputUsdPerMTok": 20,
+      "maxUsdPerRun": 0.75,
+      "maxUsdPerMonth": 3
+    },
+    "implementation": {
+      "$comment": "Claude Code GitHub Action (anthropics/claude-code-action@v1). Runs only when the repository owner adds approvalLabel.",
+      "maxRunsPerMonth": 4,
+      "maxTurns": 40,
+      "model": "claude-opus-5-5",
+      "timeoutMinutes": 30
+    }
   }
 }

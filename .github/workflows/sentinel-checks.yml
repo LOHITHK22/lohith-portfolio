@@ -1,0 +1,100 @@
+# SENTINEL build + test checks, shared by the daily agent run and by PRISM's
+# implementation workflow (so pull requests get exactly the same checks).
+# Runs untrusted branch code with a read-only token and no persisted credentials.
+name: SENTINEL checks
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git ref to check out (empty = the triggering commit)"
+        type: string
+        default: ""
+      prism_compare:
+        description: "After the build, capture before/after screenshots for PRISM"
+        type: boolean
+        default: false
+    outputs:
+      e2e:
+        description: "Outcome of the Playwright step"
+        value: ${{ jobs.checks.outputs.e2e }}
+      build:
+        description: "Outcome of the build step"
+        value: ${{ jobs.checks.outputs.build }}
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: SENTINEL · build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    outputs:
+      e2e: ${{ steps.e2e.outcome }}
+      build: ${{ steps.build.outcome }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - id: lint
+        continue-on-error: true
+        run: npm run lint
+      - id: typecheck
+        continue-on-error: true
+        run: npx tsc --noEmit
+      - id: agent_unit_tests
+        continue-on-error: true
+        run: node --test scripts/agents/tests/*.test.mjs
+      - id: build
+        continue-on-error: true
+        run: npm run build
+      - id: e2e
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: npx playwright test
+      - name: Record outcomes
+        if: always()
+        env:
+          LINT: ${{ steps.lint.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          UNIT: ${{ steps.agent_unit_tests.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          E2E: ${{ steps.e2e.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node -e '
+            const e = process.env;
+            const steps = { lint: e.LINT, typecheck: e.TYPECHECK, "agent unit tests": e.UNIT, build: e.BUILD, "e2e tests": e.E2E || "skipped" };
+            require("fs").writeFileSync("check-results.json", JSON.stringify({ steps, runUrl: e.RUN_URL, sha: process.env.GITHUB_SHA }, null, 2));
+            console.log(steps);
+          '
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: check-results
+          path: check-results.json
+          retention-days: 14
+      - name: PRISM before/after screenshots
+        id: compare
+        if: inputs.prism_compare && steps.build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          npx next start -p 3100 > /dev/null 2>&1 &
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://localhost:3100/ && break; sleep 2; done
+          node scripts/agents/prism-compare.mjs --head=http://localhost:3100 --out=prism-compare
+      - uses: actions/upload-artifact@v4
+        if: inputs.prism_compare && always()
+        with:
+          name: prism-compare
+          path: prism-compare/
+          if-no-files-found: ignore
+          retention-days: 30

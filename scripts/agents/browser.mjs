@@ -107,3 +107,64 @@ export async function smokeTest({ site, channel = process.env.PW_CHANNEL || "chr
   }
   return { checks };
 }
+
+// ---------- PRISM: screenshots + layout/readability audit ----------
+
+const LAYOUT_AUDIT = ({ minTap, minFont }) => {
+  const visible = (el) => {
+    const r = el.getBoundingClientRect();
+    const s = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none" && r.bottom > 0 && r.top < innerHeight * 3;
+  };
+  const label = (el) => (el.getAttribute("aria-label") || el.textContent || el.getAttribute("href") || "").trim().replace(/\s+/g, " ").slice(0, 50);
+  const smallTargets = [];
+  document.querySelectorAll("a[href], button, [role=button], input, select").forEach((el) => {
+    if (!visible(el)) return;
+    const r = el.getBoundingClientRect();
+    if (r.width < minTap || r.height < minTap) smallTargets.push({ label: label(el), w: Math.round(r.width), h: Math.round(r.height) });
+  });
+  const smallText = [];
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const seen = new Set();
+  while (walker.nextNode()) {
+    const el = walker.currentNode.parentElement;
+    if (!el || seen.has(el) || !walker.currentNode.textContent.trim() || !visible(el)) continue;
+    seen.add(el);
+    const size = parseFloat(getComputedStyle(el).fontSize);
+    if (size < minFont) smallText.push({ text: walker.currentNode.textContent.trim().slice(0, 40), px: size });
+  }
+  const upscaled = [...document.images]
+    .filter((img) => visible(img) && img.naturalWidth)
+    .map((img) => ({ src: (img.currentSrc || img.src).replace(location.origin, ""), natural: img.naturalWidth, rendered: Math.round(img.getBoundingClientRect().width * devicePixelRatio) }))
+    .filter((i) => i.rendered > i.natural * 1.15);
+  return {
+    overflowX: document.documentElement.scrollWidth - innerWidth,
+    smallTargets: smallTargets.slice(0, 40),
+    smallTargetCount: smallTargets.length,
+    smallText: smallText.slice(0, 40),
+    smallTextCount: smallText.length,
+    upscaled,
+  };
+};
+
+/** Capture each configured screen and audit its layout. Returns PNG buffers + audit data. */
+export async function captureScreens({ site, screens, thresholds, channel = process.env.PW_CHANNEL || "chrome" }) {
+  const chromium = loadChromium();
+  const browser = await chromium.launch({ channel });
+  const out = [];
+  try {
+    for (const s of screens) {
+      const ctx = await browser.newContext({ viewport: { width: s.width, height: s.height }, deviceScaleFactor: 1, reducedMotion: "reduce" });
+      const page = await ctx.newPage();
+      await page.goto(`${site}${s.path}`, { waitUntil: "networkidle", timeout: 60_000 });
+      await page.waitForTimeout(1500);
+      const png = await page.screenshot({ type: "png" });
+      const audit = await page.evaluate(LAYOUT_AUDIT, { minTap: thresholds.minTapTargetPx, minFont: thresholds.minFontPx });
+      out.push({ ...s, png, audit });
+      await ctx.close();
+    }
+  } finally {
+    await browser.close();
+  }
+  return out;
+}

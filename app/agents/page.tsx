@@ -4,13 +4,13 @@ import { ExternalLink, GitPullRequest, CircleDot, Github } from "lucide-react";
 import { SubpageNav } from "@/components/SubpageNav";
 import { Footer } from "@/components/Footer";
 import { maintenanceAgents } from "@/data/maintenanceAgents";
-import { getActivity, REVALIDATE_SECONDS, type AgentRun, type AgentStatus, type RunRecord } from "@/lib/agentData";
+import { getActivity, getPrism, REVALIDATE_SECONDS, type AgentRun, type AgentStatus, type PrismState, type RunRecord } from "@/lib/agentData";
 
 export const revalidate = REVALIDATE_SECONDS;
 
 export const metadata: Metadata = {
   title: "Agent Activity Center",
-  description: "Real scheduled maintenance runs for this portfolio: research, repository sync, live-site testing and performance checks on GitHub Actions.",
+  description: "Real scheduled maintenance runs for this portfolio: research, repository sync, live-site testing, performance checks and improvement prompts on GitHub Actions.",
 };
 
 const REPO = "https://github.com/LOHITHK22/lohith-portfolio";
@@ -26,6 +26,15 @@ function Badge({ status }: { status: AgentStatus }) {
   const s = STATUS[status] ?? STATUS.skipped;
   return <span className={`inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] ${s.cls}`}>{s.label}</span>;
 }
+
+const PRISM_STATE: Record<PrismState, { label: string; cls: string }> = {
+  "awaiting-approval": { label: "Awaiting approval", cls: "border-slate-400/30 bg-slate-400/10 text-slate-300" },
+  approved: { label: "Approved · implementing", cls: "border-amber-400/40 bg-amber-400/10 text-amber-300" },
+  "pr-open": { label: "PR open · in review", cls: "border-teal/40 bg-teal/10 text-teal" },
+  merged: { label: "Merged", cls: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300" },
+  "pr-closed": { label: "PR closed", cls: "border-white/10 bg-white/[0.03] text-slate-500" },
+  closed: { label: "Declined", cls: "border-white/10 bg-white/[0.03] text-slate-500" },
+};
 
 const utc = (iso?: string | null) => (iso ? `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC` : "n/a");
 
@@ -47,7 +56,8 @@ function lastRunOf(runs: RunRecord[], agent: string): { run: RunRecord; a: Agent
 }
 
 export default async function AgentsPage() {
-  const { runs, error, source } = await getActivity();
+  const [{ runs, error, source }, prism] = await Promise.all([getActivity(), getPrism()]);
+  const prismItems = prism.index?.items ?? [];
   const latest = runs[0];
   const sentinel = lastRunOf(runs, "SENTINEL");
   const pulse = lastRunOf(runs, "PULSE");
@@ -69,13 +79,14 @@ export default async function AgentsPage() {
             Agent Activity <span className="text-teal">Center</span>
           </h1>
           <p className="mt-5 max-w-3xl text-base leading-relaxed text-slate-300">
-            Seven maintenance agents run on GitHub Actions, so they keep working when my laptop is off. They research, check my
-            repositories, test this site and measure its performance, then report here. Everything below is read from their
+            Eight maintenance agents run on GitHub Actions, so they keep working when my laptop is off. They research, check my
+            repositories, test this site, measure its performance and write improvement prompts, then report here. Everything below is read from their
             actual run records. Changes they propose wait for my review as pull requests; they cannot push to the production
             branch.
           </p>
           <p className="mt-3 max-w-3xl text-sm text-slate-400">
-            These are deterministic Node.js scripts, not language models, and they are separate from the{" "}
+            Seven are deterministic Node.js scripts. PRISM can also ask Claude to refine its prompts, under a hard monthly
+            spending cap. All of them are separate from the{" "}
             <Link href="/#ai-team" className="text-teal hover:underline">narrated presentation characters</Link> on the homepage.
             Source: <a href={`${REPO}/tree/main/scripts/agents`} className="text-teal hover:underline" target="_blank" rel="noopener noreferrer">scripts/agents</a>.
           </p>
@@ -231,6 +242,64 @@ export default async function AgentsPage() {
               </div>
             </div>
           )}
+
+          <Panel title="Improvement prompts · PRISM" className="mt-5">
+            {prismItems.length ? (
+              <>
+                <ul className="divide-y divide-white/[0.06]">
+                  {prismItems.slice(0, 12).map((it) => {
+                    const st = it.state ? PRISM_STATE[it.state] : null;
+                    return (
+                      <li key={it.id} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-snug text-white">{it.title}</p>
+                          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-500">
+                            {[it.category, it.priority != null ? `priority ${it.priority}` : null, it.source === "claude" ? "refined by Claude" : it.source === "rules" ? "rule-based" : null, it.proposedAt]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                          <p className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                            {it.prompt && (
+                              <a href={`${prism.promptBase}/${it.prompt}`} target="_blank" rel="noopener noreferrer" className="text-teal hover:underline">Prompt</a>
+                            )}
+                            {it.issue && (
+                              <a href={it.issue.url} target="_blank" rel="noopener noreferrer" className="text-teal hover:underline">Issue #{it.issue.number}</a>
+                            )}
+                            {it.pr && (
+                              <a href={it.pr.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-teal hover:underline">
+                                <GitPullRequest className="h-3 w-3" /> PR #{it.pr.number}
+                              </a>
+                            )}
+                            {it.ownerAction && <span className="text-amber-300">Needs an asset from me</span>}
+                          </p>
+                        </div>
+                        {st ? (
+                          <span className={`inline-flex shrink-0 items-center self-start rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.12em] ${st.cls}`}>{st.label}</span>
+                        ) : (
+                          <span className="shrink-0 self-start font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Saved · no issue</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+                {prism.index?.lastRun && (
+                  <p className="mt-4 text-xs text-slate-500">
+                    Last PRISM run {utc(prism.index.lastRun.at)}: {prism.index.lastRun.summary}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-400">
+                {prism.error
+                  ? `PRISM's recommendations could not be loaded right now (${prism.error}).`
+                  : "PRISM has not published any recommendations yet. It runs weekly; each prompt appears here with its issue, approval state and pull request."}
+              </p>
+            )}
+            <p className="mt-3 text-xs text-slate-500">
+              Flow: PRISM writes a prompt → I approve it with a label → Claude Code implements it on a branch → SENTINEL runs the tests and PRISM
+              compares before/after screenshots on the pull request → I review and merge, or not.
+            </p>
+          </Panel>
 
           {pulse?.a.measurements?.length ? (
             <Panel title={`Performance · PULSE · ${utc(pulse.run.startedAt)}`} className="mt-5">

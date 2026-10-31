@@ -1,6 +1,6 @@
 # Portfolio maintenance agents
 
-Seven scheduled agents keep the portfolio checked and up to date. They run on
+Eight scheduled agents keep the portfolio checked and up to date. They run on
 **GitHub Actions**, not on a personal computer, so they keep working while the
 laptop is off. The site itself stays on Vercel and is never affected by an
 agent run: agents cannot deploy, and a failed run changes nothing on the site.
@@ -13,24 +13,28 @@ agent run: agents cannot deploy, and a failed run changes nothing on the site.
 | SENTINEL | Checks live pages, links and interactions (real browser); reads lint/typecheck/build/e2e results; files issues | Failure must reproduce before an issue is filed; never edits code |
 | PULSE | Measures TTFB/FCP/LCP/CLS/transfer (median of 3) + DOM accessibility checks; compares with last run | Measured runner timings only; no invented scores |
 | FORGE | Packages resource proposals and dead-link removals into a PR; escalates failures recurring 3 runs in a row | Never touches application code or `main` |
+| PRISM | Weekly: screenshots vs Design A, mobile layout audit, code scan, other agents' results → ranked Claude Code implementation prompts, saved and opened as issues | Never edits code; Claude Code runs only after the owner's approval label, on a `claude/prism-issue-N` branch, and never merges |
 | SCRIBE | Writes the sanitized run record and the Actions run summary | Records only what agents returned |
 
-These are deterministic Node.js scripts (`scripts/agents/`). They do not call a
-language model, so there is no API spend and no prompt-injection surface: text
-from the internet is stripped to plain text and only ever displayed.
+Seven agents are deterministic Node.js scripts (`scripts/agents/`) that never
+call a language model: text from the internet is stripped to plain text and only
+ever displayed. PRISM is deterministic too unless the optional
+`ANTHROPIC_API_KEY` secret exists; then it makes **one** capped Claude request
+per week to refine its prompts (see [PRISM](#prism-prompt-engineer)).
 
 ## How a run works
 
 ```
 schedule (09:23 UTC) or manual dispatch
-  └─ job "ci" (SENTINEL): npm ci → lint → tsc → agent unit tests → build → Playwright e2e
+  └─ job "ci" (SENTINEL, reusable sentinel-checks.yml): npm ci → lint → tsc → agent unit tests → build → Playwright e2e
        → check-results.json (artifact)
-  └─ job "agents" (ASTRA): SCOUT → SYNC → SENTINEL → PULSE → FORGE → SCRIBE
+  └─ job "agents" (ASTRA): SCOUT → SYNC → SENTINEL → PULSE → FORGE → PRISM (Mondays) → SCRIBE
        ├─ issues for confirmed failures (label: sentinel / forge, de-duplicated by title)
+       ├─ PRISM prompts → agent-data/prism/YYYY-MM-DD/*.md + evidence + screenshots, issues labelled prism
        ├─ resource proposal → branch agent/resources-YYYY-MM-DD → pull request
        └─ run record → branch agent-data (activity.json, proposed.json, resources-live.json, latest-run.md)
 
-lohithkovuri.store/agents    reads agent-data/activity.json (cached 10 min)
+lohithkovuri.store/agents    reads agent-data/activity.json and prism/index.json (cached 10 min)
 lohithkovuri.store/resources reads data/agents/resources.json on main (+ resources-live.json if auto-publish is on)
 ```
 
@@ -63,10 +67,9 @@ rate limit or the request budget), `failure` (an agent failed or a check failed)
    requiring a pull request. `GITHUB_TOKEN` with `contents: write` could
    technically push any branch; the agents' code refuses to, and the rule makes
    that a platform guarantee too.
-4. **Secrets.** None required. The only credential is the automatic
-   `GITHUB_TOKEN`, scoped per job in the workflow. If a paid API is ever added,
-   store its key under Settings → Secrets and variables → Actions, pass it as
-   `env:` to the one step that needs it, and never echo it.
+4. **Secrets.** None required for the daily agents: the only credential is the
+   automatic `GITHUB_TOKEN`, scoped per job. PRISM's optional Claude credentials
+   are described under [PRISM setup](#prism-setup).
 5. **Test by manual dispatch.** Actions → Portfolio agents → Run workflow:
    - first with **dry run** ticked (all checks run; no issues, branches or data published),
    - then without dry run (creates the `agent-data` branch; `/agents` shows the run within 10 minutes).
@@ -92,7 +95,9 @@ rate limit or the request budget), `failure` (an agent failed or a check failed)
 | Flaky failures | Live-page failures must reproduce after 20 s before an issue is filed |
 | Writes to production | Push targets limited in code to `agent-data` and `agent/*`; branch protection recommended |
 | Dependencies | No packages installed at run time; only `npm ci` from the committed lockfile |
-| Secrets in logs/frontend | No secrets used; run records are built from an allowlist of fields (unit-tested) |
+| Secrets in logs/frontend | Only Actions secrets, passed as `env:`/inputs to the single step that needs them and masked by GitHub; never written to files. Run records are built from an allowlist of fields (unit-tested) |
+| LLM cost (PRISM) | Worst-case cost computed before the call; skipped if it exceeds $0.75/run or the $3/month cap (tracked from run history). Claude Code: max 4 runs/month, 40 turns, 30 min each |
+| Code written by Claude Code | Only after the owner adds `prism:approved`; sender must be the repo owner; branch `claude/prism-issue-N` only; changes to `.github/`, `agents/`, `package*.json`, `.env*`, `vercel.json`, `next.config.*` are rejected; no web, `gh`, `curl`, `npx` or `npm install` tools; PR checks run with a read-only token; nothing merges automatically |
 
 ## Operating cost
 
@@ -100,9 +105,66 @@ rate limit or the request budget), `failure` (an agent failed or a check failed)
   free. A full run takes about 6–9 minutes (≈5 for build + e2e, ≈1–3 for the
   agents). If the repo became private: ~9 min × 30 days ≈ 270 of the 2,000 free
   monthly minutes.
-- **Paid APIs:** none. **Vercel:** unchanged; `/agents` and `/resources` are
-  revalidated at most every 10 minutes.
-- **Estimated total: $0/month.**
+- **Paid APIs (daily agents):** none. **Vercel:** unchanged; `/agents` and
+  `/resources` are revalidated at most every 10 minutes.
+- **PRISM prompt refinement (optional):** one Claude Opus 5.5 request per week,
+  typically ≈ $0.15–0.50 ($4 / $20 per million input / output tokens); hard
+  caps $0.75 per run and $3 per month. Without a key: $0.
+- **PRISM implementation (optional, per approval):** each approved prompt is
+  one Claude Code run, capped at 40 turns and 30 minutes. Estimated $1–5 per
+  run with an API key (the action has no per-run dollar cap, so the turn, time
+  and 4-runs-per-month caps bound it), or plan usage with a Claude subscription
+  token instead.
+- **Estimated total: $0/month without Claude credentials; at most about
+  $23/month with every cap reached.**
+
+## PRISM (prompt engineer)
+
+PRISM runs inside the normal agent workflow on Mondays (`prism.weekday` in
+`agents/config.json`), or whenever `prism` is in the `only` input.
+
+1. **Evidence.** Screenshots of `/` (1440×900 and 390×844) and `/event` from the
+   live site; a region-by-region luminance comparison of the desktop homepage
+   with the approved Design A reference (`agents/prism/reference/`); a layout
+   audit (horizontal overflow, tap targets under 40 px, text under 11 px,
+   upscaled images); a code scan (unimported components, very large files,
+   TODOs); and this run's SENTINEL failures, PULSE measurements and SYNC commits.
+2. **Recommendations.** Rules turn the evidence into ranked candidates. With
+   `ANTHROPIC_API_KEY`, one structured-output request to `claude-opus-5-5`
+   (adaptive thinking, effort high, server-side fallback enabled) sharpens and
+   extends them, seeing both screenshots. Anything already open or proposed in
+   the last 28 days is skipped; at most 3 are kept per run.
+3. **Prompts.** Each becomes a Claude Code prompt (context, evidence, files,
+   expected changes, design constraints, acceptance criteria, tests), saved to
+   `agent-data/prism/YYYY-MM-DD/<id>.md` with `evidence.json` and the
+   screenshots, and opened as an issue labelled `prism`.
+4. **Approval.** Add the `prism:approved` label to the issue. Only a label
+   added by the repository owner starts `.github/workflows/prism-implement.yml`.
+5. **Implementation.** The official
+   [Claude Code GitHub Action](https://github.com/anthropics/claude-code-action)
+   implements the prompt on `claude/prism-issue-N`; the workflow rejects
+   protected paths, pushes the branch and opens a PR that `Closes #N`.
+6. **Verification.** The same reusable `sentinel-checks.yml` runs lint,
+   typecheck, unit tests, build and Playwright on the branch; PRISM then
+   screenshots the live site and the PR build and measures the change, the
+   distance to Design A and the audit counts. Results are posted on the PR and
+   re-run whenever you push to the branch.
+7. **You review and merge, or close.** `/agents` shows each prompt's state:
+   awaiting approval → approved → PR open → merged / declined.
+
+### PRISM setup
+
+| Step | Where | Needed for |
+|---|---|---|
+| Install the Claude GitHub App on this repository | https://github.com/apps/claude (or `/install-github-app` in Claude Code) | Implementation |
+| Add `ANTHROPIC_API_KEY` **or** `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`; uses your Claude plan) | Settings → Secrets and variables → Actions | Implementation |
+| Add `ANTHROPIC_API_KEY` (optional) | same | Claude-refined prompts; without it prompts are rule-based |
+| Tick "Allow GitHub Actions to create and approve pull requests" | Settings → Actions → General | PRs opened automatically (otherwise a compare link is posted) |
+| Protect `main` (require a PR) | Settings → Branches | Platform guarantee against direct pushes |
+
+Credentials are never printed, written to files, or exposed to the site. To
+pause PRISM, set `prism.weekday` to `-1`; to stop implementations, disable the
+"PRISM implement" workflow or remove the secrets.
 
 ## Local commands
 
@@ -110,6 +172,8 @@ rate limit or the request budget), `failure` (an agent failed or a check failed)
 node --test scripts/agents/tests/*.test.mjs           # unit tests (no network)
 node scripts/agents/astra.mjs --dry-run --no-git       # real checks, nothing published
 node scripts/agents/astra.mjs --dry-run --no-git --only=scout,sync --no-browser
+node scripts/agents/astra.mjs --dry-run --no-git --only=sentinel,pulse,sync,prism   # one PRISM generation run
+node scripts/agents/prism-compare.mjs --head=http://localhost:3100              # before/after vs a local build
 ```
 
 Local runs are labelled `local` and never shown on the public dashboard.

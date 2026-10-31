@@ -78,6 +78,32 @@ export async function getResources() {
   };
 }
 
+export type PrismState = "awaiting-approval" | "approved" | "pr-open" | "merged" | "pr-closed" | "closed";
+export type PrismItem = {
+  id: string;
+  title: string;
+  category?: string;
+  priority?: number;
+  source?: "rules" | "claude";
+  ownerAction?: boolean;
+  prompt?: string;
+  proposedAt?: string;
+  runUrl?: string | null;
+  issue?: { number: number; url: string } | null;
+  state?: PrismState;
+  pr?: { number: number; url: string; state: string } | null;
+};
+export type PrismIndex = {
+  updatedAt: string | null;
+  lastRun?: { at: string; status: AgentStatus; summary: string; dryRun: boolean; llm: { model: string | null; costUsd: number; skipped: string | null } | null };
+  items: PrismItem[];
+};
+
+export async function getPrism() {
+  const { data, error } = await fetchData<PrismIndex>("prism/index.json");
+  return { index: data, error, promptBase: DATA_BASE.replace("raw.githubusercontent.com", "github.com").replace(/\/agent-data$/, "/blob/agent-data") };
+}
+
 export const RESOURCE_CATEGORIES = [
   { id: "llms", label: "LLMs" },
   { id: "agents", label: "Agents" },

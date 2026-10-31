@@ -2,7 +2,7 @@
 // ASTRA: orchestrates one maintenance run.
 //   node scripts/agents/astra.mjs [--dry-run] [--force] [--only=scout,sync] [--no-browser] [--no-git]
 //
-// Order: SCOUT → SYNC → SENTINEL → PULSE → FORGE → SCRIBE. Each agent is
+// Order: SCOUT → SYNC → SENTINEL → PULSE → FORGE → PRISM (weekly) → SCRIBE. Each agent is
 // isolated: one failing never stops the others, and nothing here can touch the
 // running website. State lives on the data-only `agent-data` branch; code and
 // resource changes only ever leave as `agent/*` branches + pull requests.
@@ -17,6 +17,7 @@ import { runSync } from "./sync.mjs";
 import { runSentinel } from "./sentinel.mjs";
 import { runPulse } from "./pulse.mjs";
 import { runForge, checkCuratedLinks } from "./forge.mjs";
+import { runPrism, refreshPrismStatus } from "./prism.mjs";
 import { buildRunRecord, toMarkdown, overallStatus } from "./scribe.mjs";
 
 const args = Object.fromEntries(
@@ -206,6 +207,69 @@ async function main() {
         })
       : skipped("FORGE")
   );
+
+  // PRISM: prompts once a week (or when selected explicitly); issue/PR status every run.
+  const prismCfg = config.prism;
+  const prismIndexFile = path.join(dataDir, "prism", "index.json");
+  const prismIndex = readJson(prismIndexFile, { updatedAt: null, items: [] });
+  const prismDue = only ? only.includes("prism") : new Date(now).getUTCDay() === prismCfg.weekday || Boolean(args.force);
+  let prismIssues = null;
+  if (env.GITHUB_TOKEN && (prismDue || enabled("prism"))) {
+    prismIssues = await refreshPrismStatus({ gh, repo: config.repo, label: prismCfg.issueLabel, approvalLabel: prismCfg.approvalLabel }).catch((e) => {
+      console.log(`PRISM: status refresh failed: ${e.message}`);
+      return null;
+    });
+  }
+  if (prismDue) {
+    let anthropic = null;
+    if (env.ANTHROPIC_API_KEY && prismCfg.llm.enabled) {
+      const { default: Anthropic } = await import("@anthropic-ai/sdk");
+      anthropic = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 180_000, maxRetries: 2 });
+    }
+    const prism = await timed("PRISM", () =>
+      runPrism({
+        config,
+        now,
+        history,
+        outDir: dataDir,
+        agentsThisRun: agents,
+        gh: env.GITHUB_TOKEN ? gh : null,
+        dryRun,
+        anthropic,
+        runUrl,
+        evidenceBaseUrl: `https://github.com/${config.repo}/tree/${config.dataBranch}`,
+        openIssues: (prismIssues ?? []).filter((i) => ["awaiting-approval", "approved", "pr-open"].includes(i.state)),
+        capture: () =>
+          browser
+            ? browser.captureScreens({ site: config.site, screens: prismCfg.screens, thresholds: prismCfg.thresholds })
+            : Promise.reject(new Error("browser checks disabled")),
+      })
+    );
+    agents.push(prism);
+    const known = new Map(prismIndex.items.map((i) => [i.id, i]));
+    for (const r of prism.recommendations ?? []) known.set(r.id, { ...known.get(r.id), ...r, proposedAt: now.slice(0, 10), runUrl });
+    prismIndex.items = [...known.values()];
+    prismIndex.lastRun = { at: now, status: prism.status, summary: prism.summary, llm: prism.llm ?? null, dryRun, drift: prism.drift ?? [] };
+  } else {
+    agents.push(skipped("PRISM"));
+  }
+  if (prismIssues) {
+    // Attach live issue / PR state to saved prompts; keep issues PRISM did not save locally too.
+    const byId = new Map(prismIndex.items.map((i) => [i.id, i]));
+    for (const iss of prismIssues) {
+      const id = iss.prismId ?? `issue-${iss.number}`;
+      byId.set(id, { title: iss.title, ...byId.get(id), id, issue: { number: iss.number, url: iss.url }, state: iss.state, pr: iss.pr });
+    }
+    prismIndex.items = [...byId.values()];
+  }
+  prismIndex.items = prismIndex.items
+    .filter((i) => !i.proposedAt || (Date.parse(now) - Date.parse(i.proposedAt)) / 86_400_000 <= prismCfg.keepWeeks * 7 || ["approved", "pr-open"].includes(i.state))
+    .sort((a, b) => String(b.proposedAt ?? "").localeCompare(String(a.proposedAt ?? "")) || (b.priority ?? 0) - (a.priority ?? 0))
+    .slice(0, 40);
+  if (prismDue || prismIssues) {
+    prismIndex.updatedAt = now;
+    writeJson(prismIndexFile, prismIndex);
+  }
 
   // Auto-publication of resource entries: off unless the owner enables it in config.
   const ap = config.publishing.autoPublish;
