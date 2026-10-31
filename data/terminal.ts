@@ -3,30 +3,29 @@ export type TerminalCommand = {
   output: string[];
 };
 
-// Exact script from CONTENT_BRIEF.md.
 export const terminalCommands: TerminalCommand[] = [
   {
     command: "whoami",
-    output: ["Lohith Kovuri, Software Engineer (Backend, Distributed Systems, AI/LLM Platforms)"],
+    output: ["Lohith Kovuri, Data Analyst (Data Engineering, Analytics, AI/LLM Systems)"],
   },
   {
     command: "status",
     output: [
-      "Status: open to new full-time roles (backend, cloud, AI/GenAI)",
-      "Most recent: Software Engineer @ Mercury (Remote, USA), Oct 2025 – Jul 2026",
-      "Previously: Rowan ACM Engineering (Backend Eng., Contract) · Roothoot Pvt Ltd (Software Developer)",
+      "Status: Data Analyst @ Uline (Remote, USA), Jul 2025 – Present",
+      "Previously: Data Analyst @ Worldpay, LLC, Jan 2022 – Jul 2023",
+      "Open to: data analyst, data engineering, and AI data roles",
     ],
   },
   {
     command: "skills --top",
-    output: ["Python · Java · TypeScript · AWS · FastAPI · LangChain/LangGraph · Kafka · PostgreSQL · Docker · Kubernetes"],
+    output: ["Python · SQL · Snowflake · PySpark · Airflow · Kafka · AWS · Tableau · Power BI · LLM evaluation"],
   },
   {
     command: "projects --top",
     output: [
-      "1. AI Code Review Agent        (85%+ defects caught, <$0.05/review)",
-      "2. VendorOps AI                (LangGraph agents, github.com/LOHITHK22/vendorops-ai)",
-      "3. High-Throughput Data Pipeline (1M+ records/hour, <1% failure rate)",
+      "1. PipelineMedic AI            (17 MCP tools, 63 MCP tests, github.com/LOHITHK22/PipelineMedic-AI)",
+      "2. RAG Sentinel                (0.82 Cohen's kappa, 0.89 ROC-AUC)",
+      "3. AWS Streaming Data Platform (Kafka → S3/Iceberg → Kimball model in Athena + dbt)",
     ],
   },
   {

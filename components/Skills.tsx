@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Code2, Server, BrainCircuit, Cloud, Database, MonitorSmartphone, CheckSquare } from "lucide-react";
+import { Code2, Workflow, BrainCircuit, Database, BarChart3 } from "lucide-react";
 import { skillGroups } from "@/data/skills";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants, staggerContainer } from "@/lib/motion";
@@ -10,12 +10,10 @@ import { StackedSectionHeader } from "./StackedSectionHeader";
 
 const groupIcons: Record<string, typeof Code2> = {
   languages: Code2,
-  backend: Server,
+  "data-streaming": Workflow,
+  databases: Database,
   "ai-genai": BrainCircuit,
-  "cloud-devops": Cloud,
-  "data-streaming": Database,
-  frontend: MonitorSmartphone,
-  practices: CheckSquare,
+  visualization: BarChart3,
 };
 
 export function Skills() {
@@ -27,7 +25,7 @@ export function Skills() {
         index={2}
         eyebrow="Toolbox"
         title="What I can do with it"
-        description="Organized by engineering capability, not a wall of logos. No arbitrary percentage bars, just what I actually use and what it lets me build."
+        description="Organized by capability, not a wall of logos. No arbitrary percentage bars, just what I actually use and what it lets me build."
       />
 
       <motion.div

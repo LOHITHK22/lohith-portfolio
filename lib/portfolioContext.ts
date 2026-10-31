@@ -41,7 +41,7 @@ export function buildPortfolioContext(): string {
 
   parts.push("\n--- EXPERIENCE ---");
   experience.forEach((e) => {
-    parts.push(`\n${e.role} at ${e.company} (${e.location}, ${e.period})${e.current ? " [CURRENT ROLE]" : ""}`);
+    parts.push(`\n${e.role} at ${e.company} (${e.location ? `${e.location}, ` : ""}${e.period})${e.current ? " [CURRENT ROLE]" : ""}`);
     parts.push(`Summary: ${e.summary}`);
     parts.push(`Tech: ${e.tech.join(", ")}`);
     e.bullets.forEach((b) => parts.push(`- ${b}`));

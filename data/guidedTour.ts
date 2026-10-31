@@ -17,8 +17,8 @@ export type GuideStep = {
 };
 
 const [primarySignal] = whyMeSignals;
-const codeReviewProject = flagshipProjects.find((p) => p.id === "ai-code-review-agent")!;
-const vendorOpsProject = flagshipProjects.find((p) => p.id === "vendorops-ai")!;
+const pipelineMedicProject = flagshipProjects.find((p) => p.id === "pipelinemedic-ai")!;
+const ragSentinelProject = flagshipProjects.find((p) => p.id === "rag-sentinel")!;
 
 export const guidedTourSteps: GuideStep[] = [
   {
@@ -28,7 +28,7 @@ export const guidedTourSteps: GuideStep[] = [
     // Narrated by the hero video itself (see Hero.tsx's play-hero-video-with-
     // sound bridge) — audioFile below is only a fallback if the video can't
     // play for some reason. Keep this in sync with the video's script.
-    line: `Hi, I'm ${profile.name}. Welcome to my world: backend, distributed systems, and AI. Take a look.`,
+    line: `Hi, I'm ${profile.name}. Welcome to my world: data, pipelines, and AI. Take a look.`,
     audioFile: "/audio/tour-intro.mp3",
   },
   {
@@ -39,18 +39,18 @@ export const guidedTourSteps: GuideStep[] = [
     audioFile: "/audio/tour-why-me.mp3",
   },
   {
-    id: "project-code-review",
+    id: "project-pipelinemedic",
     sectionId: "projects",
     eyebrow: "What I've built",
-    line: `Take the ${codeReviewProject.name}. The problem: most AI code review tools are single-shot, so one failed step means the whole review restarts. The fix: a four-tool agent chain with retry and state checkpointing, so a mid-chain failure resumes instead of starting over. The result: it catches 85%+ of seeded defects, automatically, on every pull request, for under 5 cents a review.`,
-    audioFile: "/audio/tour-project-code-review.mp3",
+    line: `Take ${pipelineMedicProject.name}. The problem: data pipelines break in predictable ways, but letting an AI fix production data on its own is too risky. The fix: plain detectors find the failure first, an LLM proposes a typed repair, and anything risky waits for a human. Every repair is validated and rolled back if it fails, and the whole thing runs as an MCP server with 17 tools and 63 tests.`,
+    audioFile: "/audio/tour-project-pipelinemedic.mp3",
   },
   {
-    id: "project-vendorops",
+    id: "project-rag-sentinel",
     sectionId: "projects",
     eyebrow: "What I've built",
-    line: `Then there's ${vendorOpsProject.name}, an agentic pipeline for contract intelligence. The hard part: coordinating multiple AI agents with a human checking anything the model wasn't confident about. It now hits over 90% extraction accuracy at 60% lower cost per document.`,
-    audioFile: "/audio/tour-project-vendorops.mp3",
+    line: `Then there's ${ragSentinelProject.name}, an LLM evaluation framework. Before trusting an AI judge, I checked it against a thousand human labels and got 0.82 Cohen's kappa. Then I used it to A/B test prompts, and built a hallucination-risk classifier at 0.89 ROC-AUC.`,
+    audioFile: "/audio/tour-project-rag-sentinel.mp3",
   },
   {
     id: "skills",
@@ -63,7 +63,7 @@ export const guidedTourSteps: GuideStep[] = [
     id: "experience",
     sectionId: "experience",
     eyebrow: "Right now",
-    line: "Most recently, I was a Software Engineer at Mercury, working remote on production backend and AI-assisted testing for financial event-ingestion systems. Right now, I'm open to new full-time roles.",
+    line: "Right now, I'm a Data Analyst at Uline, working remote on supply chain data: automated reporting, Snowflake validation, and demand forecasting. Before that, I was a Data Analyst at Worldpay, working on payments data.",
     audioFile: "/audio/tour-experience.mp3",
   },
   {

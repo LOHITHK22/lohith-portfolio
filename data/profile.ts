@@ -1,5 +1,5 @@
 // Core identity, positioning, and contact data.
-// Every value here traces back to CONTENT_BRIEF.md — do not add or "improve" facts here.
+// Every value here traces back to Lohith_Resume_Base.pdf; do not add or "improve" facts here.
 
 export const profile = {
   name: "Lohith Kovuri",
@@ -17,66 +17,70 @@ export const profile = {
   resumeUrl: "/Lohith_Kovuri_Resume.pdf",
   resumeFileName: "Lohith_Kovuri_Resume.pdf",
 
-  headline: "Software Engineer working across Backend, Distributed Systems & AI/LLM Platforms",
-  subIdentity: "Backend • Distributed Systems • Cloud (AWS) • AI/LLM Platforms",
+  headline: "Data Analyst working across Data Engineering & AI/LLM Systems",
+  subIdentity: "Python & SQL • Data Engineering (AWS) • Analytics & BI • LLM Evaluation & Agents",
 
   heroParagraph:
-    "I build fault-tolerant backend systems and production AI/LLM platforms, including event-driven AWS pipelines that process tens of thousands of events a day, and multi-tenant RAG systems that serve hundreds of concurrent tenants without leaking a byte between them.",
+    "I turn messy supply chain and payments data into reports, checks, and forecasts people trust. On my own time I build AWS data pipelines in PySpark and Kafka, an LLM evaluation framework, and an agent that repairs data pipelines with human approval.",
 
   careerFairTagline: "Here's what I actually ship.",
   recruiterModeCta: "Skip to the 30-second version.",
 
   targetRoles: [
-    "Software Engineer",
-    "Backend Engineer",
-    "Full-Stack Engineer",
-    "Java Developer",
-    "Python Developer",
+    "Data Analyst",
     "Data Engineer",
-    "AI/GenAI Engineer",
-    "Cloud Engineer",
+    "Analytics Engineer",
+    "Business Intelligence Analyst",
+    "AI/ML Data Engineer",
   ],
 
   currentStatus:
-    "Most recently Software Engineer at Mercury (Remote, USA), Oct 2025 to Jul 2026. Now open to new full-time roles in backend, cloud, and AI/GenAI engineering",
+    "Currently Data Analyst at Uline (Remote, USA), since Jul 2025. Open to data analyst, data engineering, and AI data roles",
 
-  contactCtaLine: "Let's talk about your engineering team.",
+  contactCtaLine: "Let's talk about your data team.",
 } as const;
 
-// The 5 evidence-based "Why Me" signals — verbatim numbers from the brief.
+// The 6 evidence-based "Why Me" signals. Numbers are verbatim from the resume.
 export const whyMeSignals = [
   {
-    id: "aws-availability",
+    id: "report-automation",
     signal:
-      "Operated production AWS infrastructure at Mercury (a fintech platform) sustaining 99.9% write availability across 50,000+ events/day, including 8x traffic bursts, with zero data loss.",
-    stat: "99.9%",
-    statLabel: "write availability",
+      "At Uline, automated about 50 daily shipping reports in Python, saving roughly 15 hours of manual work a week, and wired SQL results into an LLM API to draft inventory and shipping reports, with checks.",
+    stat: "15 hrs",
+    statLabel: "manual work saved weekly",
   },
   {
-    id: "multi-tenant-rag",
+    id: "data-validation",
     signal:
-      "Architected a multi-tenant RAG backend serving 200+ concurrent tenants with per-tenant vector-store isolation (zero cross-tenant data leaks in stress testing), while cutting redundant LLM calls by 62% and dropping latency from 1.8s to 680ms.",
-    stat: "200+",
-    statLabel: "concurrent tenants",
+      "Builds the checks that make numbers trustworthy: Snowflake validation that cut procurement reporting discrepancies by 22% at Uline, and SQL billing validation that cut billing discrepancies by 18% at Worldpay.",
+    stat: "22%",
+    statLabel: "fewer reporting discrepancies",
   },
   {
-    id: "latency-rebuild",
+    id: "pipelinemedic",
     signal:
-      "Took a synchronous LLM pipeline from p95 latency of 120s down to under 60s by rebuilding it as an async, backpressure-aware FastAPI service.",
-    stat: "120s → <60s",
-    statLabel: "p95 latency",
+      "Built PipelineMedic AI, an agent that detects and repairs failures in a Kafka, Flink, and Airflow pipeline, with a human approving risky fixes, exposed as an MCP server with 17 typed tools and 63 MCP tests.",
+    stat: "17",
+    statLabel: "typed MCP tools",
   },
   {
-    id: "vendorops",
+    id: "rag-sentinel",
     signal:
-      "Shipped an agentic document-intelligence pipeline (VendorOps AI, LangGraph, public repo) achieving 90%+ clause-extraction accuracy on the 100+ contract CUAD legal benchmark, at 60% lower LLM cost per document via small/large-model routing.",
-    stat: "90%+",
-    statLabel: "clause-extraction accuracy",
+      "Validated an LLM judge against 1,000 human-annotated responses (0.82 Cohen's kappa) and built an XGBoost hallucination-risk classifier with SHAP at 0.89 ROC-AUC.",
+    stat: "0.82",
+    statLabel: "Cohen's kappa vs. humans",
+  },
+  {
+    id: "spark-tuning",
+    signal:
+      "Tuned a PySpark job on EMR over 100+ GB of TPC-H data from 24.6 to 13.8 minutes (44% faster) with partitioning, broadcast joins, and skew handling.",
+    stat: "44%",
+    statLabel: "faster Spark runtime",
   },
   {
     id: "certifications",
     signal:
-      "Credentialed on the cloud and data stack he ships on: AWS Certified Data Engineer – Associate, AWS Certified Cloud Practitioner, and Microsoft Certified: Power BI Data Analyst Associate.",
+      "Credentialed on the cloud and data stack he works on: AWS Certified Data Engineer, Associate; AWS Certified Cloud Practitioner; and Microsoft Power BI Data Analyst Associate.",
     stat: "3",
     statLabel: "cloud & data certifications",
   },
@@ -90,44 +94,28 @@ export const heroStats: Array<{
   label: string;
   decimals: number;
 }> = [
-  { id: "availability", value: 99.9, suffix: "%", label: "write availability", decimals: 1 },
-  { id: "events", value: 50000, suffix: "+", label: "events/day processed", decimals: 0 },
-  { id: "tenants", value: 200, suffix: "+", label: "concurrent RAG tenants", decimals: 0 },
-  { id: "llm-cut", value: 62, suffix: "%", label: "fewer redundant LLM calls", decimals: 0 },
+  { id: "reports", value: 50, suffix: "", label: "daily reports automated", decimals: 0 },
+  { id: "records", value: 75000, suffix: "+", label: "monthly records analyzed", decimals: 0 },
+  { id: "discrepancies", value: 22, suffix: "%", label: "fewer reporting discrepancies", decimals: 0 },
+  { id: "forecast", value: 15, suffix: "%", label: "lower forecast error", decimals: 0 },
 ];
 
-// Recruiter Mode — 30-second summary, exact fields per the brief.
+// Recruiter Mode: 30-second summary.
 export const recruiterSummary = {
-  who: "Lohith Kovuri, Software Engineer",
+  who: "Lohith Kovuri, Data Analyst",
   degree: [
     "M.S. Data Science, Rowan University (2023–2025)",
     "B.Tech Information Technology, Dr. MGR Educational and Research Institute (2019–2023)",
   ],
   currentStatus:
-    "Most recently Software Engineer at Mercury (Remote, USA), Oct 2025 to Jul 2026. Now open to new full-time roles in backend, cloud, and AI/GenAI engineering",
-  targeting: [
-    "Software Engineer",
-    "Backend Engineer",
-    "Full-Stack",
-    "Data Engineer",
-    "AI/GenAI Engineer",
-    "Cloud Engineer",
-  ],
-  strongestSkills: [
-    "Python",
-    "Java",
-    "AWS",
-    "FastAPI",
-    "LangChain/LangGraph",
-    "Kafka",
-    "PostgreSQL",
-    "Docker/Kubernetes",
-  ],
-  topProjects: ["AI Code Review Agent", "VendorOps AI", "High-Throughput Data Pipeline"],
+    "Currently Data Analyst at Uline (Remote, USA), since Jul 2025. Open to data analyst, data engineering, and AI data roles",
+  targeting: ["Data Analyst", "Data Engineer", "Analytics Engineer", "BI Analyst", "AI/ML Data Engineer"],
+  strongestSkills: ["Python", "SQL", "Snowflake", "PySpark", "Airflow", "AWS", "Tableau / Power BI", "LLM evaluation"],
+  topProjects: ["PipelineMedic AI", "RAG Sentinel", "AWS Streaming Data Platform"],
   certifications: [
-    "AWS Certified Data Engineer – Associate",
+    "AWS Certified Data Engineer, Associate",
     "AWS Certified Cloud Practitioner",
-    "Microsoft Certified: Power BI Data Analyst Associate",
+    "Microsoft Power BI Data Analyst Associate",
   ],
   location: "San Francisco, CA, USA",
 } as const;

@@ -36,7 +36,7 @@ export type Certification = {
 export const certifications: Certification[] = [
   {
     id: "aws-data-engineer",
-    name: "AWS Certified Data Engineer – Associate",
+    name: "AWS Certified Data Engineer, Associate",
     issuer: "Amazon Web Services",
   },
   {
@@ -46,7 +46,7 @@ export const certifications: Certification[] = [
   },
   {
     id: "power-bi",
-    name: "Microsoft Certified: Power BI Data Analyst Associate",
+    name: "Microsoft Power BI Data Analyst Associate",
     issuer: "Microsoft",
   },
 ];

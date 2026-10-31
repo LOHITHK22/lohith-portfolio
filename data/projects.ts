@@ -13,125 +13,76 @@ export type FlagshipProject = {
   featured?: boolean;
 };
 
-// The 6 flagship engineering case studies. Links are omitted entirely (not
-// guessed) for projects the brief marks as closed-source / no public repo.
+// The 4 flagship case studies, matching the Personal Projects section of
+// Lohith_Resume_Base.pdf. Links are omitted (not guessed) for projects
+// without a public repo.
 export const flagshipProjects: FlagshipProject[] = [
   {
-    id: "ai-code-review-agent",
-    name: "AI Code Review Agent",
-    tagline: "Multi-tool agentic code reviewer wired into GitHub Actions, recovers mid-chain instead of restarting",
+    id: "pipelinemedic-ai",
+    name: "PipelineMedic AI",
+    tagline: "Pipeline repair agent: deterministic detectors find the failure, an LLM proposes the fix, a human approves the risky ones",
     problem:
-      "Manual code review doesn't scale with PR volume, and most \"AI code review\" tools are single-shot LLM calls with no way to recover if one step fails partway through.",
+      "Streaming pipelines break in predictable ways (schema drift, poison messages, consumer lag, failed tasks), and letting an LLM fix production data on its own is too risky to trust.",
     solution:
-      "A multi-tool agent system (diff retriever, static analyzer, test generator, and PR commenter) with tool-call retry and state checkpointing, so a mid-chain failure resumes from the last completed tool instead of restarting the whole review.",
+      "A Python and FastAPI agent for a Kafka, Flink, PostgreSQL, and Airflow pipeline. Deterministic detectors flag the failure before any LLM is involved, the LLM diagnoses the cause and proposes a typed repair plan, and a risk policy runs low-risk repairs automatically while routing riskier ones to a human.",
     architecture:
-      "GitHub Actions (on pull_request) → Agent orchestrator (LangGraph, model-agnostic) → Diff retriever → Static analyzer → Test generator → PR commenter → GitHub PR comment API",
-    tech: ["Python", "LangGraph", "FastAPI", "OpenAI API", "GitHub Actions"],
+      "Kafka / Flink / Airflow pipeline → Deterministic detectors (schema drift, poison messages, consumer lag, task failures) → LLM diagnosis → Typed repair plan → Risk policy (auto-run low risk, human approval for high risk) → Validate repair, roll back on failure → MCP server (17 typed tools, audit log)",
+    tech: ["Python", "FastAPI", "Kafka", "Flink", "PostgreSQL", "Airflow", "LLM APIs", "MCP (Python SDK)", "pytest"],
     challenge:
-      "Keeping the orchestration loop model-agnostic while making a 4-tool agent chain resilient to mid-run failures, via state checkpointing rather than an all-or-nothing retry.",
+      "Keeping the LLM out of detection entirely and putting a risk policy, single-use approvals, and rollback between its suggestions and the real pipeline.",
     impact:
-      "Catches 85%+ of seeded defects in benchmark diffs, at under $0.05 per review, running automatically on every pull request.",
+      "Every repair is validated and rolled back if it fails; 17 typed tools exposed through an MCP server (official Python SDK, stdio) with single-use approvals, audit logging, and 63 MCP tests.",
+    githubUrl: "https://github.com/LOHITHK22/PipelineMedic-AI",
     featured: true,
   },
   {
-    id: "multi-tenant-rag-api",
-    name: "Multi-Tenant RAG API",
-    tagline: "Production RAG backend with tenant isolation enforced at the embedding layer",
+    id: "rag-sentinel",
+    name: "RAG Sentinel",
+    tagline: "LLM evaluation framework: a validated LLM judge, prompt A/B tests, and a hallucination-risk classifier with drift monitoring",
     problem:
-      "Multiple product teams needed a shared LLM/RAG backend, but a single shared vector index risks leaking one tenant's private documents into another tenant's answers, and unmetered LLM calls make cost unpredictable at scale.",
+      "RAG systems are often judged by another LLM that nobody has checked against humans, and quality can quietly slip when prompts, embeddings, or traffic change.",
     solution:
-      "A production-grade Retrieval-Augmented Generation API where tenant isolation is enforced at the embedding layer itself, not just at the API layer, plus a semantic response cache to cut redundant model calls.",
+      "An evaluation framework that first validates the LLM judge against human labels, then uses it to A/B test prompt and embedding setups, and adds an XGBoost hallucination-risk classifier with SHAP explanations plus a drift monitor.",
     architecture:
-      "Client → FastAPI (async) → LangChain orchestration → per-tenant FAISS namespace → Redis (semantic cache + per-tenant token budget) → PostgreSQL (metadata) → OpenAI API → RAGAS eval loop (watches live traffic, fires alerts on faithfulness drops)",
-    tech: ["Python", "FastAPI", "LangChain", "FAISS", "Redis", "PostgreSQL", "OpenAI API", "RAGAS"],
+      "RAG responses → LLM judge (validated on 1,000 human-annotated responses) → A/B tests across 4 prompt and embedding setups → XGBoost hallucination-risk classifier + SHAP → PSI and KS drift monitor",
+    tech: ["Python", "XGBoost", "SHAP", "LLM APIs", "A/B testing"],
     challenge:
-      "Isolating tenants at the vector-index layer (dedicated FAISS namespace per tenant, not a filtered query on a shared index) while keeping p95 latency low under concurrent multi-tenant load.",
+      "Proving the judge is trustworthy before using it, and finding where it is weakest (multi-hop questions) instead of reporting one average score.",
     impact:
-      "200+ concurrent tenants, zero cross-tenant data access under stress testing, 62% fewer redundant OpenAI calls via SHA-256 query fingerprint caching, average latency 1.8s → 680ms.",
+      "0.82 Cohen's kappa between the LLM judge and human labels; found a 12% relative faithfulness drop on multi-part questions; hallucination-risk classifier at 0.89 ROC-AUC.",
     featured: true,
   },
   {
-    id: "vendorops-ai",
-    name: "VendorOps AI",
-    tagline: "Agentic contract & invoice intelligence, a LangGraph pipeline with human-in-the-loop gates",
+    id: "aws-streaming-platform",
+    name: "AWS Streaming Data Platform",
+    tagline: "Kafka to S3/Iceberg lakehouse with layered zones, Glue PySpark jobs, and a Kimball model in Athena and dbt",
     problem:
-      "Vendor documents (contracts, invoices) arrive unstructured across PDFs, CSVs, and email, and need reliable structured extraction with a human check on anything the model isn't confident about.",
+      "Streaming events need to land reliably, get cleaned and deduplicated, and end up in a model analysts can actually query, without bad records silently breaking reports.",
     solution:
-      "A LangGraph-orchestrated pipeline that ingests documents, extracts structured fields with an LLM (or a mock extractor for offline dev), validates the output against business rules, persists it, and produces operational reports and analytics.",
+      "A Kafka-to-S3/Iceberg pipeline across landing, raw, processed, and reporting layers. Glue PySpark jobs validate records, drop duplicates, and load increments, with Airflow checks, error quarantine, and Terraform for the infrastructure.",
     architecture:
-      "Upload (PDF / CSV / TXT / EML) → Parser (normalizes to text + metadata + pages + tables) → LLM extraction layer (mock or OpenAI) → Validation rules engine → Storage (SQLAlchemy → SQLite / PostgreSQL) → Audit log + Analytics API → React dashboard",
-    tech: ["Python", "FastAPI", "LangGraph", "OpenAI API", "MCP", "SQLAlchemy", "PostgreSQL", "Pydantic", "Docker", "React", "TypeScript"],
+      "Kafka → S3 landing → Raw (Iceberg) → Glue PySpark (validate, dedupe, incremental load, quarantine errors) → Processed → Reporting (Kimball model) → Athena + dbt, orchestrated by Airflow, provisioned with Terraform",
+    tech: ["Kafka", "PySpark", "Iceberg", "AWS Glue", "S3", "Athena", "Airflow", "dbt", "Terraform"],
     challenge:
-      "Coordinating a multi-agent pipeline with supervisor retry logic and human-in-the-loop gates on low-confidence extractions, while keeping per-document LLM cost down.",
+      "Making incremental loads and deduplication correct across layers while quarantining bad records instead of failing the whole run.",
     impact:
-      "90%+ clause-extraction accuracy across 100+ CUAD benchmark contracts; ~60% lower LLM cost per document by routing classification to a small model and reserving frontier-model calls for complex extraction; blocked seeded prompt-injection attempts by isolating untrusted document content and validating structured outputs; exposed as an MCP server so external agents/tools can discover and call its capabilities without hardcoded integrations.",
-    githubUrl: "https://github.com/LOHITHK22/vendorops-ai",
+      "End-to-end layered pipeline from Kafka to a Kimball reporting model, with Airflow data checks and error quarantine, fully defined in Terraform.",
     featured: true,
   },
   {
-    id: "distributed-job-scheduler",
-    name: "Distributed Job Scheduler",
-    tagline: "6-state job lifecycle with atomic distributed locks for exactly-once claim semantics",
+    id: "retailbench",
+    name: "RetailBench Data Platform",
+    tagline: "PySpark on EMR over 100+ GB of TPC-H data into a dimensional Redshift warehouse, tuned 44% faster",
     problem:
-      "A naive job queue lets two workers grab and execute the same job under concurrent load, producing duplicate side effects (double charges, double emails, double writes).",
+      "Spark jobs over large benchmark datasets run slowly when partitioning, joins, and skewed keys are left at their defaults.",
     solution:
-      "A 6-state job-lifecycle scheduler where claims are atomic distributed locks, not database rows you hope nobody else reads first.",
+      "A PySpark pipeline on EMR for 100+ GB of TPC-H benchmark data that loads a dimensional Redshift warehouse, built with Airflow and Glue, then tuned for runtime.",
     architecture:
-      "Producers enqueue → PostgreSQL job table (SKIP LOCKED polling) → Worker acquires a Redis Redlock distributed claim → executes job → sends heartbeat → on failure/stall, job is auto-requeued or routed to a dead-letter queue with full stack trace → Prometheus scrapes queue depth, heartbeat failures, and latency percentiles",
-    tech: ["Python", "FastAPI", "Redis (Redlock)", "PostgreSQL", "Docker", "Kubernetes", "Prometheus"],
-    challenge:
-      "Guaranteeing exactly-once claim semantics under high worker contention without a single point of failure, and recovering cleanly when a worker dies mid-job.",
-    impact: "Zero duplicate executions across load tests; p99 scheduling latency under 200ms at 2,000 jobs/min.",
+      "TPC-H data (100+ GB) → PySpark on EMR (partitioning, broadcast joins, skew handling) → Glue → Dimensional model in Redshift, with Airflow",
+    tech: ["PySpark", "AWS EMR", "Airflow", "AWS Glue", "Amazon Redshift"],
+    challenge: "Finding where the job actually spent its time and fixing partitioning, join strategy, and skew.",
+    impact: "Cut job runtime from 24.6 to 13.8 minutes (44%) by tuning partitioning, broadcast joins, and skew handling.",
     featured: true,
-  },
-  {
-    id: "java-kv-store",
-    name: "Java Distributed Key-Value Store",
-    tagline: "Crash-safe TCP KV server with WAL, snapshotting, and leader-follower replication",
-    problem:
-      "Wanted to understand, from first principles, how systems like early Redis/etcd guarantee durability and stay consistent across replicas after a crash.",
-    solution:
-      "A concurrent TCP key-value server built on Java NIO with write-ahead logging, snapshotting, and leader-follower replication.",
-    architecture:
-      "Clients → TCP listener (NIO selector + thread pool) → in-memory store + write-ahead log → periodic snapshot compaction → replication stream → follower nodes (3-node Docker Compose cluster), with resync logic after a network partition or node restart",
-    tech: ["Java", "Java NIO", "Docker Compose"],
-    challenge:
-      "Crash-safe durability (WAL + snapshotting) combined with follower resynchronization after a partition, without losing any committed write.",
-    impact:
-      "Benchmarked throughput, P95 latency, and lock contention under concurrency; validated replication, failover, and recovery end-to-end on a 3-node cluster.",
-  },
-  {
-    id: "rag-document-chatbot",
-    name: "RAG-Powered Document Chatbot",
-    tagline: "Fully local, privacy-preserving document Q&A with cited sources",
-    problem:
-      "Answering questions over your own PDFs usually means sending private document content to a third-party API. That's not always acceptable for sensitive documents.",
-    solution:
-      "A privacy-preserving document chatbot that runs the LLM locally via Ollama, so no document content ever leaves the machine, with source citations on every answer.",
-    architecture:
-      "PDF upload → PyMuPDF text extraction → chunking + embeddings (sentence-transformers) → FAISS vector index → Streamlit chat UI → local LLM via Ollama (Mistral / Llama 3) → answer with cited source passages and similarity scores",
-    tech: ["Python", "PyMuPDF", "sentence-transformers", "FAISS", "Streamlit", "Ollama", "Docker"],
-    challenge:
-      "Keeping the whole retrieval + generation loop fully local (no external API calls) while still surfacing transparent, cited answers.",
-    impact: "Fully local RAG pipeline with cited, similarity-scored answers; MIT licensed and open source.",
-    githubUrl: "https://github.com/LOHITHK22/RAG-Powered-Document-Chatbot",
-  },
-  {
-    id: "rust-polars-pipeline",
-    name: "High-Throughput Data Pipeline",
-    tagline: "Zero-copy Rust ingestion engine processing 1M+ records/hour, instrumented end-to-end with Prometheus",
-    problem:
-      "Needed a fast, memory-safe way to ingest and process high-volume customer data without the overhead of a garbage-collected runtime, with real visibility into exactly where a pipeline saturates under load.",
-    solution:
-      "Learned Rust from scratch specifically for the zero-copy memory control a garbage-collected language couldn't offer, then built a modular ingestion engine (Polars for vectorized analysis) with async PostgreSQL writes and Prometheus instrumentation on every stage.",
-    architecture:
-      "Data source → Rust ingestion engine (Polars, vectorized, zero-copy) → async PostgreSQL writes (SQLx) → Prometheus (query latency, retry rates, buffer utilization) → Tableau dashboards",
-    tech: ["Rust", "Polars", "PostgreSQL", "SQLx", "Prometheus", "Tableau"],
-    challenge:
-      "Learning a new systems language specifically to get compile-time memory safety without garbage collection, then instrumenting every stage closely enough to catch failure modes before they became incidents.",
-    impact:
-      "1M+ records/hour at under 1% failure rate; caught and resolved 2 connection-pool saturation events under load before they breached write SLAs.",
-    githubUrl: "https://github.com/LOHITHK22/rust_data_pipeline",
   },
 ];
 
@@ -146,30 +97,36 @@ export type SecondaryProject = {
 
 export const secondaryProjects: SecondaryProject[] = [
   {
+    id: "vendorops-ai",
+    name: "vendorops-ai",
+    description: "AI-powered data pipeline for vendor document extraction, validation, storage, and reporting.",
+    stack: "Python, FastAPI",
+    whyItMatters: "Shows LLM extraction paired with validation rules before anything is stored or reported.",
+    githubUrl: "https://github.com/LOHITHK22/vendorops-ai",
+  },
+  {
+    id: "rag-document-chatbot",
+    name: "RAG-Powered-Document-Chatbot",
+    description:
+      "Fully local document Q&A: PDF text extraction, embeddings in FAISS, and a local LLM via Ollama, with cited source passages.",
+    stack: "Python",
+    whyItMatters: "Shows retrieval end-to-end with no document content leaving the machine.",
+    githubUrl: "https://github.com/LOHITHK22/RAG-Powered-Document-Chatbot",
+  },
+  {
     id: "meeting-intelligence-agent",
     name: "meeting-intelligence-agent",
     description:
-      "In-progress AI agent for meetings, split into service-oriented modules (transcription, extraction, agent orchestration, memory).",
+      "In-progress AI agent for meetings, split into modules for transcription, extraction, agent orchestration, and memory.",
     stack: "Python",
-    whyItMatters:
-      "Shows current hands-on work with agent architecture and service decomposition, actively updated.",
+    whyItMatters: "Shows current hands-on work with agent architecture.",
     githubUrl: "https://github.com/LOHITHK22/meeting-intelligence-agent",
-  },
-  {
-    id: "linkedin-post-generator",
-    name: "Linkedin-post-generator",
-    description:
-      "LangChain + Groq-hosted LLaMA app that generates LinkedIn posts (English/Telugu) from topic tags using few-shot prompting, served via Streamlit.",
-    stack: "Python",
-    whyItMatters: "Shows practical LLM prompting/product work end-to-end, shipped and usable.",
-    githubUrl: "https://github.com/LOHITHK22/Linkedin-post-generator",
   },
 ];
 
 export const viewAllReposUrl = "https://github.com/LOHITHK22?tab=repositories";
 
-// Top 3 projects for Recruiter Mode / Career Fair Mode condensed views —
-// kept in sync with the 3 projects on the actual career-fair resume handout.
-export const topProjectIds = ["ai-code-review-agent", "vendorops-ai", "rust-polars-pipeline"];
+// Top 3 projects for Recruiter Mode / Career Fair Mode condensed views.
+export const topProjectIds = ["pipelinemedic-ai", "rag-sentinel", "aws-streaming-platform"];
 
 export const topProjects = flagshipProjects.filter((p) => topProjectIds.includes(p.id));

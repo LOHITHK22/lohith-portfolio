@@ -7,71 +7,48 @@ export type SkillGroup = {
   skills: string[];
 };
 
-// Grouped by engineering capability, not generic category nouns. No
-// percentage bars — rendered as chips.
+// Grouped by capability, mirroring the resume's skill categories. No
+// percentage bars, rendered as chips.
 export const skillGroups: SkillGroup[] = [
   {
     id: "languages",
     verb: "Build",
-    label: "Languages",
-    skills: ["Python", "Java", "TypeScript", "JavaScript", "Rust", "C++", "SQL"],
-  },
-  {
-    id: "backend",
-    verb: "Architect",
-    label: "Backend & APIs",
-    skills: ["FastAPI", "Spring Boot", "Flask", "Node.js/Express", "REST APIs", "Async & event-driven microservices"],
-  },
-  {
-    id: "ai-genai",
-    verb: "Reason",
-    label: "AI / GenAI",
-    skills: [
-      "LangChain",
-      "LangGraph",
-      "OpenAI API",
-      "RAG pipelines",
-      "FAISS",
-      "MCP (Model Context Protocol)",
-      "RAGAS evaluation",
-      "Prompt engineering",
-      "Multi-agent orchestration",
-    ],
-  },
-  {
-    id: "cloud-devops",
-    verb: "Ship",
-    label: "Cloud & DevOps",
-    skills: [
-      "AWS (ECS, Lambda, SQS/SNS, EC2, RDS, S3, CloudWatch)",
-      "Azure (Service Bus, Functions, CosmosDB)",
-      "Docker",
-      "Kubernetes",
-      "Terraform",
-      "GitHub Actions",
-      "Jenkins",
-      "CI/CD",
-    ],
+    label: "Programming",
+    skills: ["Python", "SQL", "R", "FastAPI", "REST APIs", "Pydantic", "pytest"],
   },
   {
     id: "data-streaming",
     verb: "Flow",
-    label: "Data & Streaming",
-    skills: ["Kafka", "Flink", "Spark", "Airflow", "PostgreSQL", "DynamoDB", "Redis", "MySQL"],
+    label: "Data Engineering",
+    skills: ["PySpark", "Airflow", "Kafka", "Flink", "dbt", "Iceberg", "AWS (S3, EMR, Glue)", "Terraform"],
   },
   {
-    id: "frontend",
-    verb: "Interface",
-    label: "Frontend",
-    skills: ["React", "TypeScript"],
+    id: "databases",
+    verb: "Model",
+    label: "Databases",
+    skills: ["Snowflake", "Amazon Redshift", "PostgreSQL", "Dimensional modeling", "Data validation"],
   },
   {
-    id: "practices",
-    verb: "Verify",
-    label: "Practices",
-    skills: ["Agile/Scrum", "Code review", "Distributed tracing", "Observability", "Pytest", "Postman", "Jest"],
+    id: "ai-genai",
+    verb: "Reason",
+    label: "AI and ML",
+    skills: [
+      "LLM APIs",
+      "Tool calling",
+      "MCP server (Python SDK)",
+      "LLM and RAG evaluation",
+      "XGBoost",
+      "SHAP",
+      "A/B testing",
+    ],
+  },
+  {
+    id: "visualization",
+    verb: "Explain",
+    label: "Visualization and Tools",
+    skills: ["Tableau", "Power BI", "Excel", "Git", "GitHub", "Docker"],
   },
 ];
 
 // Compact 8-skill chip list for Recruiter Mode / Career Fair Mode.
-export const topSkills = ["Python", "Java", "AWS", "FastAPI", "LangChain/LangGraph", "Kafka", "PostgreSQL", "Docker/Kubernetes"];
+export const topSkills = ["Python", "SQL", "Snowflake", "PySpark", "Airflow", "AWS", "Tableau / Power BI", "LLM evaluation"];

@@ -69,10 +69,12 @@ export function ExperienceTimeline() {
                         <Briefcase className="h-3.5 w-3.5" />
                         {role.company}
                       </span>
-                      <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {role.location}
-                      </span>
+                      {role.location && (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {role.location}
+                        </span>
+                      )}
                     </p>
                     <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">{role.summary}</p>
                   </div>

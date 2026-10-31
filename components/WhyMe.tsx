@@ -19,7 +19,7 @@ export function WhyMe() {
         index={1}
         eyebrow="Why me"
         title="Evidence, not adjectives."
-        description="Five things I actually shipped, with the numbers that prove it."
+        description="Six things I actually shipped, with the numbers that prove it."
       />
 
       <motion.div
