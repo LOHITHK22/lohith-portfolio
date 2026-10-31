@@ -1,4 +1,65 @@
 {
-  "updatedAt": null,
-  "items": []
+  "updatedAt": "2026-10-31T07:24:14.216Z",
+  "items": [
+    {
+      "id": "https://arxiv.org/abs/2610.39781",
+      "title": "Finding Is Not Returning, Returning Is Not Reconstructing: A Multi-Dimensional Evaluation of Agent Social Re-entry",
+      "url": "https://arxiv.org/abs/2610.39781v1",
+      "source": "arXiv · LLM agent evaluation",
+      "category": "agents",
+      "kind": "paper",
+      "published": "2026-10-29T10:31:18.000Z",
+      "summary": "As Large Language Model (LLM) agents increasingly participate in persistent social environments, understanding their long-term social interaction capabilities becomes increasingly important. While existing research has advanced long-term memory and conversational context…",
+      "addedAt": "2026-10-31T07:24:14.216Z",
+      "addedBy": "SCOUT (proposed) · approved by merging the pull request"
+    },
+    {
+      "id": "https://arxiv.org/abs/2610.40454",
+      "title": "Glance: The Generator Is Its Own Reranker",
+      "url": "https://arxiv.org/abs/2610.40454v1",
+      "source": "arXiv · retrieval-augmented generation",
+      "category": "rag",
+      "kind": "paper",
+      "published": "2026-10-29T17:01:22.000Z",
+      "summary": "Retrieval-augmented generation commonly serves separate models for reranking and answering, duplicating model residency and passage processing. We introduce Glance, which equips the generator with a lightweight decision adapter and pointer head to score candidate passages from…",
+      "addedAt": "2026-10-31T07:24:14.216Z",
+      "addedBy": "SCOUT (proposed) · approved by merging the pull request"
+    },
+    {
+      "id": "https://huggingface.co/blog/allenai/novelty-bench",
+      "title": "Can we trust LLMs to judge whether a research idea is novel?",
+      "url": "https://huggingface.co/blog/allenai/novelty-bench",
+      "source": "Hugging Face blog",
+      "category": "llms",
+      "kind": "article",
+      "published": "2026-10-27T16:12:42.000Z",
+      "summary": "",
+      "addedAt": "2026-10-31T07:24:14.216Z",
+      "addedBy": "SCOUT (proposed) · approved by merging the pull request"
+    },
+    {
+      "id": "https://github.com/duckdb/duckdb/releases/tag/v2.0.0",
+      "title": "DuckDB v2.0.0 \"Cyanoptera\"",
+      "url": "https://github.com/duckdb/duckdb/releases/tag/v2.0.0",
+      "source": "DuckDB releases",
+      "category": "data-engineering",
+      "kind": "release",
+      "published": "2026-10-21T13:11:38.000Z",
+      "summary": "This release of DuckDB is named \"Cyanoptera\" after Spatula Cyanoptera, a species of duck found in western North and South America. Please also refer to the announcement blog post: https://duckdb.org/2026/10/21/announcing-duckdb-200.html What's Changed Make Identifier a class…",
+      "addedAt": "2026-10-31T07:24:14.216Z",
+      "addedBy": "SCOUT (proposed) · approved by merging the pull request"
+    },
+    {
+      "id": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.3.0",
+      "title": "MCP Python SDK v2.3.0",
+      "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.3.0",
+      "source": "MCP Python SDK releases",
+      "category": "mcp",
+      "kind": "release",
+      "published": "2026-10-02T22:02:27.000Z",
+      "summary": "pip install -U mcp . Docs: https://py.sdk.modelcontextprotocol.io/ Mostly fixes, plus three new options. A few things behave differently, so skim these first: Behaviour changes httpx2&gt;=2.10.0 is now required ( #3600 ) It was &gt;=2.5.0 . The new max_sse_event_size option…",
+      "addedAt": "2026-10-31T07:24:14.216Z",
+      "addedBy": "SCOUT (proposed) · approved by merging the pull request"
+    }
+  ]
 }
