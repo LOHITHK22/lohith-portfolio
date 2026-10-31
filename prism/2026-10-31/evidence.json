@@ -1,0 +1,904 @@
+{
+  "screens": [
+    {
+      "id": "home-desktop",
+      "path": "/",
+      "width": 1440,
+      "height": 900,
+      "reference": "agents/prism/reference/design-a-1440x900.png",
+      "audit": {
+        "overflowX": 0,
+        "smallTargets": [
+          {
+            "label": "Lohith Kovuri, back to top",
+            "w": 195,
+            "h": 28
+          },
+          {
+            "label": "Projects",
+            "w": 65,
+            "h": 17
+          },
+          {
+            "label": "AI Lab",
+            "w": 49,
+            "h": 17
+          },
+          {
+            "label": "Experience",
+            "w": 81,
+            "h": 17
+          },
+          {
+            "label": "Contact",
+            "w": 57,
+            "h": 17
+          },
+          {
+            "label": "RESUME",
+            "w": 100,
+            "h": 35
+          },
+          {
+            "label": "MEET AI TEAM",
+            "w": 124,
+            "h": 33
+          },
+          {
+            "label": "Data Analyst @ Uline",
+            "w": 167,
+            "h": 17
+          },
+          {
+            "label": "GitHub",
+            "w": 70,
+            "h": 17
+          },
+          {
+            "label": "LinkedIn",
+            "w": 87,
+            "h": 17
+          },
+          {
+            "label": "Resume",
+            "w": 70,
+            "h": 17
+          },
+          {
+            "label": "detectors/kafka_lag.py",
+            "w": 161,
+            "h": 17
+          },
+          {
+            "label": "Explore the MCP architecture",
+            "w": 252,
+            "h": 36
+          }
+        ],
+        "smallTargetCount": 13,
+        "smallText": [
+          {
+            "text": "AI & DATA ENGINEERING",
+            "px": 9
+          },
+          {
+            "text": "45 SEC",
+            "px": 10
+          },
+          {
+            "text": "As",
+            "px": 10
+          },
+          {
+            "text": "No",
+            "px": 10
+          },
+          {
+            "text": "Fo",
+            "px": 10
+          },
+          {
+            "text": "At",
+            "px": 10
+          },
+          {
+            "text": "Pu",
+            "px": 10
+          },
+          {
+            "text": "Se",
+            "px": 10
+          },
+          {
+            "text": "Ec",
+            "px": 10
+          },
+          {
+            "text": "typed MCP tools",
+            "px": 10
+          },
+          {
+            "text": "read-only by default",
+            "px": 10
+          },
+          {
+            "text": "pytest tests",
+            "px": 10
+          },
+          {
+            "text": "operations never registered",
+            "px": 10
+          },
+          {
+            "text": "Recorded Architecture Walkthrough · Simu",
+            "px": 10
+          },
+          {
+            "text": "KafkaLagDetector",
+            "px": 10.5
+          },
+          {
+            "text": "context_collector",
+            "px": 10.5
+          },
+          {
+            "text": "LLM provider (structured output)",
+            "px": 10.5
+          },
+          {
+            "text": "Policy engine (autonomy_policy.yaml)",
+            "px": 10.5
+          },
+          {
+            "text": "Human operator",
+            "px": 10.5
+          },
+          {
+            "text": "MCP server · PolicyGateway",
+            "px": 10.5
+          },
+          {
+            "text": "validate_pipeline_health",
+            "px": 10.5
+          },
+          {
+            "text": "Sample payloads follow the repository's ",
+            "px": 10.5
+          },
+          {
+            "text": "stack.yaml",
+            "px": 10
+          },
+          {
+            "text": "safety boundary",
+            "px": 10
+          }
+        ],
+        "smallTextCount": 24,
+        "upscaled": []
+      }
+    },
+    {
+      "id": "home-mobile",
+      "path": "/",
+      "width": 390,
+      "height": 844,
+      "audit": {
+        "overflowX": 0,
+        "smallTargets": [
+          {
+            "label": "Lohith Kovuri, back to top",
+            "w": 152,
+            "h": 28
+          },
+          {
+            "label": "AI TEAM",
+            "w": 77,
+            "h": 31
+          },
+          {
+            "label": "Data Analyst @ Uline",
+            "w": 167,
+            "h": 17
+          },
+          {
+            "label": "GitHub",
+            "w": 70,
+            "h": 17
+          },
+          {
+            "label": "LinkedIn",
+            "w": 87,
+            "h": 17
+          },
+          {
+            "label": "Resume",
+            "w": 70,
+            "h": 17
+          },
+          {
+            "label": "detectors/kafka_lag.py",
+            "w": 161,
+            "h": 17
+          }
+        ],
+        "smallTargetCount": 7,
+        "smallText": [
+          {
+            "text": "AI TEAM",
+            "px": 10
+          },
+          {
+            "text": "45 SEC",
+            "px": 10
+          },
+          {
+            "text": "As",
+            "px": 9
+          },
+          {
+            "text": "No",
+            "px": 9
+          },
+          {
+            "text": "Fo",
+            "px": 9
+          },
+          {
+            "text": "At",
+            "px": 9
+          },
+          {
+            "text": "Pu",
+            "px": 9
+          },
+          {
+            "text": "Se",
+            "px": 9
+          },
+          {
+            "text": "Ec",
+            "px": 9
+          },
+          {
+            "text": "AI Team · 7 agents",
+            "px": 10
+          },
+          {
+            "text": "Detect",
+            "px": 10
+          },
+          {
+            "text": "→",
+            "px": 10
+          },
+          {
+            "text": "Diagnose",
+            "px": 10
+          },
+          {
+            "text": "→",
+            "px": 10
+          },
+          {
+            "text": "Policy",
+            "px": 10
+          },
+          {
+            "text": "→",
+            "px": 10
+          },
+          {
+            "text": "MCP · 17",
+            "px": 10
+          },
+          {
+            "text": "→",
+            "px": 10
+          },
+          {
+            "text": "Validate",
+            "px": 10
+          },
+          {
+            "text": "typed MCP tools",
+            "px": 10
+          },
+          {
+            "text": "read-only by default",
+            "px": 10
+          },
+          {
+            "text": "pytest tests",
+            "px": 10
+          },
+          {
+            "text": "operations never registered",
+            "px": 10
+          },
+          {
+            "text": "Recorded Architecture Walkthrough · Simu",
+            "px": 10
+          }
+        ],
+        "smallTextCount": 24,
+        "upscaled": []
+      }
+    },
+    {
+      "id": "event-desktop",
+      "path": "/event",
+      "width": 1440,
+      "height": 900,
+      "audit": {
+        "overflowX": 0,
+        "smallTargets": [
+          {
+            "label": "Lohith.",
+            "w": 65,
+            "h": 28
+          },
+          {
+            "label": "Projects",
+            "w": 79,
+            "h": 36
+          },
+          {
+            "label": "Architecture",
+            "w": 107,
+            "h": 36
+          },
+          {
+            "label": "Connect",
+            "w": 81,
+            "h": 36
+          },
+          {
+            "label": "View Resume",
+            "w": 150,
+            "h": 38
+          },
+          {
+            "label": "GitHub",
+            "w": 105,
+            "h": 38
+          },
+          {
+            "label": "LinkedIn",
+            "w": 115,
+            "h": 38
+          },
+          {
+            "label": "Contact",
+            "w": 112,
+            "h": 38
+          },
+          {
+            "label": "Save contact",
+            "w": 146,
+            "h": 38
+          },
+          {
+            "label": "Case study",
+            "w": 76,
+            "h": 20
+          },
+          {
+            "label": "Source",
+            "w": 47,
+            "h": 20
+          },
+          {
+            "label": "Case study",
+            "w": 76,
+            "h": 20
+          },
+          {
+            "label": "Case study",
+            "w": 76,
+            "h": 20
+          },
+          {
+            "label": "agents/tool_transport.py",
+            "w": 191,
+            "h": 16
+          },
+          {
+            "label": "Default",
+            "w": 74,
+            "h": 28
+          },
+          {
+            "label": "MCP_ALLOW_STATE_CHANGING_TOOLS=true",
+            "w": 276,
+            "h": 28
+          },
+          {
+            "label": "View the repository",
+            "w": 110,
+            "h": 15
+          },
+          {
+            "label": "SVG",
+            "w": 41,
+            "h": 16
+          },
+          {
+            "label": "Print PNG (2048 px)",
+            "w": 130,
+            "h": 16
+          },
+          {
+            "label": "View Resume",
+            "w": 150,
+            "h": 38
+          },
+          {
+            "label": "GitHub",
+            "w": 105,
+            "h": 38
+          },
+          {
+            "label": "LinkedIn",
+            "w": 115,
+            "h": 38
+          },
+          {
+            "label": "Contact",
+            "w": 112,
+            "h": 38
+          },
+          {
+            "label": "Save contact",
+            "w": 146,
+            "h": 38
+          },
+          {
+            "label": "Prepare for Offline Demo",
+            "w": 226,
+            "h": 38
+          },
+          {
+            "label": "Kiosk mode",
+            "w": 67,
+            "h": 15
+          },
+          {
+            "label": "No-JavaScript fallback",
+            "w": 895,
+            "h": 35
+          }
+        ],
+        "smallTargetCount": 27,
+        "smallText": [
+          {
+            "text": "01",
+            "px": 10
+          },
+          {
+            "text": "02",
+            "px": 10
+          },
+          {
+            "text": "03",
+            "px": 10
+          },
+          {
+            "text": "04",
+            "px": 10
+          },
+          {
+            "text": "05",
+            "px": 10
+          },
+          {
+            "text": "06",
+            "px": 10
+          },
+          {
+            "text": "07",
+            "px": 10
+          },
+          {
+            "text": "08",
+            "px": 10
+          },
+          {
+            "text": "09",
+            "px": 10
+          },
+          {
+            "text": "get_kafka_consumer_lag",
+            "px": 10
+          },
+          {
+            "text": "get_topic_metadata",
+            "px": 10
+          },
+          {
+            "text": "get_recent_pipeline_errors",
+            "px": 10
+          },
+          {
+            "text": "get_flink_job_status",
+            "px": 10
+          },
+          {
+            "text": "get_airflow_dag_status",
+            "px": 10
+          },
+          {
+            "text": "get_airflow_task_logs",
+            "px": 10
+          },
+          {
+            "text": "get_database_schema",
+            "px": 10
+          },
+          {
+            "text": "get_schema_versions",
+            "px": 10
+          },
+          {
+            "text": "compare_schema_versions",
+            "px": 10
+          },
+          {
+            "text": "validate_pipeline_health",
+            "px": 10
+          },
+          {
+            "text": "quarantine_message",
+            "px": 10
+          },
+          {
+            "text": "request_human_approval",
+            "px": 10
+          },
+          {
+            "text": "rerun_airflow_task",
+            "px": 10
+          },
+          {
+            "text": "restart_flink_job",
+            "px": 10
+          },
+          {
+            "text": "change_flink_parallelism",
+            "px": 10
+          },
+          {
+            "text": "apply_safe_config_patch",
+            "px": 10
+          },
+          {
+            "text": "rollback_change",
+            "px": 10
+          },
+          {
+            "text": "drop_database_table",
+            "px": 10
+          },
+          {
+            "text": "truncate_topic",
+            "px": 10
+          },
+          {
+            "text": "delete_dag",
+            "px": 10
+          },
+          {
+            "text": "run_arbitrary_sql",
+            "px": 10
+          },
+          {
+            "text": "run_shell_command",
+            "px": 10
+          }
+        ],
+        "smallTextCount": 31,
+        "upscaled": []
+      }
+    }
+  ],
+  "drift": [
+    {
+      "screen": "home-desktop",
+      "overall": 0.044,
+      "drifted": []
+    }
+  ],
+  "code": {
+    "fileCount": 75,
+    "large": [
+      {
+        "file": "components/AILab.tsx",
+        "lines": 893
+      },
+      {
+        "file": "components/AgentTeamExperience.tsx",
+        "lines": 724
+      }
+    ],
+    "unused": [
+      "components/AnimatedCounter.tsx",
+      "components/CursorGlow.tsx",
+      "components/NeuralField.tsx",
+      "components/TerminalLazy.tsx",
+      "components/WhyMe.tsx"
+    ],
+    "todos": []
+  },
+  "sentinel": {
+    "failures": []
+  },
+  "pulse": {
+    "measurements": [
+      {
+        "page": "/",
+        "samples": 3,
+        "ttfb": 89,
+        "fcp": 508,
+        "lcp": 508,
+        "cls": 0,
+        "load": 420,
+        "transferKB": 579
+      },
+      {
+        "page": "/event",
+        "samples": 3,
+        "ttfb": 90,
+        "fcp": 388,
+        "lcp": 388,
+        "cls": 0,
+        "load": 384,
+        "transferKB": 440
+      }
+    ],
+    "regressions": []
+  },
+  "sync": {
+    "repos": [
+      {
+        "repo": "LOHITHK22/PipelineMedic-AI",
+        "notable": [
+          {
+            "sha": "12ab557",
+            "message": "Add MCP server with server-side policy gateway and opt-in agent MCP transport",
+            "date": "2026-10-28T05:00:32Z",
+            "url": "https://github.com/LOHITHK22/PipelineMedic-AI/commit/12ab557fe60af9774b55b989df3c2c07efb10d2a"
+          },
+          {
+            "sha": "b043d35",
+            "message": "Fix broken mermaid diagram and improve README structure",
+            "date": "2026-09-11T03:18:19Z",
+            "url": "https://github.com/LOHITHK22/PipelineMedic-AI/commit/b043d353447054a118bb255482ff2f53a90444cd"
+          },
+          {
+            "sha": "50a116d",
+            "message": "Add notification service, approve-link tokens, and incident Q&A",
+            "date": "2026-09-11T03:13:39Z",
+            "url": "https://github.com/LOHITHK22/PipelineMedic-AI/commit/50a116d6c57a1c5031a40f28947b8adbc27c80f6"
+          },
+          {
+            "sha": "4b2709b",
+            "message": "Fix dedup_key unique-constraint bug preventing recurring incidents",
+            "date": "2026-09-11T02:46:06Z",
+            "url": "https://github.com/LOHITHK22/PipelineMedic-AI/commit/4b2709bbfbedbe5d59e6872c6c21a6fe42fcab7c"
+          },
+          {
+            "sha": "ef53803",
+            "message": "Add event correlation, canary remediation, and LLM cost protection",
+            "date": "2026-09-11T02:09:22Z",
+            "url": "https://github.com/LOHITHK22/PipelineMedic-AI/commit/ef5380341b5d03e1f75f8fce59b82d9ba421d2f3"
+          },
+          {
+            "sha": "b57151d",
+            "message": "Add incident memory retrieval and offline agent evaluation harness",
+            "date": "2026-09-11T00:23:08Z",
+            "url": "https://github.com/LOHITHK22/PipelineMedic-AI/commit/b57151dbfdad69d967a23727392e78ca35296156"
+          },
+          {
+            "sha": "3d6817a",
+            "message": "Add React + TypeScript dashboard for PipelineMedic AI",
+            "date": "2026-09-10T03:35:58Z",
+            "url": "https://github.com/LOHITHK22/PipelineMedic-AI/commit/3d6817ad7bffdf3a9594cd7031ba8b3fb3b5920e"
+          },
+          {
+            "sha": "e89636e",
+            "message": "Implement PipelineMedic AI backend end-to-end",
+            "date": "2026-09-10T02:00:22Z",
+            "url": "https://github.com/LOHITHK22/PipelineMedic-AI/commit/e89636e804509e1c8fbfaa1a4d5a0404d824475a"
+          }
+        ]
+      },
+      {
+        "repo": "LOHITHK22/vendorops-ai",
+        "notable": [
+          {
+            "sha": "f987e68",
+            "message": "Add secure storage abstraction",
+            "date": "2026-04-29T03:46:06Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/f987e680420d5ae667505487ef5c8e5cdef399d0"
+          },
+          {
+            "sha": "5e34a88",
+            "message": "Add Alembic migrations and PostgreSQL compose",
+            "date": "2026-04-27T19:53:19Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/5e34a88bf017e1c6b3ddfca181500578c8df076e"
+          },
+          {
+            "sha": "00a88ee",
+            "message": "Add tenant-scoped pipeline foundation",
+            "date": "2026-04-26T01:59:29Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/00a88ee34c5c76432f75b2f7b848d125b7b43222"
+          },
+          {
+            "sha": "792827e",
+            "message": "Add dashboard credential login form",
+            "date": "2026-04-26T01:34:34Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/792827ec52eee2e71372b366677d6a3f5a519fc2"
+          },
+          {
+            "sha": "0acc421",
+            "message": "Add auth RBAC and workspace foundation",
+            "date": "2026-04-26T01:28:27Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/0acc4219293a0b02d4b058c2d231265e8b4c3af4"
+          },
+          {
+            "sha": "e0ecda0",
+            "message": "Add analyst dashboard and SaaS architecture foundation",
+            "date": "2026-04-26T01:12:36Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/e0ecda0d2ba3b09935a7f7ffe2a6e464e2349f5e"
+          },
+          {
+            "sha": "b3b419e",
+            "message": "Fix dashboard sidebar navigation",
+            "date": "2026-04-26T00:36:05Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/b3b419eaa8a984c6d236ceabd3ae9232588c0c13"
+          },
+          {
+            "sha": "764adba",
+            "message": "Phase 9: add Docker deployment support",
+            "date": "2026-04-25T22:35:54Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/764adba1a03689d6b59ccd59ef64486fbc468480"
+          },
+          {
+            "sha": "ba48710",
+            "message": "Phase 8: add observability and error tracking",
+            "date": "2026-04-25T19:58:15Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/ba487106497b963c556372fe6b9b5c8386e16d77"
+          },
+          {
+            "sha": "22926b2",
+            "message": "Phase 7: add automated reporting",
+            "date": "2026-04-25T19:25:08Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/22926b2432eefd704f1a81484378f4e4a4ee2a30"
+          },
+          {
+            "sha": "f803db5",
+            "message": "Phase 6: add pipeline orchestration",
+            "date": "2026-04-25T19:12:15Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/f803db55a143a0df62cc1e31ba7cdca4f5488c7a"
+          },
+          {
+            "sha": "52a63eb",
+            "message": "Phase 5: add validation layer",
+            "date": "2026-04-25T19:03:57Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/52a63eb35897b30670bc26938d7546d8ffd4acc0"
+          },
+          {
+            "sha": "ca134f7",
+            "message": "Phase 4: add structured LLM extraction",
+            "date": "2026-04-25T18:52:29Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/ca134f79130be9d4eccd1539d485331c4096c614"
+          },
+          {
+            "sha": "30df1d8",
+            "message": "Add premium React dashboard UI",
+            "date": "2026-04-25T18:28:50Z",
+            "url": "https://github.com/LOHITHK22/vendorops-ai/commit/30df1d81bc8f9bcd2962d5ddcaf53683a26bb8f8"
+          }
+        ]
+      },
+      {
+        "repo": "LOHITHK22/meeting-intelligence-agent",
+        "notable": [
+          {
+            "sha": "036e65e",
+            "message": "feat: Phase 3 — structured extraction with self-healing Pydantic schemas",
+            "date": "2026-04-08T02:42:08Z",
+            "url": "https://github.com/LOHITHK22/meeting-intelligence-agent/commit/036e65e3f9e6bd8bd5c776a1ad9442912c2cd43e"
+          },
+          {
+            "sha": "551ec38",
+            "message": "feat: Phase 2 — LangChain agent + FAISS RAG memory",
+            "date": "2026-04-08T02:34:25Z",
+            "url": "https://github.com/LOHITHK22/meeting-intelligence-agent/commit/551ec38bec28e7dc15bcbbc4ede0d6671a4e3a89"
+          },
+          {
+            "sha": "78b0cbb",
+            "message": "feat: Phase 1 — FastAPI upload + Whisper transcription",
+            "date": "2026-04-07T23:59:32Z",
+            "url": "https://github.com/LOHITHK22/meeting-intelligence-agent/commit/78b0cbb3b1f8e2c8ce28865e645e28417f1afb16"
+          }
+        ]
+      },
+      {
+        "repo": "LOHITHK22/RAG-Powered-Document-Chatbot",
+        "notable": []
+      },
+      {
+        "repo": "LOHITHK22/lohith-portfolio",
+        "notable": [
+          {
+            "sha": "4c17dbd",
+            "message": "Add PRISM, the eighth maintenance agent: weekly improvement prompts for Claude Code",
+            "date": "2026-10-31T07:06:25Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/4c17dbdb74e86430f4363486dfcc291197ce0bf5"
+          },
+          {
+            "sha": "bbdec81",
+            "message": "Add scheduled portfolio maintenance agents and Agent Activity Center",
+            "date": "2026-10-31T06:19:38Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/bbdec81903cb81524062bf39e84691e4e3efef77"
+          },
+          {
+            "sha": "946b025",
+            "message": "Implement Design A cinematic homepage",
+            "date": "2026-10-31T05:41:37Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/946b0256620da5920e441c249cb226bbbe967945"
+          },
+          {
+            "sha": "4c66537",
+            "message": "Add 45-second AI event mode and cinematic homepage redesign",
+            "date": "2026-10-31T02:34:41Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/4c665371b2e00d25b7c36e88b8d675d69c2d345a"
+          },
+          {
+            "sha": "58e85b9",
+            "message": "Fix silent AI Pitch intro on mobile",
+            "date": "2026-08-23T05:07:46Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/58e85b9a6f1e8456e68ffb8f0e50d49ed9ae03a5"
+          },
+          {
+            "sha": "70ad8da",
+            "message": "Merge hero video into AI Pitch intro; add grounded Ask-about-me Q&A",
+            "date": "2026-08-21T12:43:43Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/70ad8da15d125a936cb9bcbce513ca542b78630e"
+          },
+          {
+            "sha": "020a9c6",
+            "message": "Add command palette, reframe skills as capabilities, hero video polish",
+            "date": "2026-08-21T01:16:26Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/020a9c63cf08ad1483c4a60536af7919e8ea2df7"
+          },
+          {
+            "sha": "064bdf7",
+            "message": "Add muted looping hero video panel (desktop only)",
+            "date": "2026-08-21T00:27:05Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/064bdf71c6f9fbb060e43d16a50e93266b721ec2"
+          },
+          {
+            "sha": "687f81b",
+            "message": "Add cinematic numbered chapter-header effect to Why Me and Skills",
+            "date": "2026-08-20T01:52:43Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/687f81b66cd6f6a8b85de2e7edaa8aa8fd82eb6d"
+          },
+          {
+            "sha": "4524d31",
+            "message": "Add desktop mouse interactions and motion polish",
+            "date": "2026-08-16T04:30:48Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/4524d31c0ae615907328237748e7f23de6171648"
+          },
+          {
+            "sha": "46cc05d",
+            "message": "Restyle hero to a cinematic starfield look, add AI Pitch guided tour",
+            "date": "2026-08-15T23:59:45Z",
+            "url": "https://github.com/LOHITHK22/lohith-portfolio/commit/46cc05de1a9e4f694a77ee4f4f526b3c899790e1"
+          }
+        ]
+      }
+    ]
+  }
+}

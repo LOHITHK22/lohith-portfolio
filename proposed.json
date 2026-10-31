@@ -1,0 +1,34 @@
+{
+  "items": [
+    {
+      "id": "https://arxiv.org/abs/2610.39781",
+      "title": "Finding Is Not Returning, Returning Is Not Reconstructing: A Multi-Dimensional Evaluation of Agent Social Re-entry",
+      "url": "https://arxiv.org/abs/2610.39781v1",
+      "proposedAt": "2026-10-31T07:24:14.216Z"
+    },
+    {
+      "id": "https://arxiv.org/abs/2610.40454",
+      "title": "Glance: The Generator Is Its Own Reranker",
+      "url": "https://arxiv.org/abs/2610.40454v1",
+      "proposedAt": "2026-10-31T07:24:14.216Z"
+    },
+    {
+      "id": "https://huggingface.co/blog/allenai/novelty-bench",
+      "title": "Can we trust LLMs to judge whether a research idea is novel?",
+      "url": "https://huggingface.co/blog/allenai/novelty-bench",
+      "proposedAt": "2026-10-31T07:24:14.216Z"
+    },
+    {
+      "id": "https://github.com/duckdb/duckdb/releases/tag/v2.0.0",
+      "title": "DuckDB v2.0.0 \"Cyanoptera\"",
+      "url": "https://github.com/duckdb/duckdb/releases/tag/v2.0.0",
+      "proposedAt": "2026-10-31T07:24:14.216Z"
+    },
+    {
+      "id": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.3.0",
+      "title": "MCP Python SDK v2.3.0",
+      "url": "https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.3.0",
+      "proposedAt": "2026-10-31T07:24:14.216Z"
+    }
+  ]
+}

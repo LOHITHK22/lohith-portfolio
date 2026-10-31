@@ -1,0 +1,68 @@
+{
+  "updatedAt": "2026-10-31T07:24:14.216Z",
+  "items": [
+    {
+      "id": "tap-targets-home-mobile",
+      "title": "Enlarge 7 small tap target(s) on / (mobile)",
+      "category": "ux",
+      "priority": 62,
+      "source": "rules",
+      "ownerAction": false,
+      "prompt": "prism/2026-10-31/tap-targets-home-mobile.md",
+      "issue": {
+        "number": 1,
+        "url": "https://github.com/LOHITHK22/lohith-portfolio/issues/1"
+      },
+      "proposedAt": "2026-10-31",
+      "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285"
+    },
+    {
+      "id": "small-text-event-desktop",
+      "title": "Raise 31 text element(s) below 11px on /event (1440px wide)",
+      "category": "ux",
+      "priority": 55,
+      "source": "rules",
+      "ownerAction": false,
+      "prompt": "prism/2026-10-31/small-text-event-desktop.md",
+      "issue": {
+        "number": 2,
+        "url": "https://github.com/LOHITHK22/lohith-portfolio/issues/2"
+      },
+      "proposedAt": "2026-10-31",
+      "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285"
+    },
+    {
+      "id": "small-text-home-desktop",
+      "title": "Raise 24 text element(s) below 11px on / (1440px wide)",
+      "category": "ux",
+      "priority": 53,
+      "source": "rules",
+      "ownerAction": false,
+      "prompt": "prism/2026-10-31/small-text-home-desktop.md",
+      "issue": {
+        "number": 3,
+        "url": "https://github.com/LOHITHK22/lohith-portfolio/issues/3"
+      },
+      "proposedAt": "2026-10-31",
+      "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285"
+    }
+  ],
+  "lastRun": {
+    "at": "2026-10-31T07:24:14.216Z",
+    "status": "success",
+    "summary": "3 screen(s) captured, 9 candidate(s) found, 3 new prompt(s) written. Generation: rule-based (no ANTHROPIC_API_KEY secret; rule-based prompts only).",
+    "llm": {
+      "model": null,
+      "costUsd": 0,
+      "skipped": "no ANTHROPIC_API_KEY secret; rule-based prompts only"
+    },
+    "dryRun": false,
+    "drift": [
+      {
+        "screen": "home-desktop",
+        "overall": 0.044,
+        "drifted": []
+      }
+    ]
+  }
+}
