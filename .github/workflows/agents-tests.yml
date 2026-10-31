@@ -1,0 +1,25 @@
+# Unit tests for the maintenance agents. Runs on PRs and pushes that touch them.
+name: Agent unit tests
+
+on:
+  pull_request:
+    paths: ["scripts/agents/**", "agents/**", ".github/workflows/portfolio-agents.yml"]
+  push:
+    branches: [main]
+    paths: ["scripts/agents/**", "agents/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node --test scripts/agents/tests/*.test.mjs

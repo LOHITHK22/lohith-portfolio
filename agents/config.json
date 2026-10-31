@@ -1,0 +1,108 @@
+{
+  "$comment": "Portfolio maintenance agents. Edited by the owner only; agents never write this file.",
+  "site": "https://lohithkovuri.store",
+  "repo": "LOHITHK22/lohith-portfolio",
+  "dataBranch": "agent-data",
+  "proposalBranchPrefix": "agent/",
+
+  "publishing": {
+    "mode": "review",
+    "$modes": "review = proposals go to a pull request only. auto-resources = additionally publish validated resource entries to the agent-data branch (never main).",
+    "autoPublish": {
+      "enabled": false,
+      "maxEntriesPerRun": 2,
+      "allowedCategories": ["llms", "agents", "mcp", "rag", "evaluation", "data-engineering"],
+      "minScore": 4
+    }
+  },
+
+  "limits": {
+    "requestTimeoutMs": 12000,
+    "maxResponseBytes": 2000000,
+    "maxRequestsPerRun": 120,
+    "maxRequestsPerHost": 40,
+    "maxProposalsPerRun": 5,
+    "maxProposalsPerSource": 2,
+    "freshnessDays": 30,
+    "historyLength": 60
+  },
+
+  "allowedHosts": [
+    "lohithkovuri.store",
+    "github.com",
+    "api.github.com",
+    "huggingface.co",
+    "openai.com",
+    "export.arxiv.org",
+    "arxiv.org",
+    "modelcontextprotocol.io"
+  ],
+
+  "scout": {
+    "sources": [
+      { "id": "mcp-spec", "name": "Model Context Protocol · specification releases", "url": "https://github.com/modelcontextprotocol/modelcontextprotocol/releases.atom", "kind": "release", "categories": ["mcp"] },
+      { "id": "mcp-python-sdk", "name": "MCP Python SDK releases", "url": "https://github.com/modelcontextprotocol/python-sdk/releases.atom", "kind": "release", "categories": ["mcp"] },
+      { "id": "mcp-typescript-sdk", "name": "MCP TypeScript SDK releases", "url": "https://github.com/modelcontextprotocol/typescript-sdk/releases.atom", "kind": "release", "categories": ["mcp"] },
+      { "id": "hf-blog", "name": "Hugging Face blog", "url": "https://huggingface.co/blog/feed.xml", "kind": "article", "categories": ["llms", "agents", "rag", "evaluation"] },
+      { "id": "openai-news", "name": "OpenAI news", "url": "https://openai.com/news/rss.xml", "kind": "article", "categories": ["llms", "agents", "evaluation"] },
+      { "id": "arxiv-rag", "name": "arXiv · retrieval-augmented generation", "url": "https://export.arxiv.org/api/query?search_query=abs:%22retrieval-augmented%20generation%22%20AND%20cat:cs.CL&sortBy=submittedDate&sortOrder=descending&max_results=15", "kind": "paper", "categories": ["rag"] },
+      { "id": "arxiv-agent-eval", "name": "arXiv · LLM agent evaluation", "url": "https://export.arxiv.org/api/query?search_query=abs:%22LLM%20agents%22%20AND%20abs:evaluation%20AND%20cat:cs.AI&sortBy=submittedDate&sortOrder=descending&max_results=15", "kind": "paper", "categories": ["agents", "evaluation"] },
+      { "id": "ragas", "name": "Ragas (RAG evaluation) releases", "url": "https://github.com/explodinggradients/ragas/releases.atom", "kind": "release", "categories": ["evaluation", "rag"] },
+      { "id": "langgraph", "name": "LangGraph releases", "url": "https://github.com/langchain-ai/langgraph/releases.atom", "kind": "release", "categories": ["agents"] },
+      { "id": "airflow", "name": "Apache Airflow releases", "url": "https://github.com/apache/airflow/releases.atom", "kind": "release", "categories": ["data-engineering"] },
+      { "id": "iceberg", "name": "Apache Iceberg releases", "url": "https://github.com/apache/iceberg/releases.atom", "kind": "release", "categories": ["data-engineering"] },
+      { "id": "duckdb", "name": "DuckDB releases", "url": "https://github.com/duckdb/duckdb/releases.atom", "kind": "release", "categories": ["data-engineering"] }
+    ],
+    "keywords": {
+      "llms": ["llm", "language model", "transformer", "fine-tun", "inference", "tokeniz", "reasoning"],
+      "agents": ["agent", "tool use", "tool calling", "function calling", "orchestrat", "planner", "multi-agent"],
+      "mcp": ["model context protocol", "mcp", "tool server"],
+      "rag": ["retrieval", "rag", "embedding", "vector", "rerank", "grounding"],
+      "evaluation": ["evaluat", "benchmark", "judge", "hallucination", "faithfulness", "eval"],
+      "data-engineering": ["pipeline", "streaming", "kafka", "airflow", "iceberg", "lakehouse", "duckdb", "spark", "warehouse"]
+    }
+  },
+
+  "sync": {
+    "repos": [
+      { "repo": "LOHITHK22/PipelineMedic-AI", "branch": "master" },
+      { "repo": "LOHITHK22/vendorops-ai", "branch": "main" },
+      { "repo": "LOHITHK22/meeting-intelligence-agent", "branch": "master" },
+      { "repo": "LOHITHK22/RAG-Powered-Document-Chatbot", "branch": "main" },
+      { "repo": "LOHITHK22/lohith-portfolio", "branch": "main" }
+    ],
+    "maxCommitsPerRepo": 20
+  },
+
+  "sentinel": {
+    "pages": [
+      { "path": "/", "expect": ["Lohith", "Launch AI Experience", "PipelineMedic"] },
+      { "path": "/event", "expect": ["Start 45-Second AI Experience"] },
+      { "path": "/recruiter", "expect": ["Lohith"] },
+      { "path": "/agents", "expect": ["Agent Activity Center"] },
+      { "path": "/resources", "expect": ["AI Resources"] },
+      { "path": "/projects/pipelinemedic-ai", "expect": ["PipelineMedic"] },
+      { "path": "/Lohith_Kovuri_Resume.pdf", "contentType": "application/pdf" },
+      { "path": "/event/emergency.html", "expect": ["Lohith"] },
+      { "path": "/sw.js", "contentType": "javascript" }
+    ],
+    "externalLinks": [
+      "https://github.com/LOHITHK22",
+      "https://github.com/LOHITHK22/PipelineMedic-AI"
+    ],
+    "recheckDelayMs": 20000,
+    "issueLabel": "sentinel"
+  },
+
+  "pulse": {
+    "pages": ["/", "/event"],
+    "samples": 3,
+    "regressionPercent": 25,
+    "regressionMinMs": 300
+  },
+
+  "forge": {
+    "recurringThreshold": 3,
+    "issueLabel": "forge"
+  }
+}

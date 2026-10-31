@@ -129,6 +129,8 @@ export function CommandPalette() {
         keywords: "audio voice agents tour",
         action: () => openAgentTeam(),
       },
+      { id: "agents", label: "Agent Activity Center", hint: "Real scheduled runs", icon: Users, keywords: "github actions maintenance monitoring", action: () => (window.location.href = "/agents") },
+      { id: "resources", label: "AI Resources", hint: "Curated reading list", icon: FlaskConical, keywords: "papers mcp rag links", action: () => (window.location.href = "/resources") },
       { id: "event", label: "Launch AI Experience", hint: "45 seconds", icon: Zap, keywords: "event demo", action: () => (window.location.href = "/event") },
     ],
     []

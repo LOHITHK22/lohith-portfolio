@@ -76,7 +76,12 @@ export function TeamSection() {
 
           <p className="mt-6 max-w-lg border-l-2 border-white/10 pl-4 text-xs leading-relaxed text-slate-400">
             These are scripted presentation characters with recorded OpenAI TTS voices, not autonomous agents. The site itself
-            was built with an AI coding assistant (Claude Code), with one independent review pass run as a separate subagent.
+            was built with an AI coding assistant (Claude Code). The real scheduled maintenance jobs (research, repo sync,
+            testing, performance) are reported on the{" "}
+            <Link href="/agents" className="text-teal hover:underline">
+              Agent Activity Center
+            </Link>
+            .
           </p>
         </div>
       </div>

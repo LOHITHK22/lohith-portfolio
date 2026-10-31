@@ -36,3 +36,6 @@ next-env.d.ts
 # Playwright
 /test-results/
 /playwright-report/
+
+# maintenance agents: local scratch checkout of the agent-data branch
+/.agent-data/

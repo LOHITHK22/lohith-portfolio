@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Github, Linkedin, Mail } from "lucide-react";
 import { profile } from "@/data/profile";
 
@@ -10,6 +11,11 @@ export function Footer() {
         <p>
           © {year} {profile.name}. Built with Next.js.
         </p>
+        <nav aria-label="More" className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-[0.14em]">
+          <Link href="/agents" className="hover:text-slate-200">Agent activity</Link>
+          <Link href="/resources" className="hover:text-slate-200">AI resources</Link>
+          <Link href="/recruiter" className="hover:text-slate-200">Recruiter mode</Link>
+        </nav>
         <div className="flex items-center gap-4">
           <a
             href={`mailto:${profile.email}`}
