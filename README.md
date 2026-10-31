@@ -39,7 +39,7 @@ scripts/
 
 public/
   Lohith_Kovuri_Resume.pdf
-  images/                Portrait (lohith-portrait-1200.webp; next/image builds responsive sizes)
+  images/                Portrait (lohith-portrait-2026.webp; next/image builds responsive sizes)
   audio/team/            Pre-generated "Meet My AI Team" narration clips (see below)
 ```
 

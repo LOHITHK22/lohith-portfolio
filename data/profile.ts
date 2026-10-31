@@ -29,7 +29,7 @@ export const profile = {
   heroSupporting:
     "Exploring the engineering behind autonomous AI agents, LLM applications, MCP integrations, reliable data platforms, and intelligent automation.",
   portrait: {
-    src: "/images/lohith-portrait-1200.webp",
+    src: "/images/lohith-portrait-2026.webp",
     alt: "Portrait of Lohith Kovuri",
   },
 
