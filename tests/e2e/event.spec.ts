@@ -164,7 +164,8 @@ test.describe("presentation", () => {
     expect(audio.clips).toHaveLength(7);
     expect(new Set(audio.clips).size).toBe(7);
     expect(audio.ended).toBeGreaterThanOrEqual(7);
-    expect(lateRequests.filter((u) => !/_vercel|favicon/.test(u))).toEqual([]);
+    // The browser may fetch the tab icon (favicon / Next.js app/icon.svg) at any time; that is not app traffic.
+    expect(lateRequests.filter((u) => !/_vercel|favicon|\/icon\.svg/.test(u))).toEqual([]);
     await expect(page.getByText(/Audio unavailable/)).toHaveCount(0);
     expect(errors).toEqual([]);
   });
