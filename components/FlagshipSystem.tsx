@@ -138,9 +138,12 @@ export function FlagshipSystem() {
                   type="button"
                   onClick={() => setAuto((v) => !v)}
                   aria-label={auto ? "Pause walkthrough" : "Play walkthrough"}
-                  className="flex h-7 w-7 items-center justify-center rounded border border-white/10 text-slate-300 hover:text-white"
+                  className="-m-1.5 flex h-10 w-10 items-center justify-center rounded text-slate-300 hover:text-white"
                 >
-                  {auto ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                  {/* 28px visual box inside a 40px tap area; -m-1.5 keeps the header height unchanged. */}
+                  <span className="flex h-7 w-7 items-center justify-center rounded border border-white/10">
+                    {auto ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                  </span>
                 </button>
               )}
             </div>
