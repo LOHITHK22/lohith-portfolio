@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-10-31T07:24:14.216Z",
+  "updatedAt": "2026-10-31T07:35:00.972Z",
   "items": [
     {
-      "id": "tap-targets-home-mobile",
       "title": "Enlarge 7 small tap target(s) on / (mobile)",
+      "id": "tap-targets-home-mobile",
       "category": "ux",
       "priority": 62,
       "source": "rules",
@@ -14,11 +14,13 @@
         "url": "https://github.com/LOHITHK22/lohith-portfolio/issues/1"
       },
       "proposedAt": "2026-10-31",
-      "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285"
+      "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285",
+      "state": "awaiting-approval",
+      "pr": null
     },
     {
-      "id": "small-text-event-desktop",
       "title": "Raise 31 text element(s) below 11px on /event (1440px wide)",
+      "id": "small-text-event-desktop",
       "category": "ux",
       "priority": 55,
       "source": "rules",
@@ -29,11 +31,13 @@
         "url": "https://github.com/LOHITHK22/lohith-portfolio/issues/2"
       },
       "proposedAt": "2026-10-31",
-      "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285"
+      "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285",
+      "state": "awaiting-approval",
+      "pr": null
     },
     {
-      "id": "small-text-home-desktop",
       "title": "Raise 24 text element(s) below 11px on / (1440px wide)",
+      "id": "small-text-home-desktop",
       "category": "ux",
       "priority": 53,
       "source": "rules",
@@ -44,7 +48,9 @@
         "url": "https://github.com/LOHITHK22/lohith-portfolio/issues/3"
       },
       "proposedAt": "2026-10-31",
-      "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285"
+      "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285",
+      "state": "awaiting-approval",
+      "pr": null
     }
   ],
   "lastRun": {
