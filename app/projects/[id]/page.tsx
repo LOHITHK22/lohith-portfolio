@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, Github, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, Github, AlertTriangle, CheckCircle2, FileText } from "lucide-react";
 import { flagshipProjects } from "@/data/projects";
 import { caseStudies } from "@/data/caseStudies";
 import { profile } from "@/data/profile";
 import { ArchitectureExplorer } from "@/components/ArchitectureExplorer";
 import { Footer } from "@/components/Footer";
+
+// Data-platform case studies link to the hands-on SQL challenge.
+const PLAYGROUND_DATA_PROJECTS = ["aws-streaming-platform", "retailbench"];
 
 export function generateStaticParams() {
   return flagshipProjects.filter((p) => caseStudies[p.id]).map((p) => ({ id: p.id }));
@@ -164,6 +167,21 @@ export default function CaseStudyPage({ params }: { params: { id: string } }) {
             </ul>
           </div>
         </section>
+
+        {PLAYGROUND_DATA_PROJECTS.includes(project.id) && (
+          <section className="section-shell pb-12">
+            <Link
+              href="/playground/sql-detective"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal/25 bg-teal/[0.04] p-5 transition-colors hover:border-teal/50"
+            >
+              <span>
+                <span className="block font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-teal">Engineering Playground</span>
+                <span className="mt-1 block font-semibold text-white">Try the data-quality checks yourself: solve a SQL mystery in your browser</span>
+              </span>
+              <ArrowRight className="h-5 w-5 text-teal" aria-hidden="true" />
+            </Link>
+          </section>
+        )}
 
         <section className="section-shell pb-20">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-400">More case studies</h2>
