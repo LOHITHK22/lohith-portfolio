@@ -98,3 +98,21 @@ jobs:
           path: prism-compare/
           if-no-files-found: ignore
           retention-days: 30
+      # Steps above continue on error so every result is recorded and uploaded;
+      # this step then fails the job, so a red check is never reported as green.
+      - name: Fail if any check failed
+        if: always()
+        env:
+          LINT: ${{ steps.lint.outcome }}
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          UNIT: ${{ steps.agent_unit_tests.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          E2E: ${{ steps.e2e.outcome || 'skipped' }}
+          COMPARE: ${{ inputs.prism_compare && steps.compare.outcome || 'success' }}
+        run: |
+          failed=""
+          for pair in "lint=$LINT" "typecheck=$TYPECHECK" "agent unit tests=$UNIT" "build=$BUILD" "e2e tests=$E2E" "PRISM before/after=$COMPARE"; do
+            [ "${pair#*=}" = "success" ] || failed="$failed ${pair%%=*}(${pair#*=}),"
+          done
+          if [ -n "$failed" ]; then echo "::error::Checks failed:${failed%,}"; exit 1; fi
+          echo "All checks passed."

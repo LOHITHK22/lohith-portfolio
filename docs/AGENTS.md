@@ -123,7 +123,7 @@ rate limit or the request budget), `failure` (an agent failed or a check failed)
 PRISM runs inside the normal agent workflow on Mondays (`prism.weekday` in
 `agents/config.json`), or whenever `prism` is in the `only` input.
 
-1. **Evidence.** Screenshots of `/` (1440×900 and 390×844) and `/event` from the
+1. **Evidence.** Screenshots of `/` and `/event` (1440×900 and 390×844) from the
    live site; a region-by-region luminance comparison of the desktop homepage
    with the approved Design A reference (`agents/prism/reference/`); a layout
    audit (horizontal overflow, tap targets under 40 px, text under 11 px,
@@ -147,8 +147,14 @@ PRISM runs inside the normal agent workflow on Mondays (`prism.weekday` in
 6. **Verification.** The same reusable `sentinel-checks.yml` runs lint,
    typecheck, unit tests, build and Playwright on the branch; PRISM then
    screenshots the live site and the PR build and measures the change, the
-   distance to Design A and the audit counts. Results are posted on the PR and
-   re-run whenever you push to the branch.
+   distance to Design A and the audit counts for all four screens (both pages,
+   desktop and phone). Results are posted on the PR and re-run whenever you
+   push to the branch. If any check or the before/after capture fails, the
+   verify job fails, so a red result is never shown as green.
+   `tests/e2e/tap-targets.spec.ts` audits every visible control on `/event` at
+   390×844, both on the page and inside the playing narrated demo (real box
+   size, must receive a tap at its centre), and fails on any target below
+   40×40px.
 7. **You review and merge, or close.** `/agents` shows each prompt's state:
    awaiting approval → approved → PR open → merged / declined.
 
