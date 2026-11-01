@@ -22,6 +22,7 @@ const EXPERIENCES: Experience[] = [
     body: "Command a simulated PipelineMedic incident, where your decisions and the MCP safety policy decide the outcome.",
     skills: "Kafka · Flink · Airflow · MCP policy",
     icon: Siren,
+    href: "/playground/incident-commander",
   },
   {
     title: "Explore PRISM's Evolution",

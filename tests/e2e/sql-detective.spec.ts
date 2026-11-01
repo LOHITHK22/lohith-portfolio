@@ -310,7 +310,8 @@ test.describe("Data Quality Detective", () => {
     const section = page.locator("#playground");
     await expect(section.getByRole("heading", { level: 2 })).toBeVisible();
     await expect(section.getByRole("link", { name: /Solve a SQL Mystery/ })).toHaveAttribute("href", ROUTE);
-    await expect(section.getByText("Coming next")).toHaveCount(2);
+    // Incident Commander (Phase 2) is live; only the PRISM timeline is still upcoming.
+    await expect(section.getByText("Coming next")).toHaveCount(1);
     expect(await noHorizontalOverflow(page)).toBe(true);
     // The SQL engine is not loaded on the homepage.
     const wasm = await page.evaluate(() => performance.getEntriesByType("resource").some((r) => r.name.includes("/sqljs/")));
