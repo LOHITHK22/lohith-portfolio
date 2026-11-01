@@ -30,7 +30,10 @@ export type AnalyticsEvent =
   | "event_exit"
   | "event_cta_click"
   | "event_architecture_open"
-  | "event_offline_ready";
+  | "event_offline_ready"
+  | "prism_welcome_play"
+  | "prism_welcome_blocked"
+  | "prism_welcome_shortcut";
 
 type AnalyticsProps = Record<string, string | number | boolean | null>;
 

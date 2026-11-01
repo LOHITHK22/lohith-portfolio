@@ -15,6 +15,7 @@ import { AgentTeamLazy } from "@/components/AgentTeamLazy";
 import { AILab } from "@/components/AILab";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { CommandPaletteLazy } from "@/components/CommandPaletteLazy";
+import { PrismWelcome } from "@/components/PrismWelcome";
 
 export default function Home({
   searchParams,
@@ -44,6 +45,7 @@ export default function Home({
       </main>
       <Footer />
       <AgentTeamLazy />
+      <PrismWelcome />
       <CommandPaletteLazy />
     </>
   );
