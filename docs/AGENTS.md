@@ -129,15 +129,32 @@ PRISM runs inside the normal agent workflow on Mondays (`prism.weekday` in
    audit (horizontal overflow, tap targets under 40 px, text under 11 px,
    upscaled images); a code scan (unimported components, very large files,
    TODOs); and this run's SENTINEL failures, PULSE measurements and SYNC commits.
-2. **Recommendations.** Rules turn the evidence into ranked candidates. With
+   `/event` is also walked the way a visitor uses it (`event-states.mjs`):
+   landing, narrated demo playing, demo paused, MCP architecture expanded,
+   contact + QR section, and the header navigation on phone/tablet, each at
+   390×844, 820×1180, 1440×900 and 1920×1080. Every state gets a screenshot
+   (animations disabled) and an audit of what is on screen: tap targets (below
+   1024 px), text under 11 px, overlapping controls, WCAG AA text contrast
+   (solid backgrounds only), horizontal overflow and, on landing, layout
+   shift. A state that cannot be reached is recorded as an error.
+2. **Recommendations.** Rules turn the evidence into candidates ranked by
+   visitor impact, not by how many problems a rule counted:
+   **P0** critical functionality or security (confirmed SENTINEL failures);
+   **P1** broken interactive demos, significant mobile problems (overflow, tap
+   targets, overlapping controls) and accessibility defects (contrast);
+   **P2** meaningful visual, performance or usability work (Design A drift,
+   PULSE regressions, project updates); **P3** minor typography, decorative or
+   internal-only changes (small text, unused files, large files). With
    `ANTHROPIC_API_KEY`, one structured-output request to `claude-opus-5-5`
    (adaptive thinking, effort high, server-side fallback enabled) sharpens and
-   extends them, seeing both screenshots. Anything already open or proposed in
-   the last 28 days is skipped; at most 3 are kept per run.
-3. **Prompts.** Each becomes a Claude Code prompt (context, evidence, files,
-   expected changes, design constraints, acceptance criteria, tests), saved to
-   `agent-data/prism/YYYY-MM-DD/<id>.md` with `evidence.json` and the
-   screenshots, and opened as an issue labelled `prism`.
+   extends them and assigns the same tiers. Anything already open or proposed
+   in the last 28 days is skipped; at most 3 are kept per run.
+3. **Prompts.** Each becomes a Claude Code prompt (tier, context, evidence,
+   files, expected changes, design constraints, acceptance criteria, tests),
+   saved to `agent-data/prism/YYYY-MM-DD/<id>.md` with `evidence.json` and the
+   screenshots. Prompts at or above `prism.issueMinTier` (default P2) are
+   opened as issues labelled `prism`; P3 prompts are saved for reference only,
+   so low-value changes never queue up for a paid Claude Code run.
 4. **Approval.** Add the `prism:approved` label to the issue. Only a label
    added by the repository owner starts `.github/workflows/prism-implement.yml`.
 5. **Implementation.** The official
@@ -148,15 +165,23 @@ PRISM runs inside the normal agent workflow on Mondays (`prism.weekday` in
    typecheck, unit tests, build and Playwright on the branch; PRISM then
    screenshots the live site and the PR build and measures the change, the
    distance to Design A and the audit counts for all four screens (both pages,
-   desktop and phone). Results are posted on the PR and re-run whenever you
-   push to the branch. If any check or the before/after capture fails, the
-   verify job fails, so a red result is never shown as green.
+   desktop and phone), plus every `/event` state at all four sizes. Audit
+   numbers are reported, not asserted, so animations and timestamps cannot
+   make the check flaky; the capture fails only if a state that works on the
+   live site cannot be reached on the PR build. Results are posted on the PR
+   and re-run whenever you push to the branch. If any check or the
+   before/after capture fails, the verify job fails, so a red result is never
+   shown as green.
    `tests/e2e/tap-targets.spec.ts` audits every visible control on `/event` at
    390×844, both on the page and inside the playing narrated demo (real box
    size, must receive a tap at its centre), and fails on any target below
    40×40px.
-7. **You review and merge, or close.** `/agents` shows each prompt's state:
-   awaiting approval → approved → PR open → merged / declined.
+7. **You review and merge, or close.** `/agents` shows each prompt's tier and
+   state: awaiting approval → approved → PR open → merged / declined. Merging
+   or closing a `claude/prism-issue-N` PR, or closing or reopening a PRISM
+   issue, triggers the `status` job in `prism-implement.yml`, which republishes
+   these states within a minute (plus the dashboard's 10-minute cache). It
+   runs code from `main` only and writes nothing but `agent-data/prism/index.json`.
 
 ### PRISM setup
 

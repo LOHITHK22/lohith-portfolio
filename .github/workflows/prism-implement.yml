@@ -11,6 +11,8 @@
 #                token) and captures PRISM before/after screenshots
 #   4. report    posts the results on the pull request
 # Nothing is merged or deployed. Later pushes to the branch re-run 3 and 4.
+# When a PRISM pull request is merged or closed, or a PRISM issue is closed or
+# reopened, `status` republishes the issue / PR states shown on /agents.
 #
 # Requires: the Claude GitHub App installed on this repository and either the
 # ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN secret. See docs/AGENTS.md.
@@ -18,10 +20,10 @@ name: PRISM implement
 
 on:
   issues:
-    types: [labeled]
+    types: [labeled, closed, reopened]
   pull_request:
     branches: [main]
-    types: [synchronize]
+    types: [synchronize, closed]
 
 permissions:
   contents: read
@@ -192,7 +194,7 @@ jobs:
     if: >-
       always() &&
       ((github.event_name == 'issues' && needs.implement.outputs.changed == 'true') ||
-       (github.event_name == 'pull_request' && startsWith(github.head_ref, 'claude/prism-issue-')))
+       (github.event_name == 'pull_request' && github.event.action == 'synchronize' && startsWith(github.head_ref, 'claude/prism-issue-')))
     uses: ./.github/workflows/sentinel-checks.yml
     with:
       ref: ${{ needs.implement.outputs.branch || github.event.pull_request.head.sha }}
@@ -242,3 +244,31 @@ jobs:
           if [ -n "$PR" ]; then gh pr comment "$PR" -R "$REPO" --body-file comment.md
           elif [ -n "$ISSUE" ]; then gh issue comment "$ISSUE" -R "$REPO" --body-file comment.md
           else cat comment.md; fi
+
+  # Keeps /agents current: republishes PRISM issue / PR states (merged,
+  # declined, closed) as soon as they change, instead of at the next daily run.
+  # Runs code from main only, never from the pull request.
+  status:
+    if: >-
+      (github.event_name == 'pull_request' && github.event.action == 'closed' && startsWith(github.head_ref, 'claude/prism-issue-')) ||
+      (github.event_name == 'issues' && github.event.action != 'labeled' && contains(github.event.issue.labels.*.name, 'prism'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write # agent-data branch only (assertPushable in astra.mjs)
+      issues: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund --ignore-scripts
+      - name: Refresh PRISM status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/agents/astra.mjs --prism-status-only

@@ -82,6 +82,7 @@ export type PrismState = "awaiting-approval" | "approved" | "pr-open" | "merged"
 export type PrismItem = {
   id: string;
   title: string;
+  tier?: "P0" | "P1" | "P2" | "P3";
   category?: string;
   priority?: number;
   source?: "rules" | "claude";

@@ -77,6 +77,22 @@ export function designDrift(screens, { designDriftRegion }) {
 // ---------------------------------------------------------------- rules
 
 /** Evidence → candidate recommendations. Pure function; easy to test. */
+// Visitor impact decides the order, not how many problems a rule counted:
+// P0 critical functionality or security, P1 broken interactive demos,
+// significant mobile problems and accessibility defects, P2 meaningful
+// visual / performance / usability work, P3 minor typography, decorative or
+// internal-only changes. Below `issueMinTier` a prompt is saved, not filed.
+export const TIERS = ["P0", "P1", "P2", "P3"];
+export function tierOf(rec) {
+  if (TIERS.includes(rec.tier)) return rec.tier;
+  const id = rec.id ?? "";
+  if (/^fix-/.test(id)) return "P0";
+  if (/^(broken-state|overflow|tap-targets|overlap|contrast)-/.test(id)) return "P1";
+  if (/^(small-text|remove-unused|split)-/.test(id)) return "P3";
+  return "P2";
+}
+export const byTier = (a, b) => TIERS.indexOf(tierOf(a)) - TIERS.indexOf(tierOf(b)) || b.priority - a.priority;
+
 export function buildRecommendations(ev, t) {
   const recs = [];
   const add = (r) => recs.push({ source: "rules", ...r });
@@ -147,6 +163,66 @@ export function buildRecommendations(ev, t) {
       });
   }
 
+  // Reachable /event states (demo, MCP, contact, nav) at 390-1920 px.
+  const states = ev.eventStates ?? [];
+  const broken = states.filter((s) => !s.ok);
+  if (broken.length)
+    add({
+      id: "broken-state-event", impact: "Visitors who scan the QR code cannot use part of the AI Event Mode demo.", category: "technical", priority: 95,
+      title: `Fix ${broken.length} /event state(s) that cannot be reached`,
+      problem: "PRISM could not reach these states on the live site the way a visitor would (clicks and scrolling).",
+      evidence: broken.slice(0, 8).map((s) => `${s.state} at ${s.width}×${s.height}: ${s.error}`),
+      files: ["components/event/EventExperience.tsx", "components/event/MCPArchitecture.tsx", "components/event/EventQRCode.tsx"],
+      changes: ["Reproduce each failure in a browser at the listed size, find the root cause and fix it."],
+      acceptance: ["PRISM's before/after reports every listed state as reachable on the pull request build.", "All Playwright tests pass."],
+    });
+  const uniq = (xs, key) => [...new Map(xs.map((x) => [key(x), x])).values()];
+  const ok = states.filter((s) => s.ok && s.audit);
+  const overlaps = uniq(ok.flatMap((s) => s.audit.overlaps.map((o) => ({ ...o, where: `${s.state} ${s.width}px` }))), (o) => `${o.a}|${o.b}`);
+  if (overlaps.length)
+    add({
+      id: "overlap-event", impact: "Overlapping controls make visitors tap the wrong thing, or nothing at all.", category: "ux", priority: 80,
+      title: `Separate ${overlaps.length} overlapping control pair(s) on /event`,
+      problem: "Interactive elements cover each other on screen.",
+      evidence: overlaps.slice(0, 8).map((o) => `"${o.a}" overlaps "${o.b}" by ${o.px}px² (${o.where})`),
+      files: ["components/event/EventExperience.tsx"],
+      changes: ["Adjust spacing or layout so no two controls share screen area at any of 390, 820, 1440 and 1920 px."],
+      acceptance: ["PRISM's /event state audit reports 0 overlapping controls at every size."],
+    });
+  const lowContrast = uniq(ok.flatMap((s) => s.audit.lowContrast.map((c) => ({ ...c, where: `${s.state} ${s.width}px` }))), (c) => `${c.text}|${c.ratio}`);
+  if (lowContrast.length)
+    add({
+      id: "contrast-event", impact: "Low-contrast text is hard to read for low-vision visitors and on projectors and phones outdoors.", category: "ux", priority: 78,
+      title: `Raise contrast of ${lowContrast.length} text element(s) on /event to WCAG AA`,
+      problem: "Text is below the WCAG AA contrast ratio against its solid background.",
+      evidence: lowContrast.slice(0, 8).map((c) => `"${c.text}" ${c.px}px: ${c.ratio}:1, needs ${c.need}:1 (${c.where})`),
+      files: ["components/event/EventExperience.tsx", "components/event/SceneVisuals.tsx"],
+      changes: ["Lighten the text colour (or darken its background) just enough to reach the required ratio, keeping the Design A palette."],
+      acceptance: ["PRISM's /event state audit reports 0 low-contrast text elements."],
+    });
+  const stateOverflow = uniq(ok.filter((s) => s.audit.overflowX > 0), (s) => s.width);
+  if (stateOverflow.length)
+    add({
+      id: "overflow-event-states", impact: "Phone and tablet visitors see the page wobble sideways, which looks broken.", category: "ux", priority: 90,
+      title: `Remove horizontal overflow in /event states at ${stateOverflow.map((s) => `${s.width}px`).join(", ")}`,
+      problem: "The page scrolls sideways in at least one interactive state.",
+      evidence: stateOverflow.map((s) => `${s.state} at ${s.width}×${s.height}: ${s.audit.overflowX}px wider than the viewport`),
+      files: ["components/event/EventExperience.tsx"],
+      changes: ["Find the overflowing element in that state and constrain it."],
+      acceptance: ["PRISM's /event state audit reports 0 horizontal overflow at every size."],
+    });
+  const demoTargets = uniq(ok.filter((s) => s.state.startsWith("demo-")).flatMap((s) => s.audit.smallTargets), (x) => x.label);
+  if (demoTargets.length)
+    add({
+      id: "tap-targets-event-demo", impact: "Phone visitors struggle to use the demo's scene and playback controls.", category: "ux", priority: 70,
+      title: `Enlarge ${demoTargets.length} small control(s) in the /event demo player (mobile)`,
+      problem: `Controls in the 45-second experience are smaller than ${t.minTapTargetPx}×${t.minTapTargetPx}px on phones and tablets.`,
+      evidence: [`Demo playing / paused at 390 and 820 px: ${demoTargets.slice(0, 8).map((x) => `"${x.label}" ${x.w}×${x.h}px`).join("; ")}.`],
+      files: ["components/event/EventExperience.tsx"],
+      changes: [`Give each listed control a hit area of at least ${t.minTapTargetPx}×${t.minTapTargetPx}px without changing the player's visual design.`],
+      acceptance: ["The narrated-demo test in tests/e2e/tap-targets.spec.ts passes with its test.fail() line removed (enforced).", "PRISM's demo-playing and demo-paused audits report 0 small tap targets at 390 and 820 px (informational)."],
+    });
+
   const p = ev.pulse;
   for (const m of p?.measurements ?? []) {
     if ((m.lcp ?? 0) > t.lcpMs || (m.transferKB ?? 0) > t.transferKB || (m.cls ?? 0) > t.cls)
@@ -202,21 +278,21 @@ export function buildRecommendations(ev, t) {
     });
   }
 
-  return recs.sort((a, b) => b.priority - a.priority);
+  return recs.map((r) => ({ ...r, tier: tierOf(r) })).sort(byTier);
 }
 
 const slug = (s) => String(s).toLowerCase().replace(/^https?:\/\//, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
 
 // ---------------------------------------------------------------- prompts
 
-const SCREENS = "/ and /event at 1440×900 and 390×844";
+const SCREENS = "/ and /event at 1440×900 and 390×844, plus every reachable /event state (landing, demo playing and paused, MCP expanded, contact + QR, mobile nav) at 390, 820, 1440 and 1920 px";
 
 export function renderPrompt(rec, { site, runUrl, evidenceBase }) {
   const list = (xs) => xs.map((x) => `- ${x}`).join("\n");
   return `# ${rec.title}
 
 <!-- prism:id=${rec.id} -->
-**Category:** ${rec.category} · **Priority:** ${rec.priority} · **Generated by:** PRISM (${rec.source}) · ${new Date().toISOString().slice(0, 10)}
+**Tier:** ${tierOf(rec)} · **Category:** ${rec.category} · **Priority:** ${rec.priority} · **Generated by:** PRISM (${rec.source}) · ${new Date().toISOString().slice(0, 10)}
 
 ## Context
 Portfolio: ${site} (Next.js 14 App Router, React 18, TypeScript, Tailwind). Repository root is the working directory.
@@ -271,9 +347,10 @@ export const LLM_SCHEMA = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["id", "category", "priority", "title", "problem", "impact", "evidence", "files", "changes", "acceptance"],
+        required: ["id", "tier", "category", "priority", "title", "problem", "impact", "evidence", "files", "changes", "acceptance"],
         properties: {
           id: { type: "string" },
+          tier: { type: "string", enum: ["P0", "P1", "P2", "P3"] },
           category: { type: "string", enum: ["visual", "ux", "technical", "feature"] },
           priority: { type: "integer" },
           title: { type: "string" },
@@ -326,6 +403,7 @@ export async function refineWithClaude({ client, llm, evidence, candidates, refe
     output_config: { effort: llm.effort, format: { type: "json_schema", schema: LLM_SCHEMA } },
     system: [
       "You are PRISM, the improvement agent for a personal engineering portfolio. You turn evidence into a short list of high-value improvements that Claude Code will implement after the owner approves them.",
+      "Assign each a tier by visitor impact: P0 critical functionality or security; P1 broken interactive demos, significant mobile problems, accessibility defects; P2 meaningful visual, performance or usability improvements; P3 minor typography or decorative changes. Never propose a change just because it is cheap to make.",
       "Return at most 5 recommendations, ranked by value to recruiters and engineers visiting the site. Keep good rule-based candidates (you may sharpen their wording, files and acceptance criteria) and add visual, UX or feature ideas only when the screenshots or evidence support them.",
       "Every recommendation must be implementable in one focused pull request, state its impact on visitors, cite specific evidence, name real files from the evidence, and have testable acceptance criteria.",
       ...DESIGN_RULES,
@@ -350,7 +428,7 @@ export async function refineWithClaude({ client, llm, evidence, candidates, refe
 
 // ---------------------------------------------------------------- run
 
-export async function runPrism({ config, now, history, outDir, capture, agentsThisRun, gh, dryRun, anthropic, runUrl, evidenceBaseUrl, openIssues = [] }) {
+export async function runPrism({ config, now, history, outDir, capture, captureStates = null, agentsThisRun, gh, dryRun, anthropic, runUrl, evidenceBaseUrl, openIssues = [] }) {
   const cfg = config.prism;
   const t = cfg.thresholds;
   const errors = [];
@@ -361,11 +439,20 @@ export async function runPrism({ config, now, history, outDir, capture, agentsTh
   } catch (e) {
     errors.push(`screenshots: ${e.message.split("\n")[0]}`);
   }
+  let eventStates = [];
+  if (captureStates) {
+    try {
+      eventStates = await captureStates();
+    } catch (e) {
+      errors.push(`/event states: ${e.message.split("\n")[0]}`);
+    }
+  }
   const sentinel = agentsThisRun.find((a) => a.agent === "SENTINEL");
   const pulse = agentsThisRun.find((a) => a.agent === "PULSE");
   const sync = agentsThisRun.find((a) => a.agent === "SYNC");
   const evidence = {
     screens: screens.map(({ png, ...s }) => s),
+    eventStates: eventStates.map(({ png, ...s }) => s),
     drift: designDrift(screens, t),
     code: scanCode(ROOT, t),
     sentinel: { failures: (sentinel?.findings ?? []).filter((f) => /^\[sentinel\]/.test(f.title)) },
@@ -384,7 +471,7 @@ export async function runPrism({ config, now, history, outDir, capture, agentsTh
         spentThisMonth: monthSpend(history, now),
       });
       llm = { model: out.model ?? cfg.llm.model, costUsd: Math.round((out.costUsd ?? 0) * 10000) / 10000, skipped: out.skipped ?? null, usage: out.usage ? { input: out.usage.input_tokens, output: out.usage.output_tokens } : null };
-      if (out.recs?.length) recs = out.recs.sort((a, b) => b.priority - a.priority);
+      if (out.recs?.length) recs = out.recs.map((r) => ({ ...r, tier: tierOf(r) })).sort(byTier);
     } catch (e) {
       errors.push(`claude refinement failed, using rule-based prompts: ${String(e.message).split("\n")[0]}`);
       llm = { model: cfg.llm.model, costUsd: 0, skipped: "request failed" };
@@ -408,6 +495,8 @@ export async function runPrism({ config, now, history, outDir, capture, agentsTh
   const dir = path.join(outDir, "prism", date);
   fs.mkdirSync(dir, { recursive: true });
   for (const s of screens) if (s.png) fs.writeFileSync(path.join(dir, `${s.id}.png`), s.png);
+  if (eventStates.some((s) => s.png)) fs.mkdirSync(path.join(dir, "states"), { recursive: true });
+  for (const s of eventStates) if (s.png) fs.writeFileSync(path.join(dir, "states", `${s.id}.png`), s.png);
   fs.writeFileSync(path.join(dir, "evidence.json"), JSON.stringify(evidence, null, 2) + "\n");
   const evidenceBase = evidenceBaseUrl ? `${evidenceBaseUrl}/prism/${date}/` : null;
   const saved = [];
@@ -423,7 +512,8 @@ export async function runPrism({ config, now, history, outDir, capture, agentsTh
     const md = renderPrompt(rec, { site: config.site, runUrl, evidenceBase });
     fs.writeFileSync(path.join(dir, `${rec.id}.md`), md);
     let issue = null;
-    if (!dryRun && gh && !rec.ownerAction) {
+    const fileIssue = TIERS.indexOf(tierOf(rec)) <= TIERS.indexOf(cfg.issueMinTier ?? "P3");
+    if (!dryRun && gh && !rec.ownerAction && fileIssue) {
       try {
         issue = await gh.upsertIssue(config.repo, {
           title: `[prism] ${rec.title}`,
@@ -434,7 +524,7 @@ export async function runPrism({ config, now, history, outDir, capture, agentsTh
         errors.push(`issue for ${rec.id}: ${e.message}`);
       }
     }
-    saved.push({ id: rec.id, title: rec.title, category: rec.category, priority: rec.priority, source: rec.source, ownerAction: Boolean(rec.ownerAction), prompt: `prism/${date}/${rec.id}.md`, issue: issue ? { number: issue.number, url: issue.url } : null });
+    saved.push({ id: rec.id, title: rec.title, tier: tierOf(rec), category: rec.category, priority: rec.priority, source: rec.source, ownerAction: Boolean(rec.ownerAction), prompt: `prism/${date}/${rec.id}.md`, issue: issue ? { number: issue.number, url: issue.url } : null });
   }
   pruneOld(path.join(outDir, "prism"), cfg.keepWeeks * 7, now);
 
@@ -448,7 +538,7 @@ export async function runPrism({ config, now, history, outDir, capture, agentsTh
     llm,
     drift: evidence.drift,
     errors,
-    findings: saved.map((s) => ({ title: s.title, url: s.issue?.url, detail: `${s.category} · priority ${s.priority}${s.ownerAction ? " · needs owner action" : ""}` })),
+    findings: saved.map((s) => ({ title: s.title, url: s.issue?.url, detail: `${s.tier} · ${s.category} · priority ${s.priority}${s.ownerAction ? " · needs owner action" : ""}` })),
   });
 }
 
