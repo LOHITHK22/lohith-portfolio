@@ -22,6 +22,7 @@ import {
   assessPlan,
   CHECKS,
   initialState,
+  isSimulatorStatus,
   plansFor,
   reducer,
   REQUIRED_CHECK,
@@ -117,6 +118,8 @@ function stepIndex(state: SimState): number {
       return state.blocked ? 3 : 2;
     case "approval":
       return 4;
+    case "human":
+      return 5;
     case "validate":
       return 6;
     case "done":
@@ -350,9 +353,10 @@ function PlanStep({ s, state, dispatch }: { s: Scenario; state: SimState; dispat
                             <span className="flex flex-wrap items-center gap-2">
                               <RiskBadge level={getToolRisk(a.tool)} />
                               {isHardBlocked(a.tool) && <span className="font-mono text-[11px] text-rose-300">hard-blocked</span>}
-                              <span className="font-mono text-[11px] text-slate-500">{a.reversible ? "reversible" : "not reversible"}</span>
+                              <span className="font-mono text-[11px] text-slate-500">{a.rollback ? "reversible · rollback tool" : a.reversible ? "no rollback tool" : "not reversible"}</span>
                             </span>
                             <ToolLine tool={a.tool} input={a.input} />
+                            <span className="block text-xs text-slate-400">{a.description}</span>
                             {a.rollback && (
                               <span className="block font-mono text-[11px] text-slate-500 [overflow-wrap:anywhere]">
                                 rollback: {a.rollback.tool}({JSON.stringify(a.rollback.input)})
@@ -401,6 +405,46 @@ function ApprovalStep({ s, state, dispatch }: { s: Scenario; state: SimState; di
         <button type="button" className={SECONDARY} onClick={() => dispatch({ type: "reject" })}>
           <Ban className="h-4 w-4" aria-hidden="true" />
           Reject
+        </button>
+      </div>
+    </>
+  );
+}
+
+function HumanRepairStep({ s, state, dispatch }: { s: Scenario; state: SimState; dispatch: React.Dispatch<Parameters<typeof reducer>[1]> }) {
+  const plan = s.plans.find((p) => p.id === state.planId)!;
+  const hr = plan.humanRepair!;
+  const escalation = plan.actions[hr.afterAction];
+  const rest = plan.actions.slice(hr.afterAction + 1);
+  return (
+    <>
+      <div className="rounded-xl border border-white/10 bg-ink-900/40 p-3" data-testid="ic-escalation">
+        <p className="text-sm font-semibold text-white">Escalation recorded</p>
+        <ToolLine tool={escalation.tool} input={escalation.input} />
+        {escalation.output && <p className="mt-1 font-mono text-[12px] text-teal">→ {JSON.stringify(escalation.output)}</p>}
+        <p className="mt-2 text-sm text-slate-300">This only notes the escalation. It does not change the database; no PipelineMedic tool can.</p>
+      </div>
+      <div className="mt-4 rounded-xl border border-amber-300/40 bg-amber-300/[0.04] p-3">
+        <p className="text-sm font-semibold text-white">Paused: waiting for an out-of-band repair</p>
+        <p className="mt-1 text-sm text-slate-200">
+          <span className="font-semibold">{hr.owner[0].toUpperCase() + hr.owner.slice(1)}:</span> {hr.task}
+        </p>
+        <p className="mt-1 text-sm text-slate-300">
+          Waiting to run: <span className="font-mono text-[12px]">{rest.map((a) => a.tool).join(", ")}</span>
+        </p>
+      </div>
+      <p className="mt-4 rounded-xl border border-white/10 p-3 text-sm text-slate-300" data-testid="ic-human-notice">
+        Confirming stands in for the simulated {hr.owner} reporting the repair done. It is part of this simulation, not an external authorization, and changes
+        nothing outside your browser.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button type="button" className={PRIMARY} onClick={() => dispatch({ type: "confirmRepair" })}>
+          <UserCheck className="h-4 w-4" aria-hidden="true" />
+          Confirm the {hr.owner} restored the column
+        </button>
+        <button type="button" className={SECONDARY} onClick={() => dispatch({ type: "withholdRepair" })}>
+          <Ban className="h-4 w-4" aria-hidden="true" />
+          Repair not done: withhold confirmation
         </button>
       </div>
     </>
@@ -465,15 +509,60 @@ const OUTCOME: Record<Outcome, { label: string; tone: string; icon: typeof Check
 
 function outcomeExplanation(s: Scenario, state: SimState): string {
   const plan = state.planId ? s.plans.find((p) => p.id === state.planId) : null;
-  if (state.status === "REJECTED") return "You rejected the plan, so nothing ran. Nothing got worse, but the incident is still open.";
-  if (state.falseAllClear)
-    return `Validation passed only because the failing check was not run: ${state.validation!.missed.map((m) => `${m.id} (${m.value})`).join(", ")}. The incident was declared resolved and then reopened. ${plan?.lesson ?? ""}`;
-  if (state.status === "ROLLED_BACK") {
-    const rb = state.rolledBack.length ? `Rolled back with ${state.rolledBack.join(", ")}.` : "There was nothing to roll back.";
-    return `${state.canary?.ran && !state.canary.passed ? "The canary gate failed." : "Validation failed."} ${rb} ${plan?.lesson ?? ""}`;
+  const lesson = plan?.lesson ?? "";
+  const failedAt = state.canary?.ran && !state.canary.passed ? "The canary gate failed." : "Validation failed.";
+  switch (state.resolution) {
+    case "rejected":
+      return "You rejected the plan, so nothing ran. Nothing got worse, but the incident is still open.";
+    case "escalated_unresolved":
+      return `The escalation is on record, but the ${plan?.humanRepair?.owner ?? "owner"} never confirmed the repair, so the rerun was not attempted. request_human_approval only notes an escalation; it can't fix the table. The incident is still open.`;
+    case "false_all_clear":
+      return `Validation passed only because the failing check was not run: ${state.validation!.missed.map((m) => `${m.id} (${m.value})`).join(", ")}. The incident was declared resolved and then reopened. ${lesson}`;
+    case "rolled_back":
+      return `${failedAt} Every executed action was undone (${state.rollback!.reverted.map((r) => r.rollbackTool).join(", ")}), so the pipeline is back where it started and the incident is still open. ${lesson}`;
+    case "partial_rollback":
+      return `${failedAt} Only part of the repair could be undone; ${state.rollback!.remaining.map((r) => r.tool).join(", ")} is still in effect. ${lesson}`;
+    case "failed_no_rollback":
+      return `${failedAt} Nothing that ran could be undone (${state.rollback!.remaining.map((r) => r.tool).join(", ")}), so its effects remain. ${lesson}`;
+    default:
+      return lesson;
   }
-  return plan?.lesson ?? "";
 }
+
+function RollbackDetails({ state }: { state: SimState }) {
+  const r = state.rollback;
+  if (!r) return null;
+  return (
+    <section aria-labelledby="ic-sum-rollback">
+      <h3 id="ic-sum-rollback" className="text-sm font-semibold text-white">
+        Rollback
+      </h3>
+      <ul className="mt-1 space-y-0.5 text-sm" data-testid="ic-rollback">
+        {r.reverted.map((x) => (
+          <li key={x.tool} className="text-teal">
+            ↺ <span className="font-mono text-[12px]">{x.tool}</span> <span className="text-slate-400">undone by {x.rollbackTool}</span>
+          </li>
+        ))}
+        {r.remaining.map((x) => (
+          <li key={x.tool} className="text-amber-200">
+            ! <span className="font-mono text-[12px]">{x.tool}</span>{" "}
+            <span className="text-slate-400">still in effect ({x.reason === "not_reversible" ? "not reversible" : "no rollback tool"})</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1 text-xs text-slate-400">
+        PipelineMedic&apos;s graph.py records any failed validation as ROLLED_BACK. This simulator reports what was actually undone instead.
+      </p>
+    </section>
+  );
+}
+
+const StatusText = ({ status }: { status: SimState["status"] }) => (
+  <>
+    status={status}
+    {isSimulatorStatus(status) && <span className="text-amber-200"> (simulator status)</span>}
+  </>
+);
 
 function Summary({ s, state, dispatch, onNext }: { s: Scenario; state: SimState; dispatch: React.Dispatch<Parameters<typeof reducer>[1]>; onNext: () => void }) {
   const o = OUTCOME[state.outcome!];
@@ -483,10 +572,13 @@ function Summary({ s, state, dispatch, onNext }: { s: Scenario; state: SimState;
   const evidenceTools = state.evidence.map((id) => s.evidence.find((e) => e.id === id)!.tool);
   const sources = [...s.sources, "backend/app/policies/autonomy_policy.yaml", "backend/app/policies/engine.py", "backend/app/agents/graph.py", "backend/app/tools/registry.py"];
   return (
-    <div data-testid="ic-summary" data-outcome={state.outcome} data-status={state.status}>
+    <div data-testid="ic-summary" data-outcome={state.outcome} data-status={state.status} data-resolution={state.resolution ?? undefined}>
       <p className={`flex flex-wrap items-center gap-2 rounded-xl border p-3 text-base font-semibold ${o.tone}`} data-testid="ic-outcome">
         <Icon className="h-5 w-5" aria-hidden="true" />
-        Simulated outcome: {o.label} <span className="font-mono text-xs text-slate-300">status={state.status}</span>
+        Simulated outcome: {o.label}{" "}
+        <span className="font-mono text-xs text-slate-300">
+          <StatusText status={state.status} />
+        </span>
       </p>
       <p className="mt-3 text-sm text-slate-200">{outcomeExplanation(s, state)}</p>
       {plan?.sourceNote && <p className="mt-2 text-xs text-slate-400">{plan.sourceNote}</p>}
@@ -522,14 +614,18 @@ function Summary({ s, state, dispatch, onNext }: { s: Scenario; state: SimState;
               Evidence: <span className="font-mono text-[12px]">{evidenceTools.join(", ") || "none"}</span>
             </p>
             <p className="mt-1 text-sm text-slate-300">
-              Repair: <span className="font-mono text-[12px]">{plan && state.approval !== "rejected" ? plan.actions.map((a) => a.tool).join(", ") : "none executed"}</span>
+              Repair executed:{" "}
+              <span className="font-mono text-[12px]" data-testid="ic-executed">
+                {plan && state.executed.length ? state.executed.map((i) => plan.actions[i].tool).join(", ") : "none"}
+              </span>
             </p>
-            {state.rolledBack.length > 0 && (
+            {plan && state.executed.length > 0 && state.executed.length < plan.actions.length && (
               <p className="mt-1 text-sm text-slate-300">
-                Rollback: <span className="font-mono text-[12px]">{state.rolledBack.join(", ")}</span>
+                Never ran: <span className="font-mono text-[12px]">{plan.actions.filter((_, i) => !state.executed.includes(i)).map((a) => a.tool).join(", ")}</span>
               </p>
             )}
           </section>
+          <RollbackDetails state={state} />
           <section aria-labelledby="ic-sum-policy">
             <h3 id="ic-sum-policy" className="text-sm font-semibold text-white">
               Policy decisions
@@ -656,6 +752,12 @@ export function IncidentCommander() {
             <ApprovalStep s={s} state={state} dispatch={act} />
           </Panel>
         );
+      case "human":
+        return (
+          <Panel key={phaseKey} testId="ic-step-human" kicker="Execute · Human repair" title="Waiting for a human repair" headingRef={headingRef}>
+            <HumanRepairStep s={s} state={state} dispatch={act} />
+          </Panel>
+        );
       case "validate":
         return (
           <Panel key={phaseKey} testId="ic-step-validate" kicker="Execute · Validate" title="Validate the repair" headingRef={headingRef}>
@@ -704,7 +806,7 @@ export function IncidentCommander() {
             Monitoring console · simulated
           </h2>
           <span className="font-mono text-[11px] text-slate-400" data-testid="ic-status">
-            status={state.status}
+            <StatusText status={state.status} />
           </span>
         </div>
         <PipelineMap m={state.metrics} />

@@ -40,8 +40,20 @@ export type Hypothesis = {
 
 export type PlanAction = ToolCall & {
   description: string;
+  /** PipelineMedic's RepairAction.is_reversible flag. Only an action with a rollback tool is actually undone on failure. */
   reversible: boolean;
   rollback?: ToolCall;
+  /** What the simulated tool returns, when worth showing (for example the real ESCALATION_NOTED status). */
+  output?: Record<string, unknown>;
+};
+
+/** A step only a human can do, outside PipelineMedic. Execution pauses after the action at `afterAction`. */
+export type HumanRepair = {
+  afterAction: number;
+  owner: string;
+  task: string;
+  /** Metrics once the human confirms the repair, before the remaining actions run. */
+  repaired: Metrics;
 };
 
 export type PlanQuality = "correct" | "partial" | "wrong" | "forbidden";
@@ -61,6 +73,8 @@ export type RepairPlanOption = {
   lesson: string;
   /** A note tying the plan to PipelineMedic's own code, if relevant. */
   sourceNote?: string;
+  /** An out-of-band human step the plan waits for. */
+  humanRepair?: HumanRepair;
 };
 
 export type Scenario = {
@@ -661,27 +675,36 @@ export const SCENARIOS: Scenario[] = [
     plans: [
       {
         id: "escalate-then-rerun",
-        summary: "Escalate the column fix to the database owner, then rerun the task.",
+        summary: "Escalate the column fix to the database owner, wait for their repair, then rerun the task.",
         quality: "correct",
         forHypotheses: ["column-renamed"],
         actions: [
           {
             tool: "request_human_approval",
             input: { reason: "orders.customerId must be renamed back to customer_id by the database owner before check_orders_schema can pass." },
-            description: "Hand the column fix to a human. No PipelineMedic tool can alter a table.",
+            description:
+              "Record an escalation for the database owner. This tool only notes the escalation; it does not and cannot change the table. No PipelineMedic tool can alter a schema.",
             reversible: true,
+            output: { status: "ESCALATION_NOTED" },
           },
           {
             tool: "rerun_airflow_task",
             input: { dag_id: "order_data_quality_dag", task_id: "check_orders_schema", run_id: AIRFLOW_RUN_ID },
-            description: "Rerun the task once the owner confirms the column is restored (simulated: the owner restores it).",
+            description: "Rerun the task. It runs only after the database owner confirms the column is restored.",
             reversible: false,
           },
         ],
         after: { ...HEALTHY, lag: 220 },
-        lesson: "The agent's typed tools can't change a table, and arbitrary SQL is hard-blocked, so the safe move is to escalate the fix and rerun afterwards.",
+        humanRepair: {
+          afterAction: 0,
+          owner: "database owner",
+          task: "Rename orders.customerId back to customer_id in PostgreSQL.",
+          repaired: { lag: 220, dlqPerMin: 0, validatedPct: 100, flink: "RUNNING", airflow: "failed", postgres: "healthy" },
+        },
+        lesson:
+          "The agent's typed tools can't change a table and arbitrary SQL is hard-blocked, so it records an escalation and waits. Only after a human restores the column does the rerun have a chance to pass.",
         sourceNote:
-          "PipelineMedic's mock planner proposes a rerun only for Airflow failures. Its failure-injection script renames customer_id to customerId, and its docs describe repairing the column before the rerun succeeds.",
+          "PipelineMedic's RequestHumanApprovalTool only returns ESCALATION_NOTED (tools/ops_tools.py). Its mock planner proposes a rerun only for Airflow failures; its failure-injection script renames customer_id to customerId, and docs/limitations.md describes repairing the column before the rerun succeeds.",
       },
       {
         id: "rerun-only",

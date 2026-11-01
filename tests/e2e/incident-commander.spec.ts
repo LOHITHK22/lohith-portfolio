@@ -45,6 +45,26 @@ const log = (page: Page) => page.getByTestId("ic-log");
 const summary = (page: Page) => page.getByTestId("ic-summary");
 
 test.describe("Incident Commander", () => {
+  // Record the browser console for every test and attach it when a test fails, so an intermittent failure
+  // leaves its own evidence alongside the trace and screenshot from playwright.config.ts.
+  const consoleLog = new WeakMap<Page, string[]>();
+  test.beforeEach(async ({ page }) => {
+    const lines: string[] = [];
+    consoleLog.set(page, lines);
+    page.on("console", (m) => lines.push(`[console.${m.type()}] ${m.text()}`));
+    page.on("pageerror", (e) => lines.push(`[pageerror] ${e.message}`));
+    page.on("requestfailed", (r) => lines.push(`[requestfailed] ${r.url()} ${r.failure()?.errorText ?? ""}`));
+  });
+  test.afterEach(async ({ page }, testInfo) => {
+    if (testInfo.status === testInfo.expectedStatus) return;
+    const viewport = page.viewportSize();
+    const lines = consoleLog.get(page) ?? [];
+    await testInfo.attach("browser-console.txt", {
+      body: [`viewport=${viewport?.width}x${viewport?.height} project=${testInfo.project.name}`, `url=${page.url()}`, ...lines].join("\n"),
+      contentType: "text/plain",
+    });
+  });
+
   test("loads as a labelled simulation with four scenarios, no console errors and no overflow", async ({ page }) => {
     const errors = consoleErrors(page);
     await open(page);
@@ -134,7 +154,7 @@ test.describe("Incident Commander", () => {
     await expect(page.getByTestId("ic-policy-history")).toContainText("run_shell_command → BLOCKED");
   });
 
-  test("validation choices decide the outcome: a lag-only check gives a false all-clear, the right check rolls back", async ({ page }) => {
+  test("validation choices decide the outcome: a lag-only check reopens the incident, the right check catches the failed rerun", async ({ page }) => {
     await open(page, /^Airflow task failure/);
     await expect(page.getByTestId("ic-alert")).toContainText("check_orders_schema failed");
     await diagnose(page, /transient worker failure/);
@@ -142,6 +162,8 @@ test.describe("Incident Commander", () => {
     await page.getByRole("button", { name: "Approve (simulation)" }).click();
     await validate(page, []);
     await expect(summary(page)).toHaveAttribute("data-outcome", "worsened");
+    await expect(summary(page)).toHaveAttribute("data-status", "REOPENED");
+    await expect(page.getByTestId("ic-outcome")).toContainText("status=REOPENED (simulator status)");
     await expect(summary(page)).toContainText("Validation passed only because the failing check was not run");
     await expect(page.getByTestId("ic-validation")).toContainText("airflow_task_success was not run and would have failed");
     await expect(log(page)).toContainText("Incident reopened");
@@ -152,17 +174,60 @@ test.describe("Incident Commander", () => {
     await choosePlan(page, "rerun-only");
     await page.getByRole("button", { name: "Approve (simulation)" }).click();
     await validate(page, ["airflow_task_success"]);
+    // A failed rerun can't be undone: FAILED, not ROLLED_BACK.
     await expect(summary(page)).toHaveAttribute("data-outcome", "degraded");
-    await expect(summary(page)).toHaveAttribute("data-status", "ROLLED_BACK");
+    await expect(summary(page)).toHaveAttribute("data-status", "FAILED");
+    await expect(summary(page)).toContainText("Nothing that ran could be undone (rerun_airflow_task)");
+    await expect(page.getByTestId("ic-rollback")).toContainText("rerun_airflow_task still in effect (not reversible)");
     await expect(log(page)).toContainText("VALIDATION_FAILED");
     await expect(log(page)).toContainText("rerun_airflow_task cannot be rolled back");
+    await expect(log(page)).toContainText("INCIDENT_ROLLED_BACK nothing could be undone");
+  });
 
+  test("Airflow escalation pauses for an out-of-band human repair; only a confirmed repair lets the rerun run", async ({ page }) => {
+    const errors = consoleErrors(page);
+    await open(page, /^Airflow task failure/);
+    await runEvidence(page, "get_airflow_task_logs");
+    await diagnose(page, /renamed orders\.customer_id/);
+    await expect(page.getByTestId("ic-plan-escalate-then-rerun")).toContainText("does not and cannot change the table");
+    await choosePlan(page, "escalate-then-rerun");
+    await expect(page.getByTestId("ic-rationale")).toHaveText("max tool risk=MEDIUM, severity floor=MEDIUM (from incident severity HIGH) => overall=MEDIUM.");
+    await page.getByRole("button", { name: "Approve (simulation)" }).click();
+
+    // The escalation is recorded and the simulation pauses; the pipeline is still broken.
+    await expect(root(page)).toHaveAttribute("data-phase", "human");
+    await expect(page.getByRole("heading", { name: "Waiting for a human repair" })).toBeFocused();
+    await expect(page.getByTestId("ic-status")).toHaveText("status=AWAITING_HUMAN_REPAIR (simulator status)");
+    await expect(page.getByTestId("ic-escalation")).toContainText('→ {"status":"ESCALATION_NOTED"}');
+    await expect(page.getByTestId("ic-escalation")).toContainText("It does not change the database");
+    await expect(page.getByTestId("ic-human-notice")).toContainText("not an external authorization");
+    await expect(page.getByTestId("ic-metrics")).toContainText("schema mismatch");
+    await expect(log(page)).toContainText("Paused for human repair");
+    await expect(log(page)).not.toContainText("rerun_airflow_task");
+
+    // Withholding confirmation: nothing recovers and the rerun never runs.
+    await page.getByRole("button", { name: "Repair not done: withhold confirmation" }).click();
+    await expect(summary(page)).toHaveAttribute("data-status", "ESCALATED");
+    await expect(summary(page)).toHaveAttribute("data-outcome", "degraded");
+    await expect(summary(page)).toContainText("never confirmed the repair, so the rerun was not attempted");
+    await expect(page.getByTestId("ic-executed")).toHaveText("request_human_approval");
+    await expect(summary(page)).toContainText("Never ran: rerun_airflow_task");
+    await expect(log(page)).not.toContainText("INCIDENT_RESOLVED");
+    await expect(page.getByTestId("ic-metrics")).toContainText("failed");
+
+    // Confirming: the column is restored, then the rerun, canary and validation run.
     await page.getByRole("button", { name: "Retry this incident" }).click();
     await diagnose(page, /renamed orders\.customer_id/);
     await choosePlan(page, "escalate-then-rerun");
     await page.getByRole("button", { name: "Approve (simulation)" }).click();
+    await page.getByRole("button", { name: "Confirm the database owner restored the column" }).click();
+    await expect(log(page)).toContainText("Human repair confirmed");
+    await expect(log(page)).toContainText("rerun_airflow_task");
     await validate(page, ALL_CHECKS);
     await expect(summary(page)).toHaveAttribute("data-outcome", "recovered");
+    await expect(summary(page)).toHaveAttribute("data-status", "RESOLVED");
+    await expect(page.getByTestId("ic-executed")).toHaveText("request_human_approval, rerun_airflow_task");
+    expect(errors).toEqual([]);
   });
 
   test("a failed canary rolls back before full validation, and an irreversible restart leaves things worse", async ({ page }) => {
@@ -172,6 +237,8 @@ test.describe("Incident Commander", () => {
     await page.getByRole("button", { name: "Approve (simulation)" }).click();
     await expect(root(page)).toHaveAttribute("data-phase", "done");
     await expect(summary(page)).toHaveAttribute("data-outcome", "worsened");
+    await expect(summary(page)).toHaveAttribute("data-status", "FAILED");
+    await expect(page.getByTestId("ic-rollback")).toContainText("restart_flink_job still in effect (not reversible)");
     await expect(summary(page)).toContainText("The canary gate failed");
     await expect(summary(page)).toContainText("Full validation never ran because the canary failed.");
     await expect(log(page)).toContainText("CANARY_VALIDATION_FAILED");
@@ -184,6 +251,8 @@ test.describe("Incident Commander", () => {
     await page.getByRole("button", { name: "Approve (simulation)" }).click();
     await validate(page, ["dlq_rate_ok"]);
     await expect(summary(page)).toHaveAttribute("data-status", "ROLLED_BACK");
+    await expect(page.getByTestId("ic-rollback")).toContainText("change_flink_parallelism undone by change_flink_parallelism");
+    await expect(summary(page)).toContainText("Every executed action was undone");
     await expect(log(page)).toContainText('change_flink_parallelism {"job_name":"order-validator","parallelism":2} (rollback of change_flink_parallelism)');
   });
 

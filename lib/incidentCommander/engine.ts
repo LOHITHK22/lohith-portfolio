@@ -1,15 +1,29 @@
 // A deterministic, pure state machine for the Incident Commander simulation. It follows the flow of
 // PipelineMedic's agents/graph.py: diagnose → plan → calculate_risk → BLOCKED | AUTO_EXECUTE |
 // APPROVAL_REQUIRED → execute → canary (MEDIUM/HIGH) → validate → resolve | rollback.
+// Two deliberate differences, both labelled in the UI:
+//  - A plan can pause for an out-of-band human repair (PipelineMedic's request_human_approval only
+//    records an escalation; a person does the repair outside the system).
+//  - After a failed repair the simulator reports what was actually undone. graph.py marks every
+//    failed validation ROLLED_BACK, even when no action had a rollback tool.
 // The same decisions always produce the same result. Nothing here performs I/O.
 
 import { assessRisk, type RiskAssessment, type RiskLevel } from "./policy";
-import { getScenario, LAG_WARNING_THRESHOLD, type Metrics, type RepairPlanOption, type Scenario, type ScenarioId, type ToolCall } from "./scenarios";
+import {
+  getScenario,
+  LAG_WARNING_THRESHOLD,
+  type Metrics,
+  type PlanAction,
+  type RepairPlanOption,
+  type Scenario,
+  type ScenarioId,
+  type ToolCall,
+} from "./scenarios";
 
-export type Phase = "investigate" | "plan" | "approval" | "validate" | "done";
+export type Phase = "investigate" | "plan" | "approval" | "human" | "validate" | "done";
 
-/** PipelineMedic's IncidentStatus values used here. */
-export type IncidentStatus =
+/** IncidentStatus values from PipelineMedic's db/models.py used here. */
+export type PipelineMedicStatus =
   | "DETECTED"
   | "DIAGNOSING"
   | "PLAN_READY"
@@ -18,9 +32,35 @@ export type IncidentStatus =
   | "VALIDATING"
   | "RESOLVED"
   | "ROLLED_BACK"
-  | "REJECTED";
+  | "REJECTED"
+  | "FAILED";
+/** Statuses that exist only in this simulator, to describe states PipelineMedic doesn't model. */
+export const SIMULATOR_STATUSES = ["AWAITING_HUMAN_REPAIR", "ESCALATED", "PARTIALLY_ROLLED_BACK", "REOPENED"] as const;
+export type SimulatorStatus = (typeof SIMULATOR_STATUSES)[number];
+export type IncidentStatus = PipelineMedicStatus | SimulatorStatus;
+export const isSimulatorStatus = (s: IncidentStatus) => (SIMULATOR_STATUSES as readonly string[]).includes(s);
 
 export type Outcome = "recovered" | "degraded" | "worsened";
+
+/** How the incident ended. Each one maps to exactly one final status. */
+export type Resolution =
+  | "recovered" // validation passed and nothing failing was left unchecked
+  | "false_all_clear" // validation passed only because a failing check was not run; reopened
+  | "rolled_back" // repair failed; every executed action was undone
+  | "partial_rollback" // repair failed; some actions undone, others remain in effect
+  | "failed_no_rollback" // repair failed; nothing executed could be undone
+  | "rejected" // the visitor rejected the plan; nothing ran
+  | "escalated_unresolved"; // escalation recorded, but the human repair was not confirmed
+
+export const RESOLUTION_STATUS: Record<Resolution, IncidentStatus> = {
+  recovered: "RESOLVED",
+  false_all_clear: "REOPENED",
+  rolled_back: "ROLLED_BACK",
+  partial_rollback: "PARTIALLY_ROLLED_BACK",
+  failed_no_rollback: "FAILED",
+  rejected: "REJECTED",
+  escalated_unresolved: "ESCALATED",
+};
 
 /** "pm" is an incident_events type from graph.py, "tool" a simulated tool call, "sim" a note from this simulator only. */
 export type LogEntry = { kind: "pm" | "tool" | "sim"; label: string; detail?: string };
@@ -67,7 +107,7 @@ export const getCheck = (id: CheckId) => CHECKS.find((c) => c.id === id)!;
 
 export type CheckResult = { id: CheckId; passed: boolean; value: string };
 
-export type DecisionStep = "evidence" | "diagnosis" | "plan" | "policy" | "approval" | "validation";
+export type DecisionStep = "evidence" | "diagnosis" | "plan" | "policy" | "approval" | "human" | "validation";
 export type Decision = { step: DecisionStep; choice: string; note: string; good: boolean | null };
 
 export type PolicyRecord = { planId: string; tools: string[]; assessment: RiskAssessment };
@@ -79,6 +119,12 @@ export type Diagnosis = {
   confidence: number;
   contradicted: boolean;
   affectedComponents: string[];
+};
+
+/** What happened to each executed action after a failed repair. */
+export type RollbackReport = {
+  reverted: { tool: string; rollbackTool: string }[];
+  remaining: { tool: string; reason: "not_reversible" | "no_rollback_tool" }[];
 };
 
 export type SimState = {
@@ -93,12 +139,14 @@ export type SimState = {
   /** The latest plan the policy engine blocked; cleared when a new plan is chosen. */
   blocked: PolicyRecord | null;
   approval: "approved" | "rejected" | null;
+  /** Indexes of plan actions that actually ran. */
+  executed: number[];
+  humanRepair: "pending" | "confirmed" | "withheld" | null;
   canary: { ran: boolean; passed: boolean; lag: number } | null;
   validation: { checks: CheckResult[]; passed: boolean; missed: CheckResult[] } | null;
-  rolledBack: string[];
+  rollback: RollbackReport | null;
+  resolution: Resolution | null;
   outcome: Outcome | null;
-  /** True when validation passed only because a failing check was not run. */
-  falseAllClear: boolean;
   decisions: Decision[];
   log: LogEntry[];
 };
@@ -109,6 +157,8 @@ export type SimAction =
   | { type: "plan"; planId: string }
   | { type: "approve" }
   | { type: "reject" }
+  | { type: "confirmRepair" }
+  | { type: "withholdRepair" }
   | { type: "validate"; checks: CheckId[] }
   | { type: "restart" }
   | { type: "load"; scenarioId: ScenarioId };
@@ -128,11 +178,13 @@ export function initialState(scenarioId: ScenarioId): SimState {
     policy: [],
     blocked: null,
     approval: null,
+    executed: [],
+    humanRepair: null,
     canary: null,
     validation: null,
-    rolledBack: [],
+    rollback: null,
+    resolution: null,
     outcome: null,
-    falseAllClear: false,
     decisions: [],
     log: [
       { kind: "pm", label: "INCIDENT_DETECTED", detail: `${s.incidentType} · severity ${s.severity} · ${s.sourceComponent}` },
@@ -181,49 +233,90 @@ export function healthScore(m: Metrics) {
   );
 }
 
-function rollback(state: SimState, s: Scenario, plan: RepairPlanOption): SimState {
-  const log = [...state.log];
-  const rolledBack: string[] = [];
-  for (const a of [...plan.actions].reverse()) {
-    if (a.rollback) {
-      log.push({ kind: "tool", label: a.rollback.tool, detail: `${fmtInput(a.rollback)} (rollback of ${a.tool})` });
-      rolledBack.push(a.rollback.tool);
-    }
+/**
+ * Classifies executed actions after a failure, newest first (graph.py rolls back in reverse order).
+ * Only an action with a rollback tool is undone; is_reversible alone undoes nothing.
+ */
+export function classifyRollback(actions: PlanAction[]): { report: RollbackReport; resolution: Resolution } {
+  const report: RollbackReport = { reverted: [], remaining: [] };
+  for (const a of [...actions].reverse()) {
+    if (a.rollback) report.reverted.push({ tool: a.tool, rollbackTool: a.rollback.tool });
+    else report.remaining.push({ tool: a.tool, reason: a.reversible ? "no_rollback_tool" : "not_reversible" });
   }
-  const irreversible = plan.actions.filter((a) => !a.reversible).map((a) => a.tool);
-  if (irreversible.length) log.push({ kind: "sim", label: "Not reversible", detail: `${irreversible.join(", ")} cannot be rolled back.` });
-  const metrics = plan.afterRollback ?? (irreversible.length ? plan.after! : { ...s.initial });
-  return { ...state, log, rolledBack, metrics, status: "ROLLED_BACK" };
+  const resolution: Resolution = !report.remaining.length ? "rolled_back" : report.reverted.length ? "partial_rollback" : "failed_no_rollback";
+  return { report, resolution };
 }
 
-function finish(state: SimState, s: Scenario): SimState {
+function rollback(state: SimState, s: Scenario, plan: RepairPlanOption): SimState {
+  const executed = state.executed.map((i) => plan.actions[i]);
+  const { report, resolution } = classifyRollback(executed);
+  const log = [...state.log];
+  for (const a of [...executed].reverse()) {
+    if (a.rollback) log.push({ kind: "tool", label: a.rollback.tool, detail: `${fmtInput(a.rollback)} (rollback of ${a.tool})` });
+  }
+  for (const r of report.remaining) {
+    log.push({
+      kind: "sim",
+      label: "Still in effect",
+      detail: r.reason === "not_reversible" ? `${r.tool} cannot be rolled back.` : `${r.tool} has no rollback tool, so it stays applied.`,
+    });
+  }
+  // Fully undone: back to where the incident started. Otherwise whatever remains stays in effect.
+  const metrics = resolution === "rolled_back" ? { ...s.initial } : plan.afterRollback ?? { ...state.metrics };
+  return { ...state, log, rollback: report, metrics, resolution, status: RESOLUTION_STATUS[resolution] };
+}
+
+function finish(state: SimState, s: Scenario, resolution: Resolution): SimState {
   let outcome: Outcome;
-  if (state.status === "RESOLVED" && !state.falseAllClear) outcome = "recovered";
-  else if (state.falseAllClear) outcome = "worsened";
-  else outcome = healthScore(state.metrics) > healthScore(s.initial) + 0.01 ? "worsened" : "degraded";
-  return { ...state, phase: "done", outcome };
+  switch (resolution) {
+    case "recovered":
+      outcome = "recovered";
+      break;
+    case "false_all_clear":
+      outcome = "worsened";
+      break;
+    case "rolled_back":
+    case "rejected":
+    case "escalated_unresolved":
+      outcome = "degraded";
+      break;
+    case "partial_rollback":
+    case "failed_no_rollback":
+      outcome = healthScore(state.metrics) > healthScore(s.initial) + 0.01 ? "worsened" : "degraded";
+      break;
+  }
+  return { ...state, phase: "done", resolution, status: RESOLUTION_STATUS[resolution], outcome };
 }
 
-/** execute → canary → (validate phase | rolled back). Mirrors _execute_and_validate in graph.py. */
-function execute(state: SimState, s: Scenario, plan: RepairPlanOption, risk: RiskLevel): SimState {
-  const log: LogEntry[] = [...state.log, { kind: "pm", label: "REPAIR_STARTED", detail: plan.summary }];
-  for (const a of plan.actions) log.push({ kind: "tool", label: a.tool, detail: fmtInput(a) });
-  let next: SimState = { ...state, status: "EXECUTING", metrics: { ...plan.after! }, log };
+/** Runs plan actions [from, to) and logs each simulated tool call. */
+function runActions(state: SimState, plan: RepairPlanOption, from: number, to: number): SimState {
+  const log = [...state.log];
+  const executed = [...state.executed];
+  for (let i = from; i < to; i++) {
+    const a = plan.actions[i];
+    log.push({ kind: "tool", label: a.tool, detail: `${fmtInput(a)}${a.output ? ` → ${JSON.stringify(a.output)}` : ""}` });
+    executed.push(i);
+  }
+  return { ...state, log, executed };
+}
 
+/** After every action has run: canary for MEDIUM/HIGH, then the validation step. Mirrors _execute_and_validate. */
+function afterActions(state: SimState, s: Scenario, plan: RepairPlanOption): SimState {
+  const risk = state.policy[state.policy.length - 1].assessment.riskLevel;
+  let next: SimState = { ...state, metrics: { ...plan.after! }, log: [...state.log] };
   if (needsCanary(risk)) {
     const lag = next.metrics.lag;
     const passed = lag < LAG_WARNING_THRESHOLD;
-    next.log = [
-      ...next.log,
+    next.log.push(
       { kind: "pm", label: "CANARY_STARTED", detail: `risk_level=${risk}; single-instance validation gate` },
       { kind: "tool", label: "validate_pipeline_health", detail: `canary: consumer_lag_ok=${passed}, measured_lag=${lag}` },
-    ];
+    );
     next.canary = { ran: true, passed, lag };
     if (!passed) {
       next.log.push({ kind: "pm", label: "CANARY_VALIDATION_FAILED", detail: `measured_lag=${lag} ≥ ${LAG_WARNING_THRESHOLD}` });
       next = rollback(next, s, plan);
-      next.log.push({ kind: "pm", label: "INCIDENT_ROLLED_BACK" });
-      return finish(next, s);
+      next.log.push(rollbackEndEntry(next.resolution!));
+      return finish(next, s, next.resolution!);
     }
     next.log.push({ kind: "pm", label: "CANARY_VALIDATION_PASSED" }, { kind: "pm", label: "CANARY_EXPANDED", detail: "expanded_scope=full" });
   } else {
@@ -231,6 +324,34 @@ function execute(state: SimState, s: Scenario, plan: RepairPlanOption, risk: Ris
   }
   next.log.push({ kind: "pm", label: "REPAIR_COMPLETED" });
   return { ...next, status: "VALIDATING", phase: "validate" };
+}
+
+/** graph.py logs INCIDENT_ROLLED_BACK for every failed validation; the simulator adds what that really meant. */
+function rollbackEndEntry(resolution: Resolution): LogEntry {
+  const detail =
+    resolution === "rolled_back"
+      ? "every executed action was undone"
+      : resolution === "partial_rollback"
+        ? "partial: some actions remain in effect (simulator status PARTIALLY_ROLLED_BACK)"
+        : "nothing could be undone (simulator status FAILED)";
+  return { kind: "pm", label: "INCIDENT_ROLLED_BACK", detail };
+}
+
+/** REPAIR_STARTED, then actions up to an out-of-band human step (pause) or to the end. */
+function execute(state: SimState, s: Scenario, plan: RepairPlanOption): SimState {
+  let next: SimState = { ...state, status: "EXECUTING", log: [...state.log, { kind: "pm", label: "REPAIR_STARTED", detail: plan.summary }] };
+  const pauseAfter = plan.humanRepair?.afterAction;
+  if (pauseAfter !== undefined) {
+    next = runActions(next, plan, 0, pauseAfter + 1);
+    next.log.push({
+      kind: "sim",
+      label: "Paused for human repair",
+      detail: `Waiting for the ${plan.humanRepair!.owner} to do this outside PipelineMedic: ${plan.humanRepair!.task}`,
+    });
+    return { ...next, phase: "human", status: "AWAITING_HUMAN_REPAIR", humanRepair: "pending" };
+  }
+  next = runActions(next, plan, 0, plan.actions.length);
+  return afterActions(next, s, plan);
 }
 
 export function reducer(state: SimState, action: SimAction): SimState {
@@ -296,7 +417,7 @@ export function reducer(state: SimState, action: SimAction): SimState {
         };
       }
       if (assessment.decision === "AUTO_EXECUTE") {
-        return execute({ ...base, log: [...state.log, { kind: "sim", label: "Policy: AUTO_EXECUTE", detail: assessment.rationale }] }, s, plan, assessment.riskLevel);
+        return execute({ ...base, log: [...state.log, { kind: "sim", label: "Policy: AUTO_EXECUTE", detail: assessment.rationale }] }, s, plan);
       }
       return {
         ...base,
@@ -325,20 +446,62 @@ export function reducer(state: SimState, action: SimAction): SimState {
           {
             ...state,
             approval: "rejected",
-            status: "REJECTED",
             decisions,
             log: [...state.log, { kind: "pm", label: "HUMAN_REJECTED", detail: "decided_by=visitor (simulation)" }],
           },
           s,
+          "rejected",
         );
       }
-      const risk = state.policy[state.policy.length - 1].assessment.riskLevel;
       return execute(
         { ...state, approval: "approved", decisions, log: [...state.log, { kind: "pm", label: "HUMAN_APPROVED", detail: "decided_by=visitor (simulation)" }] },
         s,
         plan,
-        risk,
       );
+    }
+
+    case "confirmRepair":
+    case "withholdRepair": {
+      if (state.phase !== "human" || !state.planId) return state;
+      const plan = s.plans.find((p) => p.id === state.planId)!;
+      const hr = plan.humanRepair!;
+      if (action.type === "withholdRepair") {
+        return finish(
+          {
+            ...state,
+            humanRepair: "withheld",
+            decisions: [
+              ...state.decisions,
+              { step: "human", choice: "Repair not confirmed", note: "The escalation is on record, but the column was never restored, so the rerun never ran.", good: false },
+            ],
+            log: [
+              ...state.log,
+              { kind: "sim", label: "Human repair not confirmed", detail: `The ${hr.owner} has not completed: ${hr.task} The rerun is not attempted.` },
+            ],
+          },
+          s,
+          "escalated_unresolved",
+        );
+      }
+      let next: SimState = {
+        ...state,
+        humanRepair: "confirmed",
+        metrics: { ...hr.repaired },
+        decisions: [
+          ...state.decisions,
+          { step: "human", choice: "Repair confirmed (simulated)", note: `The ${hr.owner} reported the fix done, so the remaining actions run.`, good: true },
+        ],
+        log: [
+          ...state.log,
+          {
+            kind: "sim",
+            label: "Human repair confirmed",
+            detail: `Simulated ${hr.owner} reports done: ${hr.task} A simulated confirmation, not an external authorization.`,
+          },
+        ],
+      };
+      next = runActions(next, plan, hr.afterAction + 1, plan.actions.length);
+      return afterActions({ ...next, status: "EXECUTING" }, s, plan);
     }
 
     case "validate": {
@@ -361,7 +524,7 @@ export function reducer(state: SimState, action: SimAction): SimState {
           {
             step: "validation",
             choice: `${checks.length} check(s): ${checks.map((c) => c.id).join(", ")}`,
-            note: passed ? (missed.length ? "Passed, but a failing check was not run." : "All checks passed.") : "A check failed, so the repair was rolled back.",
+            note: passed ? (missed.length ? "Passed, but a failing check was not run." : "All checks passed.") : "A check failed, so the repair was rolled back where possible.",
             good: passed ? missed.length === 0 : true,
           },
         ],
@@ -369,27 +532,18 @@ export function reducer(state: SimState, action: SimAction): SimState {
       };
       if (passed) {
         next.log.push({ kind: "pm", label: "VALIDATION_PASSED" }, { kind: "pm", label: "INCIDENT_RESOLVED" });
-        next.status = "RESOLVED";
-        if (missed.length) {
-          next.falseAllClear = true;
-          next.log.push({
-            kind: "sim",
-            label: "Incident reopened",
-            detail: `Unchecked problem surfaced later: ${missed.map((m) => `${m.id} (${m.value})`).join(", ")}.`,
-          });
-        }
-      } else {
-        next.log.push({ kind: "pm", label: "VALIDATION_FAILED", detail });
-        next = rollback(next, s, plan);
-        next.log.push({ kind: "pm", label: "INCIDENT_ROLLED_BACK" });
+        if (!missed.length) return finish(next, s, "recovered");
+        next.log.push({
+          kind: "sim",
+          label: "Incident reopened",
+          detail: `Unchecked problem surfaced later: ${missed.map((m) => `${m.id} (${m.value})`).join(", ")}. Simulator status REOPENED.`,
+        });
+        return finish(next, s, "false_all_clear");
       }
-      return finish(next, s);
+      next.log.push({ kind: "pm", label: "VALIDATION_FAILED", detail });
+      next = rollback(next, s, plan);
+      next.log.push(rollbackEndEntry(next.resolution!));
+      return finish(next, s, next.resolution!);
     }
   }
 }
-
-/** Convenience for tests and the summary: the plan currently or last chosen. */
-export const currentPlan = (state: SimState) => {
-  const id = state.planId ?? state.policy[state.policy.length - 1]?.planId;
-  return id ? getScenario(state.scenarioId).plans.find((p) => p.id === id) ?? null : null;
-};
