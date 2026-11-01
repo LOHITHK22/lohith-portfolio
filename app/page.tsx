@@ -13,6 +13,7 @@ import { CareerFairBanner } from "@/components/CareerFairBanner";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { AgentTeamLazy } from "@/components/AgentTeamLazy";
 import { AILab } from "@/components/AILab";
+import { EngineeringPlayground } from "@/components/EngineeringPlayground";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { CommandPaletteLazy } from "@/components/CommandPaletteLazy";
 import { PrismWelcome } from "@/components/PrismWelcome";
@@ -24,7 +25,7 @@ export default function Home({
 }) {
   const careerFair = searchParams?.careerfair === "true";
 
-  // Flow: hero → flagship system → AI team → lab → other systems → experience → contact.
+  // Flow: hero → flagship system → AI team → lab → playground → other systems → experience → contact.
   return (
     <>
       <ScrollProgressBar />
@@ -36,6 +37,7 @@ export default function Home({
         <FlagshipSystem />
         <TeamSection />
         <AILab />
+        <EngineeringPlayground />
         <ProjectShowcase />
         <GitHubProjects />
         <ExperienceTimeline />

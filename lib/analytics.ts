@@ -33,7 +33,9 @@ export type AnalyticsEvent =
   | "event_offline_ready"
   | "prism_welcome_play"
   | "prism_welcome_blocked"
-  | "prism_welcome_shortcut";
+  | "prism_welcome_shortcut"
+  | "playground_open"
+  | "sql_challenge_check";
 
 type AnalyticsProps = Record<string, string | number | boolean | null>;
 
