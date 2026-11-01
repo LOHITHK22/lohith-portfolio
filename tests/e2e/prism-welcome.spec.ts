@@ -204,16 +204,25 @@ test.describe("PRISM voice welcome · desktop", () => {
           expect(info.ring, `${match} shows a focus indicator`).toBe(true);
           reached.add(match);
         }
+        // Tabbing through the whole page scrolls past the hero, where the
+        // compact panel shows no shortcuts; a keyboard user expands it with
+        // Enter, exactly as a pointer user would click Expand.
+        if (match === "Expand PRISM" && (await panel(page).getByRole("button", { name: "Explore Projects" }).count()) === 0) {
+          await page.keyboard.press("Enter");
+          await expect(panel(page).getByRole("button", { name: "Minimize PRISM" })).toBeFocused();
+        }
       }
     }
     expect([...reached].sort()).toEqual([...names].sort());
-    // Operate with the keyboard: Enter on Mute, Enter on Expand.
+    // Operate with the keyboard: Enter on Mute, Enter on Expand/Minimize.
     await panel(page).getByRole("button", { name: "Mute PRISM" }).focus();
     await page.keyboard.press("Enter");
     await expect(panel(page).getByRole("button", { name: "Unmute PRISM" })).toHaveAttribute("aria-pressed", "true");
-    await panel(page).getByRole("button", { name: "Expand PRISM" }).focus();
+    const toggle = panel(page).getByRole("button", { name: /^(Expand|Minimize) PRISM$/ });
+    const before = await toggle.getAttribute("aria-expanded");
+    await toggle.focus();
     await page.keyboard.press("Enter");
-    await expect(panel(page).getByRole("button", { name: "Minimize PRISM" })).toHaveAttribute("aria-expanded", "true");
+    await expect(toggle).toHaveAttribute("aria-expanded", before === "true" ? "false" : "true");
   });
 
   test("clear of the navigation, headline, CTAs, agent dock and the portrait's face at common desktop sizes", async ({ page }) => {
