@@ -448,7 +448,7 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
                 {!completed && ` · ${scene.title}`}
               </p>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="hidden rounded-full border border-white/10 px-2.5 py-1 text-[10px] uppercase tracking-wide text-slate-400 sm:inline">
+                <span className="hidden rounded-full border border-white/10 px-2.5 py-1 text-[11px] uppercase tracking-wide text-slate-400 sm:inline">
                   Scripted demo
                 </span>
                 <IconButton label="Exit experience" onClick={exit}>

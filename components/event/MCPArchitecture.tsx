@@ -59,7 +59,7 @@ export function MCPArchitecture() {
                   boxShadow: isActive ? `0 0 24px -8px ${color}` : "none",
                 }}
               >
-                <span className="mr-2 font-mono text-[10px]" style={{ color }}>
+                <span className="mr-2 font-mono text-[10px] sm:text-[11px]" style={{ color }}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 {n.label}
@@ -146,14 +146,14 @@ export function MCPArchitecture() {
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {readOnlyTools.map((t) => (
-              <span key={t} className="rounded border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-0.5 font-mono text-[10px] text-emerald-200">
+              <span key={t} className="rounded border border-emerald-400/30 bg-emerald-400/10 px-1.5 py-0.5 font-mono text-[10px] text-emerald-200 sm:text-[11px]">
                 {t}
               </span>
             ))}
             {stateChangingTools.map((t) => (
               <span
                 key={t.name}
-                className={`rounded border px-1.5 py-0.5 font-mono text-[10px] ${
+                className={`rounded border px-1.5 py-0.5 font-mono text-[10px] sm:text-[11px] ${
                   fullTools
                     ? t.risk === "MEDIUM"
                       ? "border-violet-300/40 bg-violet-400/10 text-violet-200"
@@ -166,7 +166,7 @@ export function MCPArchitecture() {
               </span>
             ))}
             {blockedTools.map((t) => (
-              <span key={t} className="rounded border border-rose-400/30 px-1.5 py-0.5 font-mono text-[10px] text-rose-300/80 line-through">
+              <span key={t} className="rounded border border-rose-400/30 px-1.5 py-0.5 font-mono text-[10px] text-rose-300/80 sm:text-[11px] line-through">
                 {t}
               </span>
             ))}

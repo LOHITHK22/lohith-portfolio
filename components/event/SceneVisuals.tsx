@@ -131,7 +131,7 @@ export function PipelineMedicVisual({ progress, reduced }: VisualProps) {
         {demoStages.map((s, i) => (
           <li key={s.id} className="flex flex-col items-center text-center">
             <span
-              className="flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-semibold transition-all duration-300 sm:h-8 sm:w-8"
+              className="flex h-7 w-7 items-center justify-center rounded-full border text-[10px] font-semibold transition-all duration-300 sm:h-8 sm:w-8 sm:text-[11px]"
               style={{
                 borderColor: i <= active ? toneColorOf(s.tone) : "rgba(255,255,255,0.15)",
                 background: i === active ? `${toneColorOf(s.tone)}30` : "transparent",
@@ -141,7 +141,7 @@ export function PipelineMedicVisual({ progress, reduced }: VisualProps) {
             >
               {s.step}
             </span>
-            <span className={`mt-1 text-[9px] leading-tight sm:text-[10px] ${i === active ? "text-white" : "text-slate-300"}`}>{s.label}</span>
+            <span className={`mt-1 text-[9px] leading-tight sm:text-[11px] ${i === active ? "text-white" : "text-slate-300"}`}>{s.label}</span>
           </li>
         ))}
       </ol>
@@ -158,7 +158,7 @@ export function PipelineMedicVisual({ progress, reduced }: VisualProps) {
             {stage.step} · {stage.label} <span className="font-normal text-slate-400">· {stage.actor}</span>
           </p>
           {(stage.id === "approval" || stage.id === "policy") && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-violet-300/40 bg-violet-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-200">
+            <span className="inline-flex items-center gap-1 rounded-full border border-violet-300/40 bg-violet-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-200 sm:text-[11px]">
               <LockKeyhole className="h-3 w-3" aria-hidden="true" /> Human approval required
             </span>
           )}
@@ -171,7 +171,7 @@ export function PipelineMedicVisual({ progress, reduced }: VisualProps) {
           href={pmFile(stage.source.path)}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1 inline-block font-mono text-[10px] text-cyan-300 underline-offset-2 hover:underline"
+          className="mt-1 inline-block font-mono text-[10px] text-cyan-300 sm:text-[11px] underline-offset-2 hover:underline"
         >
           source: {stage.source.label}
         </a>
@@ -246,7 +246,7 @@ function TestingVisual({ progress, reduced }: VisualProps) {
         <p className="mb-1.5 text-[11px] uppercase tracking-wide text-slate-400">incident events (sample sequence)</p>
         <div className="flex flex-wrap gap-1.5">
           {audit.map((e) => (
-            <span key={e} className="rounded border border-white/10 bg-base-950/80 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">
+            <span key={e} className="rounded border border-white/10 bg-base-950/80 px-1.5 py-0.5 font-mono text-[10px] text-slate-300 sm:text-[11px]">
               {e}
             </span>
           ))}
