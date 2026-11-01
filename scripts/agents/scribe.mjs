@@ -28,7 +28,7 @@ function publicAgent(a) {
   if (a.agent === "SYNC") out.repos = (a.repos ?? []).map(({ repo, status, commits, release, ci, error }) => ({ repo, status, commits: commits?.length ?? 0, release, ci, error }));
   if (a.agent === "FORGE") out.issues = a.issues ?? [];
   if (a.agent === "PRISM") {
-    out.recommendations = (a.recommendations ?? []).map(({ id, title, category, priority, source, ownerAction, prompt, issue }) => ({ id, title, category, priority, source, ownerAction, prompt, issue }));
+    out.recommendations = (a.recommendations ?? []).map(({ id, title, tier, category, priority, source, ownerAction, prompt, issue }) => ({ id, title, tier, category, priority, source, ownerAction, prompt, issue }));
     out.llm = a.llm ?? null;
   }
   return out;

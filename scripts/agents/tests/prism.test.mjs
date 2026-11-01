@@ -8,8 +8,9 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { loadConfig, ROOT } from "../lib.mjs";
 import { regionDiff } from "../imagediff.mjs";
-import { buildRecommendations, renderPrompt, refineWithClaude, monthSpend, estimateUsd, runPrism, scanCode, refreshPrismStatus } from "../prism.mjs";
-import { compareScreens, toReport } from "../prism-compare.mjs";
+import { buildRecommendations, tierOf, TIERS, renderPrompt, refineWithClaude, monthSpend, estimateUsd, runPrism, scanCode, refreshPrismStatus } from "../prism.mjs";
+import { compareScreens, toReport, compareStates, toStatesReport } from "../prism-compare.mjs";
+import { analyzeState, contrastRatio, parseColor, requiredContrast } from "../event-states.mjs";
 import { buildRunRecord } from "../scribe.mjs";
 
 const { PNG } = createRequire(path.join(ROOT, "package.json"))("pngjs");
@@ -67,7 +68,9 @@ test("rules: mobile tap targets, small text, overflow, unused code and SENTINEL 
   assert.ok(ids.includes("design-drift-home-desktop"));
   assert.ok(ids.includes("remove-unused-components"));
   assert.ok(!ids.some((i) => i.startsWith("perf-")), "within thresholds: no performance prompt");
-  for (let i = 1; i < recs.length; i++) assert.ok(recs[i - 1].priority >= recs[i].priority);
+  // Ordered by visitor-impact tier first, then by priority within a tier.
+  const rank = (r) => TIERS.indexOf(r.tier);
+  for (let i = 1; i < recs.length; i++) assert.ok(rank(recs[i - 1]) < rank(recs[i]) || (rank(recs[i - 1]) === rank(recs[i]) && recs[i - 1].priority >= recs[i].priority));
   for (const r of recs) assert.ok(r.evidence.length && r.acceptance.length && r.impact, `${r.id} has impact, evidence and acceptance criteria`);
 });
 
@@ -188,6 +191,9 @@ test("runPrism: skips recommendations already open or proposed recently", async 
   const second = await runPrism(prismArgs({ history, openIssues: [{ prismId: ids[0] }] }));
   for (const id of ids) assert.ok(!second.recommendations.some((r) => r.id === id), `${id} not proposed twice`);
   assert.match(second.summary, /already open or recently proposed/);
+  // An issue that also claims another prompt id (extra prism:id marker) blocks that prompt too.
+  const third = await runPrism(prismArgs({ openIssues: [{ prismId: "other", prismIds: ["other", ...ids] }] }));
+  for (const id of ids) assert.ok(!third.recommendations.some((r) => r.id === id), `${id} covered by a multi-id issue`);
 });
 
 test("runPrism: Claude recommendations replace rules when the call succeeds; a crash falls back", async () => {
@@ -212,7 +218,10 @@ test("runPrism (live): one issue per prompt, with the approval instructions; own
     upsertIssue: async (repo, issue) => (created.push(issue), { action: "created", number: 40 + created.length, url: `https://github.com/x/issues/${40 + created.length}` }),
   };
   const r = await runPrism(prismArgs({ dryRun: false, gh }));
-  assert.equal(created.length, r.recommendations.filter((x) => !x.ownerAction).length);
+  // Issues only for prompts at or above issueMinTier; lower tiers are saved without one.
+  const fileable = (x) => !x.ownerAction && TIERS.indexOf(x.tier) <= TIERS.indexOf(config.prism.issueMinTier);
+  assert.equal(created.length, r.recommendations.filter(fileable).length);
+  for (const x of r.recommendations) assert.equal(Boolean(x.issue), fileable(x), `${x.id} (${x.tier}) issue matches its tier`);
   for (const c of created) {
     assert.ok(c.title.startsWith("[prism] "));
     assert.deepEqual(c.labels, ["prism"]);
@@ -237,6 +246,7 @@ test("refreshPrismStatus maps issues and claude/ PRs to dashboard states", async
   const st = Object.fromEntries(out.map((o) => [o.prismId, o.state]));
   assert.deepEqual(st, { a: "awaiting-approval", b: "approved", c: "pr-open", d: "closed" });
   assert.equal(out.find((o) => o.prismId === "c").pr.number, 9);
+  assert.deepEqual(out.find((o) => o.prismId === "a").prismIds, ["a"]);
 });
 
 test("compare: before/after metrics and the PR report", () => {
@@ -261,4 +271,102 @@ test("SCRIBE keeps PRISM's public fields only", () => {
   assert.equal(p.recommendations[0].secret, undefined);
   assert.equal(p.drift, undefined);
   assert.equal(p.llm.costUsd, 0);
+});
+
+test("tiers: visitor impact ranks above rule counts", () => {
+  assert.equal(tierOf({ id: "fix-event-500" }), "P0");
+  for (const id of ["broken-state-event", "overflow-home-mobile", "tap-targets-event-mobile", "overlap-event", "contrast-event"]) assert.equal(tierOf({ id }), "P1", id);
+  for (const id of ["design-drift-home-desktop", "perf-event", "project-update-x"]) assert.equal(tierOf({ id }), "P2", id);
+  for (const id of ["small-text-home-desktop", "remove-unused-components", "split-components-ailab-tsx"]) assert.equal(tierOf({ id }), "P3", id);
+  assert.equal(tierOf({ id: "small-text-x", tier: "P1" }), "P1", "an explicit tier (from Claude) wins");
+  // 60 small text nodes (P3) never outrank one small tap target (P1).
+  const recs = buildRecommendations(
+    { screens: [{ id: "home-mobile", path: "/", width: 390, height: 844, audit: audit({ smallTargetCount: 1, smallTargets: [{ label: "x", w: 20, h: 20 }], smallTextCount: 60, smallText: [{ text: "t", px: 9 }] }) }], drift: [], code: { unused: [], large: [], todos: [] }, sentinel: { failures: [] }, pulse: null, sync: { repos: [] } },
+    T
+  );
+  assert.deepEqual(recs.map((r) => r.id), ["tap-targets-home-mobile", "small-text-home-mobile"]);
+  assert.match(renderPrompt(recs[0], { site: config.site, runUrl: null, evidenceBase: null }), /\*\*Tier:\*\* P1/);
+});
+
+const state = (st, width, a = {}, extra = {}) => ({ id: `${st}-${width}x844`, state: st, path: "/event", width, height: 844, ok: true, audit: { overflowX: 0, smallTargets: [], smallTargetCount: 0, smallText: [], smallTextCount: 0, overlaps: [], overlapCount: 0, lowContrast: [], lowContrastCount: 0, ...a }, ...extra });
+
+test("rules: /event states produce P1 prompts for broken states, overlaps, contrast, overflow and demo controls", () => {
+  const recs = buildRecommendations(
+    {
+      screens: [], drift: [], code: { unused: [], large: [], todos: [] }, sentinel: { failures: [] }, pulse: null, sync: { repos: [] },
+      eventStates: [
+        { id: "demo-paused-390x844", state: "demo-paused", width: 390, height: 844, ok: false, error: "Timeout waiting for Pause" },
+        state("contact-qr", 1440, { overlaps: [{ a: "A", b: "B", px: 120 }] }),
+        state("demo-playing", 390, { lowContrast: [{ text: "NOVA", px: 9, ratio: 4.28, need: 4.5 }], smallTargets: [{ label: "Scene 1", w: 47.7, h: 24 }], overflowX: 6 }),
+        state("demo-playing", 820, { lowContrast: [{ text: "NOVA", px: 9, ratio: 4.28, need: 4.5 }] }),
+      ],
+    },
+    T
+  );
+  const byId = Object.fromEntries(recs.map((r) => [r.id, r]));
+  for (const id of ["broken-state-event", "overlap-event", "contrast-event", "overflow-event-states", "tap-targets-event-demo"]) assert.equal(byId[id]?.tier, "P1", id);
+  assert.equal(byId["contrast-event"].evidence.length, 1, "the same text at two sizes is reported once");
+  assert.match(byId["broken-state-event"].evidence[0], /demo-paused at 390×844: Timeout/);
+  assert.equal(recs[0].id, "broken-state-event", "a broken demo ranks first");
+});
+
+test("event states: WCAG contrast maths and colour parsing", () => {
+  assert.deepEqual(parseColor("rgba(255, 255, 255, 0.5)"), [255, 255, 255, 0.5]);
+  assert.deepEqual(parseColor("rgb(2 6 8 / 50%)"), [2, 6, 8, 0.5]);
+  assert.equal(parseColor("linear-gradient(red, blue)"), null);
+  assert.equal(contrastRatio([0, 0, 0, 1], [255, 255, 255]), 21);
+  assert.equal(contrastRatio([255, 255, 255, 0], [2, 6, 8]), 1, "transparent text has no contrast");
+  assert.equal(requiredContrast(14, 400), 4.5);
+  assert.equal(requiredContrast(24, 400), 3);
+  assert.equal(requiredContrast(19, 700), 3);
+});
+
+test("event states: audit counts touch targets on touch widths only, ignores nested and wrapped controls, skips unknown backgrounds", () => {
+  const raw = {
+    overflowX: 0,
+    controls: [
+      { label: "Card", x: 0, y: 0, w: 200, h: 100, contains: [1] },
+      { label: "Inside", x: 10, y: 10, w: 30, h: 20, contains: [] },
+      // A link wrapped over two lines: its bounding box spans the row, its line boxes do not touch "Kiosk".
+      { label: "Kiosk", x: 0, y: 200, w: 60, h: 15, contains: [], boxes: [{ x: 0, y: 200, w: 60, h: 15 }] },
+      { label: "Fallback", x: 0, y: 200, w: 400, h: 35, contains: [], boxes: [{ x: 80, y: 200, w: 320, h: 15 }, { x: 0, y: 220, w: 120, h: 15 }] },
+      { label: "Covering", x: 300, y: 50, w: 50, h: 50, contains: [] },
+      { label: "Covered", x: 310, y: 60, w: 50, h: 50, contains: [] },
+    ],
+    texts: [
+      { text: "dim", px: 12, weight: 400, fg: "rgb(80, 80, 80)", bg: "rgb(2, 6, 8)" },
+      { text: "fine", px: 12, weight: 400, fg: "rgb(230, 230, 230)", bg: "rgb(2, 6, 8)" },
+      { text: "over image", px: 9, weight: 400, fg: "rgb(80, 80, 80)", bg: null },
+    ],
+  };
+  const phone = analyzeState(raw, T, { touch: true });
+  assert.deepEqual(phone.overlaps.map((o) => `${o.a}|${o.b}`), ["Covering|Covered"]);
+  assert.equal(phone.smallTargetCount, 3, "Inside, Kiosk and Fallback (35px tall) are under 40px");
+  assert.deepEqual(phone.lowContrast.map((c) => c.text), ["dim"]);
+  assert.equal(phone.contrastChecked, 2, "text over an image is not judged");
+  assert.equal(phone.smallTextCount, 1);
+  assert.equal(analyzeState(raw, T, { touch: false }).smallTargetCount, 0, "desktop: tap targets not counted");
+});
+
+test("compare: /event states report changes, and a state lost on the PR build is a regression", () => {
+  const png = solidPng(40, 30, [0, 0, 0]);
+  const before = [
+    { ...state("landing", 390, { smallTargetCount: 8 }), png },
+    { ...state("demo-paused", 390), png },
+    { id: "mcp-expanded-390x844", state: "mcp-expanded", width: 390, height: 844, ok: false, error: "already broken live" },
+  ];
+  const after = [
+    { ...state("landing", 390, { smallTargetCount: 0 }), png },
+    { id: "demo-paused-390x844", state: "demo-paused", width: 390, height: 844, ok: false, error: "Pause button missing" },
+    { id: "mcp-expanded-390x844", state: "mcp-expanded", width: 390, height: 844, ok: false, error: "still broken" },
+  ];
+  const rows = compareStates(before, after);
+  assert.deepEqual(rows.map((r) => r.state), ["landing", "mcp-expanded", "demo-paused"], "rows follow the visitor's path");
+  assert.deepEqual(rows.find((r) => r.state === "landing").audit.smallTargets, [8, 0]);
+  assert.equal(rows.find((r) => r.state === "demo-paused").regression, true);
+  assert.equal(rows.find((r) => r.state === "mcp-expanded").regression, false, "broken on both sides is not blamed on the PR");
+  const md = toStatesReport(rows);
+  assert.ok(md.includes("8 → **0**"));
+  assert.ok(md.includes("unreachable on this build"));
+  assert.ok(md.includes("unreachable on the live site"));
 });

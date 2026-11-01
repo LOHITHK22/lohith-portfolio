@@ -254,7 +254,7 @@ export default async function AgentsPage() {
                         <div className="min-w-0">
                           <p className="text-sm font-medium leading-snug text-white">{it.title}</p>
                           <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-500">
-                            {[it.category, it.priority != null ? `priority ${it.priority}` : null, it.source === "claude" ? "refined by Claude" : it.source === "rules" ? "rule-based" : null, it.proposedAt]
+                            {[it.tier, it.category, it.priority != null ? `priority ${it.priority}` : null, it.source === "claude" ? "refined by Claude" : it.source === "rules" ? "rule-based" : null, it.proposedAt]
                               .filter(Boolean)
                               .join(" · ")}
                           </p>

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // ASTRA: orchestrates one maintenance run.
 //   node scripts/agents/astra.mjs [--dry-run] [--force] [--only=scout,sync] [--no-browser] [--no-git]
+//   node scripts/agents/astra.mjs --prism-status-only   (refresh PRISM issue/PR states only)
 //
 // Order: SCOUT → SYNC → SENTINEL → PULSE → FORGE → PRISM (weekly) → SCRIBE. Each agent is
 // isolated: one failing never stops the others, and nothing here can touch the
@@ -120,6 +121,16 @@ async function proposeResourcesPr(gh, change) {
   return gh.openPr(config.repo, { head: branch, base: "main", title: `Resource library update ${now.slice(0, 10)} (agent proposal)`, body });
 }
 
+/** Attaches live issue / PR state to saved prompts; keeps issues PRISM did not save locally too. */
+function mergePrismStatus(index, issues) {
+  const byId = new Map(index.items.map((i) => [i.id, i]));
+  for (const iss of issues) {
+    const id = iss.prismId ?? `issue-${iss.number}`;
+    byId.set(id, { title: iss.title, ...byId.get(id), id, issue: { number: iss.number, url: iss.url }, state: iss.state, pr: iss.pr });
+  }
+  index.items = [...byId.values()];
+}
+
 async function timed(name, fn) {
   const startedAt = new Date().toISOString();
   try {
@@ -148,6 +159,30 @@ async function main() {
   const budget = new Budget(config.limits);
   const fetcher = makeFetcher({ allowedHosts: config.allowedHosts, limits: config.limits, budget });
   const gh = makeGitHub({ fetcher, token: env.GITHUB_TOKEN });
+
+  // --prism-status-only: refresh PRISM issue / PR states for /agents right
+  // after a PRISM pull request is merged or closed. No agent runs, so no run
+  // record is written. Retries if a concurrent agent run pushed first.
+  if (args["prism-status-only"]) {
+    for (let attempt = 1; ; attempt++) {
+      const file = path.join(dataDir, "prism", "index.json");
+      const index = readJson(file, { updatedAt: null, items: [] });
+      const issues = await refreshPrismStatus({ gh, repo: config.repo, label: config.prism.issueLabel, approvalLabel: config.prism.approvalLabel });
+      mergePrismStatus(index, issues);
+      index.updatedAt = new Date().toISOString();
+      writeJson(file, index);
+      try {
+        const pushed = publishDataDir(`PRISM status refresh (${trigger})`);
+        console.log(pushed ? `ASTRA: PRISM status published (${issues.length} issue(s)).` : "ASTRA: PRISM status unchanged (or dry run / local).");
+        return;
+      } catch (e) {
+        if (attempt >= 3) throw e;
+        console.log(`ASTRA: push rejected (${String(e.message).split("\n")[0]}); refetching and retrying.`);
+        prepareDataDir();
+      }
+    }
+  }
+
   const checkResults = env.CHECK_RESULTS ? readJson(env.CHECK_RESULTS, null) : null;
   const since = history.find((r) => r.agents?.some((a) => a.agent === "SYNC" && a.status !== "failure"))?.startedAt ?? null;
   const browser = args["no-browser"] ? null : await import("./browser.mjs").catch(() => null);
@@ -244,6 +279,9 @@ async function main() {
           browser
             ? browser.captureScreens({ site: config.site, screens: prismCfg.screens, thresholds: prismCfg.thresholds })
             : Promise.reject(new Error("browser checks disabled")),
+        captureStates: browser
+          ? () => import("./event-states.mjs").then((m) => m.captureEventStates({ site: config.site, thresholds: prismCfg.thresholds }))
+          : null,
       })
     );
     agents.push(prism);
@@ -255,15 +293,7 @@ async function main() {
   } else {
     agents.push(skipped("PRISM"));
   }
-  if (prismIssues) {
-    // Attach live issue / PR state to saved prompts; keep issues PRISM did not save locally too.
-    const byId = new Map(prismIndex.items.map((i) => [i.id, i]));
-    for (const iss of prismIssues) {
-      const id = iss.prismId ?? `issue-${iss.number}`;
-      byId.set(id, { title: iss.title, ...byId.get(id), id, issue: { number: iss.number, url: iss.url }, state: iss.state, pr: iss.pr });
-    }
-    prismIndex.items = [...byId.values()];
-  }
+  if (prismIssues) mergePrismStatus(prismIndex, prismIssues);
   prismIndex.items = prismIndex.items
     .filter((i) => !i.proposedAt || (Date.parse(now) - Date.parse(i.proposedAt)) / 86_400_000 <= prismCfg.keepWeeks * 7 || ["approved", "pr-open"].includes(i.state))
     .sort((a, b) => String(b.proposedAt ?? "").localeCompare(String(a.proposedAt ?? "")) || (b.priority ?? 0) - (a.priority ?? 0))

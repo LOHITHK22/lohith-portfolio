@@ -110,6 +110,7 @@
     "$comment": "PRISM writes implementation prompts weekly. It never edits code itself; Claude Code implements a prompt only after the owner adds the approval label.",
     "weekday": 1,
     "maxRecommendationsPerRun": 3,
+    "issueMinTier": "P2",
     "repeatAfterDays": 28,
     "issueLabel": "prism",
     "approvalLabel": "prism:approved",
