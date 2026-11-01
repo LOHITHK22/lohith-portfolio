@@ -18,34 +18,23 @@ import {
 import { CHALLENGES, type Challenge } from "@/lib/sqlDetective/challenges";
 import { TABLES, ROW_COUNTS } from "@/lib/sqlDetective/dataset";
 import { judge, type Verdict, type Cell } from "@/lib/sqlDetective/compare";
-import { SqlDetectiveEngine, MAX_ROWS, type QueryResult } from "@/lib/sqlDetective/engine";
+import { SqlDetectiveEngine, QueryTimeoutError, MAX_ROWS, QUERY_TIMEOUT_MS, type QueryResult } from "@/lib/sqlDetective/engine";
+import {
+  blankProgress,
+  describeCompletion,
+  loadProgress,
+  recordCheck,
+  saveProgress,
+  COMPLETION_LABEL,
+  type CaseProgress,
+  type Completion,
+  type ProgressMap,
+} from "@/lib/sqlDetective/progress";
 import { track } from "@/lib/analytics";
 
-type Progress = { solved: boolean; attempts: number; hints: number; solutionViewed: boolean };
-type Feedback = { verdict: Verdict; rows: number; expectedRows: number } | null;
+type Feedback = { verdict: Verdict; rows: number; expectedRows: number; completion: Completion | null } | null;
 
-const STORAGE_KEY = "sql-detective-progress-v1";
 const DISPLAY_ROWS = 200;
-const blank = (): Record<string, Progress> =>
-  Object.fromEntries(CHALLENGES.map((c) => [c.id, { solved: false, attempts: 0, hints: 0, solutionViewed: false }]));
-
-function loadProgress(): Record<string, Progress> {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null");
-    if (saved && typeof saved === "object") return { ...blank(), ...saved };
-  } catch {
-    // Storage can be unavailable (private mode, blocked site data). Progress then lasts for this visit only.
-  }
-  return blank();
-}
-
-function saveProgress(p: Record<string, Progress>) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
-  } catch {
-    // See loadProgress.
-  }
-}
 
 const distinctRows = (r: QueryResult) => new Set(r.rows.map((row) => JSON.stringify(row))).size;
 
@@ -54,7 +43,7 @@ export function SqlDetective() {
   const [engineState, setEngineState] = useState<"loading" | "ready" | "error">("loading");
   const [active, setActive] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, string>>(() => Object.fromEntries(CHALLENGES.map((c) => [c.id, c.starter])));
-  const [progress, setProgress] = useState<Record<string, Progress>>(blank);
+  const [progress, setProgress] = useState<ProgressMap>(blankProgress);
   const [result, setResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"run" | "check" | "reset" | null>(null);
@@ -65,7 +54,7 @@ export function SqlDetective() {
   const challenge = CHALLENGES[active];
   const sql = drafts[challenge.id];
   const p = progress[challenge.id];
-  const solvedCount = CHALLENGES.filter((c) => progress[c.id].solved).length;
+  const solvedCount = CHALLENGES.filter((c) => progress[c.id].completion).length;
 
   useEffect(() => {
     setProgress(loadProgress());
@@ -84,9 +73,9 @@ export function SqlDetective() {
     return () => e.dispose();
   }, []);
 
-  const update = useCallback((id: string, patch: Partial<Progress>) => {
+  const update = useCallback((id: string, change: (p: CaseProgress) => CaseProgress) => {
     setProgress((prev) => {
-      const next = { ...prev, [id]: { ...prev[id], ...patch } };
+      const next = { ...prev, [id]: change(prev[id]) };
       saveProgress(next);
       return next;
     });
@@ -98,6 +87,27 @@ export function SqlDetective() {
     return e.query(text);
   }, []);
 
+  // Shows a query error. After a timeout the engine has already discarded the worker and its
+  // database, so rebuild a fresh copy right away and say so once it is ready.
+  const fail = async (err: unknown) => {
+    setResult(null);
+    const message = err instanceof Error ? err.message : String(err);
+    setError(message);
+    setStatus(`Query error: ${message}`);
+    if (!(err instanceof QueryTimeoutError) || !engine.current) return;
+    setEngineState("loading");
+    try {
+      await engine.current.load();
+      setEngineState("ready");
+      const rebuilt = `Query stopped after ${QUERY_TIMEOUT_MS / 1000} seconds. Its in-browser database was discarded and a fresh copy of the synthetic dataset has been rebuilt. You can run another query.`;
+      setError(rebuilt);
+      setStatus(rebuilt);
+    } catch (loadErr) {
+      setEngineState("error");
+      setStatus(`The SQL engine could not reload: ${loadErr instanceof Error ? loadErr.message : String(loadErr)}`);
+    }
+  };
+
   const run = async (text = sql) => {
     setBusy("run");
     setError(null);
@@ -107,10 +117,7 @@ export function SqlDetective() {
       setResult(r);
       setStatus(`Query returned ${r.rows.length}${r.truncated ? "+" : ""} row${r.rows.length === 1 ? "" : "s"} in ${r.ms.toFixed(1)} ms.`);
     } catch (err) {
-      setResult(null);
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message);
-      setStatus(`Query error: ${message}`);
+      await fail(err);
     } finally {
       setBusy(null);
     }
@@ -126,15 +133,15 @@ export function SqlDetective() {
       const accepted = await Promise.all(challenge.accepted.map((q) => execute(q)));
       const verdict = judge(r, accepted);
       const expectedRows = distinctRows(accepted[0]);
-      setFeedback({ verdict, rows: r.rows.length, expectedRows });
-      update(challenge.id, { attempts: p.attempts + 1, ...(verdict.correct ? { solved: true } : {}) });
-      setStatus(verdict.correct ? `Case ${challenge.number} solved. Your result matches the expected answer.` : `Not yet: ${verdict.message}`);
+      const after = recordCheck(p, verdict.correct);
+      setFeedback({ verdict, rows: r.rows.length, expectedRows, completion: after.completion });
+      update(challenge.id, (prev) => recordCheck(prev, verdict.correct));
+      setStatus(
+        verdict.correct ? `Case ${challenge.number}: ${describeCompletion(after).toLowerCase()}. Your result matches the expected answer.` : `Not yet: ${verdict.message}`,
+      );
       track("sql_challenge_check", { challenge: challenge.id, correct: verdict.correct });
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setResult(null);
-      setError(message);
-      setStatus(`Query error: ${message}`);
+      await fail(err);
     } finally {
       setBusy(null);
     }
@@ -171,15 +178,15 @@ export function SqlDetective() {
 
   const setSql = (value: string) => setDrafts((d) => ({ ...d, [challenge.id]: value }));
 
-  const revealHint = () => update(challenge.id, { hints: Math.min(p.hints + 1, challenge.hints.length) });
+  const revealHint = () => update(challenge.id, (prev) => ({ ...prev, hints: Math.min(prev.hints + 1, challenge.hints.length) }));
   const revealSolution = () => {
-    update(challenge.id, { solutionViewed: true });
+    update(challenge.id, (prev) => ({ ...prev, solutionViewed: true }));
     setSql(challenge.solution);
     setStatus("Solution loaded into the editor. Run or check it to see the result.");
   };
 
   const startOver = () => {
-    const fresh = blank();
+    const fresh = blankProgress();
     saveProgress(fresh);
     setProgress(fresh);
     setDrafts(Object.fromEntries(CHALLENGES.map((c) => [c.id, c.starter])));
@@ -312,10 +319,10 @@ export function SqlDetective() {
   );
 }
 
-function nextOpen(progress: Record<string, Progress>, from: number) {
+function nextOpen(progress: ProgressMap, from: number) {
   for (let k = 1; k <= CHALLENGES.length; k++) {
     const i = (from + k) % CHALLENGES.length;
-    if (!progress[CHALLENGES[i].id].solved) return i;
+    if (!progress[CHALLENGES[i].id].completion) return i;
   }
   return Math.min(from + 1, CHALLENGES.length - 1);
 }
@@ -338,7 +345,7 @@ function ProgressTracker({
   solvedCount,
   onSummary,
 }: {
-  progress: Record<string, Progress>;
+  progress: ProgressMap;
   active: number;
   onSelect: (i: number) => void;
   solvedCount: number;
@@ -361,7 +368,7 @@ function ProgressTracker({
       </div>
       <ol className="relative z-10 mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {CHALLENGES.map((c, i) => {
-          const solved = progress[c.id].solved;
+          const solved = !!progress[c.id].completion;
           const current = i === active;
           return (
             <li key={c.id}>
@@ -388,7 +395,7 @@ function ProgressTracker({
   );
 }
 
-function CaseFile({ challenge, progress, onHint, onSolution }: { challenge: Challenge; progress: Progress; onHint: () => void; onSolution: () => void }) {
+function CaseFile({ challenge, progress, onHint, onSolution }: { challenge: Challenge; progress: CaseProgress; onHint: () => void; onSolution: () => void }) {
   const moreHints = progress.hints < challenge.hints.length;
   return (
     <section aria-labelledby="case-heading" className="glass-panel rounded-2xl p-5" data-testid="case-file">
@@ -437,6 +444,11 @@ function CaseFile({ challenge, progress, onHint, onSolution }: { challenge: Chal
             {progress.solutionViewed ? "Load the solution again" : "Show a solution"}
           </button>
         </div>
+        {progress.completion ? (
+          <p className="mt-3 text-xs text-emerald-200/80" data-testid="case-completion">{describeCompletion(progress)}. Hints and the solution stay open for learning.</p>
+        ) : (
+          <p className="mt-3 text-xs text-slate-500">Use hints or the solution whenever they help. Your summary just notes which you used.</p>
+        )}
       </div>
     </section>
   );
@@ -581,9 +593,14 @@ function FeedbackPanel({
       <section aria-labelledby="verdict-heading" data-testid="sql-verdict" data-correct="true" className="rounded-2xl border border-emerald-400/30 bg-emerald-400/[0.06] p-5">
         <h2 id="verdict-heading" className="flex items-center gap-2 font-semibold text-emerald-200">
           <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
-          Case {challenge.number} solved
+          Case {challenge.number} {feedback.completion === "solution" ? "completed" : "solved"}
         </h2>
         <p className="mt-1 text-sm text-emerald-50/80">Your result set matches the expected answer ({feedback.expectedRows} rows), whatever the column names or row order.</p>
+        {feedback.completion && (
+          <p className="mt-2 inline-flex rounded-full border border-emerald-300/25 px-2.5 py-0.5 font-mono text-[11px] text-emerald-100" data-testid="sql-completion">
+            {COMPLETION_LABEL[feedback.completion]}
+          </p>
+        )}
         <h3 className="mt-4 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200/80">Why it works</h3>
         <p className="mt-1 text-sm leading-relaxed text-slate-200">{challenge.why}</p>
         <h3 className="mt-4 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-200/80">Business outcome</h3>
@@ -611,8 +628,10 @@ function FeedbackPanel({
   );
 }
 
-function Summary({ progress, onStartOver, onOpen }: { progress: Record<string, Progress>; onStartOver: () => void; onOpen: (i: number) => void }) {
-  const independent = CHALLENGES.filter((c) => progress[c.id].solved && !progress[c.id].solutionViewed).length;
+const COMPLETION_ORDER: Completion[] = ["independent", "hints", "solution"];
+
+function Summary({ progress, onStartOver, onOpen }: { progress: ProgressMap; onStartOver: () => void; onOpen: (i: number) => void }) {
+  const tally = COMPLETION_ORDER.map((kind) => ({ kind, n: CHALLENGES.filter((c) => progress[c.id].completion === kind).length }));
   return (
     <section aria-labelledby="summary-heading" className="glass-panel rounded-2xl p-5 sm:p-7" data-testid="sql-summary">
       <div className="relative z-10">
@@ -621,31 +640,37 @@ function Summary({ progress, onStartOver, onOpen }: { progress: Record<string, P
           All four cases closed
         </h2>
         <p className="mt-3 max-w-2xl text-sm text-slate-300">
-          You found duplicate loads, orders without shipments, mis-settled payments, and built a de-duplicated merchant report. {independent} of{" "}
-          {CHALLENGES.length} were solved without opening the solution. This summary is stored only in this browser.
+          You found duplicate loads, orders without shipments, mis-settled payments, and built a de-duplicated merchant report. Hints and solutions
+          are there to learn from; this summary simply records how each case was closed. It is stored only in this browser.
         </p>
+        <ul className="mt-5 grid gap-2 sm:grid-cols-3" aria-label="How the cases were completed" data-testid="sql-tally">
+          {tally.map(({ kind, n }) => (
+            <li key={kind} className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <span className="block font-hero text-2xl font-black text-white">{n}</span>
+              <span className="block text-xs text-slate-400">{COMPLETION_LABEL[kind]}</span>
+            </li>
+          ))}
+        </ul>
         <div className="mt-5 overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <caption className="sr-only">Your results for each case</caption>
+            <caption className="sr-only">How each case was completed</caption>
             <thead className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">
               <tr>
                 <th scope="col" className="py-2 pr-4">Case</th>
-                <th scope="col" className="py-2 pr-4">Checks</th>
-                <th scope="col" className="py-2 pr-4">Hints</th>
-                <th scope="col" className="py-2">Solution viewed</th>
+                <th scope="col" className="py-2 pr-4">Completion</th>
+                <th scope="col" className="py-2">Checks</th>
               </tr>
             </thead>
             <tbody>
               {CHALLENGES.map((c, i) => (
-                <tr key={c.id} className="border-t border-white/[0.07]">
+                <tr key={c.id} className="border-t border-white/[0.07]" data-testid={`summary-${c.id}`}>
                   <td className="py-2 pr-4">
                     <button type="button" onClick={() => onOpen(i)} className="min-h-10 text-left text-white hover:text-teal">
                       {c.number}. {c.title}
                     </button>
                   </td>
-                  <td className="py-2 pr-4 font-mono text-slate-300">{progress[c.id].attempts}</td>
-                  <td className="py-2 pr-4 font-mono text-slate-300">{progress[c.id].hints}</td>
-                  <td className="py-2 font-mono text-slate-300">{progress[c.id].solutionViewed ? "yes" : "no"}</td>
+                  <td className="py-2 pr-4 text-slate-300">{describeCompletion(progress[c.id])}</td>
+                  <td className="py-2 font-mono text-slate-300">{progress[c.id].attempts}</td>
                 </tr>
               ))}
             </tbody>

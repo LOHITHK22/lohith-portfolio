@@ -91,6 +91,8 @@ export const PLANTED = {
   unsettledTxns: ["T-50020", "T-50039"],
   amountMismatches: ["T-50009", "T-50017", "T-50024", "T-50038"],
   delayedSettlements: { "T-50003": 4, "T-50014": 5, "T-50021": 3, "T-50027": 6, "T-50030": 4, "T-50036": 5 } as Record<string, number>,
+  /** Settled exactly 2 days later: on time under "more than 2 days", so > and >= give different answers. */
+  boundarySettlement: { "T-50011": 2 } as Record<string, number>,
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -151,7 +153,7 @@ function paymentRows() {
     if (declined || PLANTED.unsettledTxns.includes(id)) continue;
     const settled =
       id === "T-50009" ? amount - 0.3 : id === "T-50017" ? amount + 9 : id === "T-50024" ? amount / 2 : id === "T-50038" ? amount - 1.25 : amount;
-    settlements.push([`ST-${70000 + i}`, id, merchant, round2(settled), addDays(date, PLANTED.delayedSettlements[id] ?? 1)]);
+    settlements.push([`ST-${70000 + i}`, id, merchant, round2(settled), addDays(date, PLANTED.delayedSettlements[id] ?? PLANTED.boundarySettlement[id] ?? 1)]);
   }
   return { merchants, transactions, settlements };
 }

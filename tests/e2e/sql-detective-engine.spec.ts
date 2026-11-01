@@ -4,6 +4,7 @@ import { DATABASE_SQL, PLANTED, ROW_COUNTS } from "../../lib/sqlDetective/datase
 import { CHALLENGES } from "../../lib/sqlDetective/challenges";
 import { checkQuery, MAX_QUERY_LENGTH } from "../../lib/sqlDetective/guard";
 import { compareResults, judge, type ResultSet } from "../../lib/sqlDetective/compare";
+import { emptyCase, parseProgress, recordCheck, describeCompletion } from "../../lib/sqlDetective/progress";
 
 // Engine-level tests: the real SQLite build (sql.js) running in Node against the same synthetic
 // dataset, reference queries and result checker that the browser workbench uses. No browser needed.
@@ -82,6 +83,8 @@ test.describe("SQL Detective answer checking", () => {
         "SELECT txn_id FROM transactions GROUP BY txn_id HAVING COUNT(*) > 2",
         "SELECT merchant_id FROM transactions GROUP BY merchant_id HAVING COUNT(*) > 1",
         "SELECT txn_id FROM transactions WHERE 0",
+        // Wrong aggregation: counts distinct merchants instead of rows per transaction.
+        "SELECT txn_id FROM transactions GROUP BY txn_id HAVING COUNT(DISTINCT merchant_id) > 1",
       ],
     },
     "missing-shipments": {
@@ -117,6 +120,11 @@ test.describe("SQL Detective answer checking", () => {
         // Filtering delayed rows in WHERE drops merchants with no delays.
         "WITH d AS (SELECT DISTINCT txn_id, txn_date FROM transactions) SELECT s.merchant_id, COUNT(*), SUM(s.settled_amount), COUNT(*) FROM settlements s JOIN d USING (txn_id) WHERE julianday(s.settlement_date) - julianday(d.txn_date) > 2 GROUP BY 1",
         "SELECT merchant_id, COUNT(*), SUM(settled_amount) FROM settlements GROUP BY merchant_id",
+        // Wrong aggregations: average instead of total, and the expected amount instead of what was settled.
+        "WITH d AS (SELECT DISTINCT txn_id, txn_date FROM transactions) SELECT s.merchant_id, COUNT(*), AVG(s.settled_amount), SUM(julianday(s.settlement_date) - julianday(d.txn_date) > 2) FROM settlements s JOIN d USING (txn_id) GROUP BY 1",
+        "WITH d AS (SELECT DISTINCT txn_id, txn_date, amount FROM transactions) SELECT s.merchant_id, COUNT(*), SUM(d.amount), SUM(julianday(s.settlement_date) - julianday(d.txn_date) > 2) FROM settlements s JOIN d USING (txn_id) GROUP BY 1",
+        // Off-by-one on the delay rule (>= 2 instead of > 2).
+        "WITH d AS (SELECT DISTINCT txn_id, txn_date FROM transactions) SELECT s.merchant_id, COUNT(*), SUM(s.settled_amount), SUM(julianday(s.settlement_date) - julianday(d.txn_date) >= 2) FROM settlements s JOIN d USING (txn_id) GROUP BY 1",
       ],
     },
   };
@@ -127,6 +135,22 @@ test.describe("SQL Detective answer checking", () => {
       for (const sql of fail) expect(verdictFor(id, sql).correct, sql).toBe(false);
     });
   }
+
+  test("missing statuses are not missing shipments, and duplicates don't inflate the report", () => {
+    const byId = Object.fromEntries(CHALLENGES.map((c) => [c.id, c]));
+    const missing = run(byId["missing-shipments"].solution).rows.map((r) => r[0]);
+    for (const id of PLANTED.nullShipmentStatus) expect(missing, id).not.toContain(id);
+    // Orders with a NULL-status shipment still have a shipment row.
+    expect(run(`SELECT COUNT(DISTINCT order_id) FROM shipments WHERE order_id IN ('${PLANTED.nullShipmentStatus.join("','")}')`).rows[0][0]).toBe(3);
+
+    const report = run(byId.report.solution).rows;
+    const settled = run("SELECT merchant_id, COUNT(*), ROUND(SUM(settled_amount), 2) FROM settlements GROUP BY 1").rows;
+    const names = Object.fromEntries(run("SELECT name, merchant_id FROM merchants").rows.map((r) => [r[0], r[1]]));
+    for (const [merchant, n, total] of report) {
+      const truth = settled.find((r) => r[0] === names[String(merchant)])!;
+      expect([n, total], String(merchant)).toEqual([truth[1], truth[2]]);
+    }
+  });
 
   test("compares result sets, not column names, order or formatting", () => {
     const expected: ResultSet = { columns: ["id", "total"], rows: [["a", 1.5], ["b", 2]] };
@@ -185,5 +209,46 @@ test.describe("SQL Detective read-only policy", () => {
       expect(() => db.exec(sql), sql).toThrow(/readonly|query_only/i);
     }
     expect(run("SELECT COUNT(*) FROM orders").rows[0][0]).toBe(ROW_COUNTS.orders);
+  });
+});
+
+test.describe("SQL Detective completion tracking", () => {
+  test("the first correct check decides how a case was completed", () => {
+    expect(recordCheck(emptyCase(), true).completion).toBe("independent");
+    expect(recordCheck({ ...emptyCase(), hints: 2 }, true)).toMatchObject({ completion: "hints", hintsAtCompletion: 2 });
+    expect(recordCheck({ ...emptyCase(), hints: 1, solutionViewed: true }, true).completion).toBe("solution");
+    const wrong = recordCheck(emptyCase(), false);
+    expect(wrong).toMatchObject({ attempts: 1, completion: null });
+    // Learning afterwards does not rewrite history.
+    const solved = recordCheck(emptyCase(), true);
+    const later = recordCheck({ ...solved, hints: 3, solutionViewed: true }, true);
+    expect(later).toMatchObject({ completion: "independent", attempts: 2, hintsAtCompletion: 0 });
+    expect(describeCompletion({ ...emptyCase(), completion: "hints", hintsAtCompletion: 1 })).toBe("Solved using 1 hint");
+  });
+
+  test("migrates v1 progress conservatively and survives corrupt storage", () => {
+    const v1 = JSON.stringify({
+      duplicates: { solved: true, attempts: 2, hints: 0, solutionViewed: false },
+      "missing-shipments": { solved: true, attempts: 1, hints: 1, solutionViewed: false },
+      reconcile: { solved: true, attempts: 1, hints: 2, solutionViewed: true },
+      report: { solved: false, attempts: 4, hints: 99, solutionViewed: false },
+    });
+    const { progress, migrated } = parseProgress(null, v1);
+    expect(migrated).toBe(true);
+    expect(progress.duplicates.completion).toBe("independent");
+    expect(progress["missing-shipments"]).toMatchObject({ completion: "hints", hintsAtCompletion: 1 });
+    expect(progress.reconcile.completion).toBe("solution");
+    expect(progress.report).toMatchObject({ completion: null, attempts: 4, hints: 3 });
+
+    for (const bad of ["{not json", "[]", "null", '"text"']) {
+      const r = parseProgress(bad, null);
+      expect(r.migrated).toBe(false);
+      expect(Object.values(r.progress).every((p) => p.completion === null && p.attempts === 0)).toBe(true);
+    }
+    // v2 wins over v1, and malformed v2 fields are dropped.
+    const v2 = JSON.stringify({ duplicates: { attempts: -3, hints: "x", solutionViewed: "yes", completion: "genius", hintsAtCompletion: 5 } });
+    const r = parseProgress(v2, v1);
+    expect(r.migrated).toBe(false);
+    expect(r.progress.duplicates).toEqual(emptyCase());
   });
 });

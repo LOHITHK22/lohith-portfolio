@@ -10,7 +10,17 @@ export const MAX_ROWS = 500;
 
 export type QueryResult = ResultSet & { truncated: boolean; ms: number };
 
-type Reply = { id: number; ok: boolean; error?: string } & Partial<QueryResult>;
+type Reply = { id: number; ok: boolean; error?: string; timedOut?: boolean } & Partial<QueryResult>;
+
+/** Thrown when a query runs past QUERY_TIMEOUT_MS. The worker and its database are already gone. */
+export class QueryTimeoutError extends Error {
+  constructor() {
+    super(
+      `Query stopped after ${QUERY_TIMEOUT_MS / 1000} seconds. Its in-browser database was discarded; a fresh copy of the synthetic dataset is being rebuilt.`,
+    );
+    this.name = "QueryTimeoutError";
+  }
+}
 
 export class SqlDetectiveEngine {
   private worker: Worker | null = null;
@@ -29,7 +39,7 @@ export class SqlDetectiveEngine {
         };
         this.worker = worker;
         const reply = await this.send({ type: "init", sql: DATABASE_SQL }, 20_000);
-        if (!reply.ok) throw new Error(reply.error);
+        if (!reply.ok) throw new Error(reply.timedOut ? "The SQLite engine took too long to load." : reply.error);
       })().catch((error) => {
         this.dispose();
         throw error;
@@ -50,6 +60,7 @@ export class SqlDetectiveEngine {
     if (!guard.ok) throw new Error(guard.error);
     await this.load();
     const reply = await this.send({ type: "exec", sql: guard.sql, maxRows: MAX_ROWS }, QUERY_TIMEOUT_MS);
+    if (reply.timedOut) throw new QueryTimeoutError();
     if (!reply.ok) throw new Error(friendly(reply.error ?? "Query failed."));
     return { columns: reply.columns ?? [], rows: reply.rows ?? [], truncated: !!reply.truncated, ms: reply.ms ?? 0 };
   }
@@ -71,7 +82,7 @@ export class SqlDetectiveEngine {
         // A runaway query can't be interrupted inside the worker, so drop the worker and database.
         this.pending.delete(id);
         this.dispose();
-        resolve({ id, ok: false, error: `Query stopped after ${timeoutMs / 1000} seconds. The database was reloaded; try a narrower query.` });
+        resolve({ id, ok: false, timedOut: true, error: "timeout" });
       }, timeoutMs);
       this.pending.set(id, {
         resolve: (r) => {
