@@ -10,6 +10,8 @@ import { Footer } from "@/components/Footer";
 
 // Data-platform case studies link to the hands-on SQL challenge.
 const PLAYGROUND_DATA_PROJECTS = ["aws-streaming-platform", "retailbench"];
+// The PipelineMedic case study links to the incident simulation built on it.
+const INCIDENT_PROJECT = "pipelinemedic-ai";
 
 export function generateStaticParams() {
   return flagshipProjects.filter((p) => caseStudies[p.id]).map((p) => ({ id: p.id }));
@@ -177,6 +179,21 @@ export default function CaseStudyPage({ params }: { params: { id: string } }) {
               <span>
                 <span className="block font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-teal">Engineering Playground</span>
                 <span className="mt-1 block font-semibold text-white">Try the data-quality checks yourself: solve a SQL mystery in your browser</span>
+              </span>
+              <ArrowRight className="h-5 w-5 text-teal" aria-hidden="true" />
+            </Link>
+          </section>
+        )}
+
+        {project.id === INCIDENT_PROJECT && (
+          <section className="section-shell pb-12">
+            <Link
+              href="/playground/incident-commander"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal/25 bg-teal/[0.04] p-5 transition-colors hover:border-teal/50"
+            >
+              <span>
+                <span className="block font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-teal">Engineering Playground</span>
+                <span className="mt-1 block font-semibold text-white">Command a simulated PipelineMedic incident: fix a broken pipeline yourself</span>
               </span>
               <ArrowRight className="h-5 w-5 text-teal" aria-hidden="true" />
             </Link>

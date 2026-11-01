@@ -35,7 +35,8 @@ export type AnalyticsEvent =
   | "prism_welcome_blocked"
   | "prism_welcome_shortcut"
   | "playground_open"
-  | "sql_challenge_check";
+  | "sql_challenge_check"
+  | "incident_scenario_complete";
 
 type AnalyticsProps = Record<string, string | number | boolean | null>;
 

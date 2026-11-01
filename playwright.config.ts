@@ -10,8 +10,11 @@ export default defineConfig({
   timeout: 120_000,
   fullyParallel: false,
   workers: 1,
-  reporter: [["list"]],
+  // Keep evidence of every failure: the failed assertion and output (JSON report), a trace and a screenshot.
+  reporter: [["list"], ["json", { outputFile: "playwright-report/results.json" }]],
   use: {
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
     baseURL: `http://localhost:${PORT}`,
     channel: "chrome",
     launchOptions: { args: ["--autoplay-policy=no-user-gesture-required"] },
