@@ -152,8 +152,9 @@ PRISM runs inside the normal agent workflow on Mondays (`prism.weekday` in
    push to the branch. If any check or the before/after capture fails, the
    verify job fails, so a red result is never shown as green.
    `tests/e2e/tap-targets.spec.ts` audits every visible control on `/event` at
-   390×844 (full page, real box size, must receive a tap at its centre) and
-   fails on any target below 40×40px.
+   390×844, both on the page and inside the playing narrated demo (real box
+   size, must receive a tap at its centre), and fails on any target below
+   40×40px.
 7. **You review and merge, or close.** `/agents` shows each prompt's state:
    awaiting approval → approved → PR open → merged / declined.
 
