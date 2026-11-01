@@ -1,0 +1,29 @@
+{
+  "file": "/audio/prism/welcome.mp3",
+  "durationMs": 14650,
+  "bytes": 117696,
+  "cues": [
+    {
+      "startMs": 0,
+      "endMs": 2640,
+      "text": "Welcome to Lohith's portfolio."
+    },
+    {
+      "startMs": 2640,
+      "endMs": 5700,
+      "text": "I'm PRISM, his AI portfolio guide."
+    },
+    {
+      "startMs": 5700,
+      "endMs": 11060,
+      "text": "I help review and improve this website alongside his cloud maintenance agents."
+    },
+    {
+      "startMs": 11060,
+      "endMs": 14650,
+      "text": "Explore his projects, and see the engineering behind the experience."
+    }
+  ],
+  "generatedAt": "2026-11-01T02:04:47.647Z",
+  "model": "gpt-4o-mini-tts (stock voice \"shimmer\"), 64 kbps mono, RMS -20 dBFS; cues from whisper-1 word timestamps"
+}

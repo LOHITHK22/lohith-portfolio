@@ -10,7 +10,8 @@
     "generate:team-audio": "tsx scripts/generate-team-audio.ts",
     "generate:event-audio": "tsx scripts/generate-event-audio.ts",
     "generate:event-assets": "tsx scripts/generate-event-assets.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "generate:prism-welcome": "tsx scripts/generate-prism-welcome.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^1.3.1",

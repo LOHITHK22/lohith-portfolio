@@ -156,6 +156,34 @@
   }
 }
 
+/* PRISM welcome: holographic orb + speaking waveform */
+@keyframes prism-orbit {
+  to { transform: rotate(360deg); }
+}
+.prism-orbit {
+  animation: prism-orbit 9s linear infinite;
+}
+@keyframes prism-wave {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+.prism-wave-bar {
+  transform-origin: center;
+  transform: scaleY(0.3);
+}
+.prism-speaking .prism-wave-bar {
+  animation: prism-wave 0.9s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .prism-orbit,
+  .prism-speaking .prism-wave-bar {
+    animation: none;
+  }
+  .prism-speaking .prism-wave-bar {
+    transform: scaleY(0.7);
+  }
+}
+
 /* ---------- Design A hero ---------- */
 .hero-portrait {
   -webkit-mask-image: radial-gradient(60% 52% at 49% 40%, #000 62%, transparent 100%);
