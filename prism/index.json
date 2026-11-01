@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-31T07:35:00.972Z",
+  "updatedAt": "2026-11-01T01:17:13.285Z",
   "items": [
     {
       "title": "Enlarge 7 small tap target(s) on / (mobile)",
@@ -15,8 +15,12 @@
       },
       "proposedAt": "2026-10-31",
       "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285",
-      "state": "awaiting-approval",
-      "pr": null
+      "state": "merged",
+      "pr": {
+        "number": 4,
+        "url": "https://github.com/LOHITHK22/lohith-portfolio/pull/4",
+        "state": "merged"
+      }
     },
     {
       "title": "Raise 31 text element(s) below 11px on /event (1440px wide)",
@@ -32,8 +36,12 @@
       },
       "proposedAt": "2026-10-31",
       "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285",
-      "state": "awaiting-approval",
-      "pr": null
+      "state": "pr-open",
+      "pr": {
+        "number": 5,
+        "url": "https://github.com/LOHITHK22/lohith-portfolio/pull/5",
+        "state": "open"
+      }
     },
     {
       "title": "Raise 24 text element(s) below 11px on / (1440px wide)",
@@ -49,6 +57,16 @@
       },
       "proposedAt": "2026-10-31",
       "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285",
+      "state": "awaiting-approval",
+      "pr": null
+    },
+    {
+      "title": "Enlarge 26 small tap targets on /event (mobile)",
+      "id": "tap-targets-event-mobile",
+      "issue": {
+        "number": 6,
+        "url": "https://github.com/LOHITHK22/lohith-portfolio/issues/6"
+      },
       "state": "awaiting-approval",
       "pr": null
     }
