@@ -209,7 +209,7 @@ const slug = (s) => String(s).toLowerCase().replace(/^https?:\/\//, "").replace(
 
 // ---------------------------------------------------------------- prompts
 
-const SCREENS = "/ at 1440×900 and 390×844, and /event at 1440×900";
+const SCREENS = "/ and /event at 1440×900 and 390×844";
 
 export function renderPrompt(rec, { site, runUrl, evidenceBase }) {
   const list = (xs) => xs.map((x) => `- ${x}`).join("\n");

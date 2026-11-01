@@ -117,7 +117,8 @@
     "screens": [
       { "id": "home-desktop", "path": "/", "width": 1440, "height": 900, "reference": "agents/prism/reference/design-a-1440x900.png" },
       { "id": "home-mobile", "path": "/", "width": 390, "height": 844 },
-      { "id": "event-desktop", "path": "/event", "width": 1440, "height": 900 }
+      { "id": "event-desktop", "path": "/event", "width": 1440, "height": 900 },
+      { "id": "event-mobile", "path": "/event", "width": 390, "height": 844 }
     ],
     "thresholds": {
       "designDriftRegion": 0.16,
