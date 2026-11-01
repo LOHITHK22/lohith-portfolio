@@ -486,7 +486,8 @@ export async function runPrism({ config, now, history, outDir, capture, captureS
       .filter((r) => (Date.parse(now) - Date.parse(r.startedAt)) / 86_400_000 < cfg.repeatAfterDays)
       .flatMap((r) => r.agents?.find((a) => a.agent === "PRISM")?.recommendations?.map((x) => x.id) ?? [])
   );
-  const open = new Set(openIssues.map((i) => i.prismId).filter(Boolean));
+  // One issue can cover several prompts (several prism:id markers).
+  const open = new Set(openIssues.flatMap((i) => i.prismIds ?? [i.prismId]).filter(Boolean));
   const fresh = recs.filter((r) => !open.has(r.id) && !recent.has(r.id));
   const chosen = fresh.slice(0, cfg.maxRecommendationsPerRun);
 
@@ -556,10 +557,11 @@ export async function refreshPrismStatus({ gh, repo, label, approvalLabel }) {
   return (issues ?? [])
     .filter((i) => !i.pull_request)
     .map((i) => {
-      const prismId = i.body?.match(/<!-- prism:id=([a-z0-9-]+) -->/)?.[1] ?? null;
+      const prismIds = [...(i.body ?? "").matchAll(/<!-- prism:id=([a-z0-9-]+) -->/g)].map((m) => m[1]);
+      const prismId = prismIds[0] ?? null;
       const pr = (prs ?? []).find((p) => p.head?.ref?.startsWith("claude/") && new RegExp(`(close[sd]?|fix(e[sd])?|resolve[sd]?) #${i.number}\\b`, "i").test(p.body ?? ""));
       const approved = (i.labels ?? []).some((l) => (l.name ?? l) === approvalLabel);
       const state = pr ? (pr.merged_at ? "merged" : pr.state === "open" ? "pr-open" : "pr-closed") : i.state === "closed" ? "closed" : approved ? "approved" : "awaiting-approval";
-      return { prismId, number: i.number, title: i.title.replace(/^\[prism\]\s*/, ""), url: i.html_url, state, createdAt: i.created_at, pr: pr ? { number: pr.number, url: pr.html_url, state: pr.merged_at ? "merged" : pr.state } : null };
+      return { prismId, prismIds, number: i.number, title: i.title.replace(/^\[prism\]\s*/, ""), url: i.html_url, state, createdAt: i.created_at, pr: pr ? { number: pr.number, url: pr.html_url, state: pr.merged_at ? "merged" : pr.state } : null };
     });
 }

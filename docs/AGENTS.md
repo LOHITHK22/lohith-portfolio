@@ -154,7 +154,9 @@ PRISM runs inside the normal agent workflow on Mondays (`prism.weekday` in
    saved to `agent-data/prism/YYYY-MM-DD/<id>.md` with `evidence.json` and the
    screenshots. Prompts at or above `prism.issueMinTier` (default P2) are
    opened as issues labelled `prism`; P3 prompts are saved for reference only,
-   so low-value changes never queue up for a paid Claude Code run.
+   so low-value changes never queue up for a paid Claude Code run. An issue
+   can cover several prompts: each `<!-- prism:id=... -->` marker in its body
+   stops PRISM from proposing that prompt again while the issue is open.
 4. **Approval.** Add the `prism:approved` label to the issue. Only a label
    added by the repository owner starts `.github/workflows/prism-implement.yml`.
 5. **Implementation.** The official

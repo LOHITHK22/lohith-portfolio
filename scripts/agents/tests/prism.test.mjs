@@ -191,6 +191,9 @@ test("runPrism: skips recommendations already open or proposed recently", async 
   const second = await runPrism(prismArgs({ history, openIssues: [{ prismId: ids[0] }] }));
   for (const id of ids) assert.ok(!second.recommendations.some((r) => r.id === id), `${id} not proposed twice`);
   assert.match(second.summary, /already open or recently proposed/);
+  // An issue that also claims another prompt id (extra prism:id marker) blocks that prompt too.
+  const third = await runPrism(prismArgs({ openIssues: [{ prismId: "other", prismIds: ["other", ...ids] }] }));
+  for (const id of ids) assert.ok(!third.recommendations.some((r) => r.id === id), `${id} covered by a multi-id issue`);
 });
 
 test("runPrism: Claude recommendations replace rules when the call succeeds; a crash falls back", async () => {
@@ -243,6 +246,7 @@ test("refreshPrismStatus maps issues and claude/ PRs to dashboard states", async
   const st = Object.fromEntries(out.map((o) => [o.prismId, o.state]));
   assert.deepEqual(st, { a: "awaiting-approval", b: "approved", c: "pr-open", d: "closed" });
   assert.equal(out.find((o) => o.prismId === "c").pr.number, 9);
+  assert.deepEqual(out.find((o) => o.prismId === "a").prismIds, ["a"]);
 });
 
 test("compare: before/after metrics and the PR report", () => {
