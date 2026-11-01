@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-01T01:17:13.285Z",
+  "updatedAt": "2026-11-01T03:18:29.292Z",
   "items": [
     {
       "title": "Enlarge 7 small tap target(s) on / (mobile)",
@@ -36,11 +36,11 @@
       },
       "proposedAt": "2026-10-31",
       "runUrl": "https://github.com/LOHITHK22/lohith-portfolio/actions/runs/41180154285",
-      "state": "pr-open",
+      "state": "merged",
       "pr": {
         "number": 5,
         "url": "https://github.com/LOHITHK22/lohith-portfolio/pull/5",
-        "state": "open"
+        "state": "merged"
       }
     },
     {
