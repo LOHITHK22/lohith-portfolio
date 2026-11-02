@@ -58,7 +58,7 @@ function sentenceIndex(caption: string, fraction: number) {
 }
 
 function ContactLinks({ source, large = false }: { source: string; large?: boolean }) {
-  const cls = large ? "btn-secondary !px-5 !py-3 text-base" : "btn-secondary !px-4 !py-2";
+  const cls = large ? "btn-secondary !px-5 !py-3 text-base" : "btn-secondary min-h-10 !px-4 !py-2 sm:min-h-0";
   return (
     <div className="flex flex-wrap gap-2">
       <a href={profile.resumeUrl} target="_blank" rel="noopener noreferrer" className={cls} onClick={() => track("event_cta_click", { cta: "resume", source })}>
@@ -254,13 +254,13 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
 
         {!kiosk && (
           <header className="section-shell relative flex items-center justify-between py-5">
-            <Link prefetch={false} href="/" className="font-hero text-lg font-black tracking-tight">
+            <Link prefetch={false} href="/" className="-my-1.5 inline-flex min-h-10 items-center font-hero text-lg font-black tracking-tight sm:min-h-0 sm:my-0">
               Lohith<span className="text-teal">.</span>
             </Link>
             <nav aria-label="Event page" className="flex items-center gap-1 text-sm">
-              <Link prefetch={false} href="/#projects" className="btn-ghost !px-3">Projects</Link>
+              <Link prefetch={false} href="/#projects" className="btn-ghost -my-0.5 min-h-10 !px-3 sm:min-h-0 sm:my-0">Projects</Link>
               <a href="#architecture" className="btn-ghost hidden !px-3 sm:inline-flex">Architecture</a>
-              <a href="#connect" className="btn-ghost !px-3">Connect</a>
+              <a href="#connect" className="btn-ghost -my-0.5 min-h-10 !px-3 sm:min-h-0 sm:my-0">Connect</a>
             </nav>
           </header>
         )}
@@ -360,11 +360,11 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
                     <h3 className="font-display text-lg font-semibold">{p.name}</h3>
                     <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-300">{p.tagline}</p>
                     <div className="mt-4 flex flex-wrap gap-3 text-sm">
-                      <Link prefetch={false} href={`/projects/${p.id}`} className="font-semibold text-teal hover:underline" onClick={() => track("event_cta_click", { cta: `case_${p.id}`, source: "landing" })}>
+                      <Link prefetch={false} href={`/projects/${p.id}`} className="-my-2.5 inline-flex min-h-10 items-center font-semibold text-teal hover:underline sm:min-h-0 sm:my-0" onClick={() => track("event_cta_click", { cta: `case_${p.id}`, source: "landing" })}>
                         Case study
                       </Link>
                       {p.githubUrl && (
-                        <a href={p.githubUrl} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white">
+                        <a href={p.githubUrl} target="_blank" rel="noopener noreferrer" className="-my-2.5 inline-flex min-h-10 items-center text-slate-300 hover:text-white sm:min-h-0 sm:my-0">
                           Source
                         </a>
                       )}
@@ -407,9 +407,9 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
                     <p className="mt-3 text-xs leading-relaxed text-slate-400">
                       Caches this page, the narration, and the QR code on this device so the demo plays without venue Wi-Fi. A first visit
                       still needs a connection.{" "}
-                      <a href="/event?kiosk=true" className="text-cyan-300 hover:underline">Kiosk mode</a>
+                      <a href="/event?kiosk=true" className="-my-3 inline-flex min-h-10 items-center text-cyan-300 hover:underline sm:inline sm:min-h-0 sm:my-0">Kiosk mode</a>
                       {" · "}
-                      <a href="/event/emergency.html" className="text-cyan-300 hover:underline">No-JavaScript fallback</a>
+                      <a href="/event/emergency.html" className="-my-3 inline-flex min-h-10 items-center text-cyan-300 hover:underline sm:inline sm:min-h-0 sm:my-0">No-JavaScript fallback</a>
                     </p>
                   </div>
                 )}
@@ -575,7 +575,7 @@ export function EventExperience({ kiosk = false, source }: { kiosk?: boolean; so
                         onClick={() => pb.goTo(i)}
                         aria-label={`Scene ${i + 1}: ${a.name}, ${s.title}`}
                         aria-current={i === state.index && !completed ? "step" : undefined}
-                        className="group relative h-6 flex-1 focus-visible:outline-none"
+                        className="group relative -my-2 h-10 flex-1 focus-visible:outline-none"
                       >
                         <span className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-white/10 group-focus-visible:ring-2 group-focus-visible:ring-white">
                           <span className="block h-full rounded-full" style={{ width: `${fill * 100}%`, background: a.color, transition: "width 100ms linear" }} />

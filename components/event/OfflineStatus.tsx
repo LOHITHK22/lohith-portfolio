@@ -39,7 +39,7 @@ export function OfflineStatus({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={`flex flex-wrap items-center gap-3 ${compact ? "text-xs" : "text-sm"}`} data-testid="offline-status">
-      <button type="button" onClick={prepare} disabled={status.kind === "working"} className="btn-secondary !px-4 !py-2 disabled:opacity-60">
+      <button type="button" onClick={prepare} disabled={status.kind === "working"} className="btn-secondary min-h-10 !px-4 !py-2 disabled:opacity-60 sm:min-h-0">
         {status.kind === "working" ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
         ) : (
