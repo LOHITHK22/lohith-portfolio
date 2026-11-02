@@ -14,6 +14,7 @@ import {
 } from "@/data/agentHq";
 import { readingTimeMs } from "@/data/agentTeam";
 import { HQ_AGENTS, type HqAgentId } from "@/lib/agentHq/layout";
+import { createFramePolicy, minFrameGap, updateFramePolicy } from "@/lib/agentHq/framePolicy";
 import {
   DT,
   advanceSpeaker,
@@ -37,7 +38,7 @@ import { announceAudio, onOtherAudio } from "@/lib/siteAudio";
 import { useAudioNarration } from "@/hooks/useAudioNarration";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { track } from "@/lib/analytics";
-import { LOOK, WORLD_BOUNDS, characterTop, drawScene, type View } from "./render";
+import { LOOK, WORLD_BOUNDS, characterTop, createStaticLayer, drawScene, type View } from "./render";
 
 type Caption = { agent: HqAgentId; text: string; source: "intro" | "meeting-voiced" | "meeting-silent" } | null;
 type AudioState = "idle" | "playing" | "ended" | "stopped" | "captions";
@@ -45,6 +46,8 @@ type AudioState = "idle" | "playing" | "ended" | "stopped" | "captions";
 declare global {
   interface Window {
     __agentHqLoops?: number;
+    /** Frames actually drawn (for tests: drawing stops when nothing on screen can change). */
+    __agentHqDraws?: number;
   }
 }
 
@@ -325,6 +328,13 @@ export function AgentHQ() {
     let lastStatus = 0;
     let onScreen = true;
     let docVisible = document.visibilityState !== "hidden";
+    const layer = createStaticLayer();
+    // Adaptive frame rate: a steady 30 fps on devices that cannot keep 60.
+    const policy = createFramePolicy(performance.now());
+    let lastFrame = performance.now();
+    if (rootRef.current) rootRef.current.dataset.fps = String(policy.mode);
+    // With motion paused or reduced, nothing animates on its own: redraw only when something changed.
+    let lastSig = "";
 
     const fitScale = () => Math.min(css.w / WORLD_BOUNDS.width, css.h / WORLD_BOUNDS.height);
     const homeX = WORLD_BOUNDS.left + WORLD_BOUNDS.width / 2;
@@ -332,6 +342,11 @@ export function AgentHQ() {
 
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
+      // In 30 fps mode every other display frame is skipped; the fixed-step simulation catches up next time.
+      if (now - lastFrame < minFrameGap(policy)) return;
+      const interval = now - lastFrame;
+      lastFrame = now;
+      const workStart = performance.now();
       const dt = Math.min(0.25, (now - last) / 1000);
       last = now;
       const s = simRef.current!;
@@ -366,7 +381,22 @@ export function AgentHQ() {
       const scale = fitScale() * cam.z;
       const view: View = { scale, ox: css.w / 2 - cam.cx * scale, oy: css.h / 2 - cam.cy * scale, dpr };
 
-      drawScene(ctx, s, view, { time: animTime, still: s.reduced, selected: focusId, highlighted: null });
+      let draw = true;
+      if (pausedRef.current || s.reduced) {
+        let sig = `${canvas.width}x${canvas.height}|${view.scale.toFixed(4)}|${view.ox.toFixed(1)}|${view.oy.toFixed(1)}|${focusId}|${s.meeting?.phase}|${pausedRef.current ? animTime : 0}`;
+        // Every character field the renderer reads, so a turning head or a voice level change still redraws.
+        for (const c of s.chars)
+          sig += `|${c.x.toFixed(3)},${c.y.toFixed(3)},${c.face.toFixed(3)},${c.look.toFixed(3)},${c.sit.toFixed(3)},${c.walkPhase.toFixed(2)},${c.walkAmt.toFixed(3)},${c.gesture},${c.activity},${c.level.toFixed(2)}`;
+        draw = sig !== lastSig;
+        lastSig = sig;
+      } else lastSig = "";
+      if (draw) {
+        drawScene(ctx, s, view, { time: animTime, still: s.reduced, selected: focusId, highlighted: null, layer });
+        window.__agentHqDraws = (window.__agentHqDraws ?? 0) + 1;
+        if (updateFramePolicy(policy, now, interval, performance.now() - workStart) && rootRef.current) {
+          rootRef.current.dataset.fps = String(policy.mode);
+        }
+      }
 
       // Overlay buttons and speech bubbles follow the characters.
       const writeAttrs = now - lastAttr > 150;
@@ -417,6 +447,7 @@ export function AgentHQ() {
     const start = () => {
       if (raf || !onScreen || !docVisible) return;
       last = performance.now();
+      lastFrame = last;
       raf = requestAnimationFrame(frame);
     };
     const halt = () => {

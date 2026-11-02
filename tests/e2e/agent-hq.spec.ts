@@ -11,7 +11,7 @@ import { MEETING_SPOTS, walkableFor, type HqAgentId } from "../../lib/agentHq/la
 const ROUTE = "/agent-hq";
 const AGENTS: HqAgentId[] = ["astra", "nova", "forge"];
 
-type W = { __media: HTMLMediaElement[]; __max: number; __agentHqLoops?: number };
+type W = { __media: HTMLMediaElement[]; __max: number; __agentHqLoops?: number; __agentHqDraws?: number };
 
 async function instrument(page: Page) {
   await page.addInitScript(() => {
@@ -51,6 +51,25 @@ async function open(page: Page) {
   await expect(root(page)).toHaveAttribute("data-ready", "true");
   await page.getByTestId("hq-phase").scrollIntoViewIfNeeded();
 }
+
+/**
+ * Canvas redraws during the next `frames` display frames. Waits in animation frames,
+ * not wall-clock time, so the result does not depend on how fast the machine is.
+ */
+const drawsOver = (page: Page, frames: number) =>
+  page.evaluate(
+    (n) =>
+      new Promise<number>((resolve) => {
+        const w = window as unknown as W;
+        const start = w.__agentHqDraws ?? 0;
+        let k = 0;
+        const tick = () => (++k >= n ? resolve((w.__agentHqDraws ?? 0) - start) : requestAnimationFrame(tick));
+        requestAnimationFrame(tick);
+      }),
+    frames,
+  );
+/** Waits until the canvas stops redrawing (a whole window of frames with no draw). */
+const settled = (page: Page) => expect.poll(() => drawsOver(page, 30), { timeout: 10_000 }).toBe(0);
 
 async function positions(page: Page) {
   const out: Record<string, { x: number; y: number; activity: string }> = {};
@@ -277,6 +296,35 @@ test.describe("Agent HQ", () => {
     await expect.poll(async () => Number(await root(page).getAttribute("data-time"))).toBeGreaterThan(Number(t1));
   });
 
+  test("the scene redraws continuously while animating, in one of the two frame-rate modes", async ({ page }) => {
+    await open(page);
+    await expect(root(page)).toHaveAttribute("data-fps", /^(60|30)$/);
+    // 60 fps mode draws every display frame; 30 fps mode every other one.
+    expect(await drawsOver(page, 120)).toBeGreaterThanOrEqual(55);
+    test.info().annotations.push({ type: "frame-rate mode", description: String(await root(page).getAttribute("data-fps")) });
+  });
+
+  test("paused, the canvas stops redrawing; selection, the camera and going back redraw it, then it rests again", async ({ page }) => {
+    await open(page);
+    await page.getByRole("button", { name: "Pause motion" }).click();
+    await expect(root(page)).toHaveAttribute("data-paused", "true");
+    await settled(page);
+    expect(await drawsOver(page, 120)).toBe(0);
+
+    // Selecting while paused: the highlight, camera zoom and the talking character are drawn.
+    await agent(page, "nova").click();
+    await expect(root(page)).toHaveAttribute("data-selected", "nova");
+    expect(await drawsOver(page, 60)).toBeGreaterThan(0);
+    await page.getByTestId("hq-back").click();
+    await expect(root(page)).toHaveAttribute("data-selected", "");
+    expect(await drawsOver(page, 30)).toBeGreaterThan(0); // camera returning
+    await settled(page);
+    expect(await drawsOver(page, 120)).toBe(0);
+
+    await page.getByRole("button", { name: "Resume motion" }).click();
+    expect(await drawsOver(page, 120)).toBeGreaterThanOrEqual(55);
+  });
+
   test("leaving stops the animation loop and the audio; coming back starts fresh", async ({ page }) => {
     await open(page);
     await agent(page, "forge").click();
@@ -308,6 +356,15 @@ test.describe("Agent HQ with reduced motion", () => {
     await page.getByRole("button", { name: /^Quick meeting/ }).click();
     await expect(root(page)).toHaveAttribute("data-speaker", "astra", { timeout: 10_000 });
     await expect.poll(() => atMeetingSpots(page)).toBe(true);
+  });
+
+  test("the still office is not redrawn every frame; a character who starts talking is", async ({ page }) => {
+    await open(page);
+    await settled(page);
+    expect(await drawsOver(page, 120)).toBe(0);
+    await agent(page, "nova").click();
+    await expect(root(page)).toHaveAttribute("data-selected", "nova");
+    await expect.poll(() => drawsOver(page, 60), { timeout: 10_000 }).toBeGreaterThan(0);
   });
 });
 
