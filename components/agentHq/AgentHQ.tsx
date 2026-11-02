@@ -1,16 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Captions, CaptionsOff, Pause, Play, RotateCcw, SkipForward, Square, Users, Volume2, VolumeX, X } from "lucide-react";
+import { Captions, CaptionsOff, Locate, Minus, Pause, Play, Plus, RotateCcw, SkipForward, Square, Users, Volume2, VolumeX, X } from "lucide-react";
 import Link from "next/link";
 import {
   CLIP_SECONDS,
   FULL_MEETING_AUDIO_SECONDS,
   HQ_INTRO,
+  QUICK_MEETING_SPEAKING_SECONDS,
   SILENT_MEETING_LINES,
   VOICED_MEETING_LINES,
   formatClip,
   hqAgent,
+  lineSeconds,
 } from "@/data/agentHq";
 import { readingTimeMs } from "@/data/agentTeam";
 import { HQ_AGENTS, type HqAgentId } from "@/lib/agentHq/layout";
@@ -31,6 +33,8 @@ import {
   setReduced,
   skipMeeting,
   step,
+  switchToCaptions,
+  type MeetingLine,
   type MeetingPhase,
   type Sim,
 } from "@/lib/agentHq/sim";
@@ -38,7 +42,7 @@ import { announceAudio, onOtherAudio } from "@/lib/siteAudio";
 import { useAudioNarration } from "@/hooks/useAudioNarration";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { track } from "@/lib/analytics";
-import { LOOK, WORLD_BOUNDS, characterTop, createStaticLayer, drawScene, type View } from "./render";
+import { AMBIENT_FPS, LOOK, WORLD_BOUNDS, characterTop, createStaticLayer, drawScene, type View } from "./render";
 
 type Caption = { agent: HqAgentId; text: string; source: "intro" | "meeting-voiced" | "meeting-silent" } | null;
 type AudioState = "idle" | "playing" | "ended" | "stopped" | "captions";
@@ -54,6 +58,12 @@ declare global {
 function sentences(text: string) {
   return text.match(/[^.!?]+[.!?]+(\s|$)/g)?.map((s) => s.trim()) ?? [text];
 }
+
+/** Zoom steps for the office view (on top of the fitted view). */
+const ZOOMS = [1, 1.5, 2, 2.6];
+
+/** Roughly how long a quick meeting takes: the call, the walk to the table and every line at reading pace. */
+const QUICK_MEETING_ABOUT = Math.round((QUICK_MEETING_SPEAKING_SECONDS + 10) / 5) * 5;
 
 const PHASE_TEXT: Record<MeetingPhase, string> = {
   calling: "ASTRA is calling a meeting",
@@ -77,14 +87,17 @@ export function AgentHQ() {
 
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<HqAgentId | null>(null);
-  const [meeting, setMeeting] = useState<{ phase: MeetingPhase; voiced: boolean; speaker: HqAgentId | null } | null>(null);
+  const [meeting, setMeeting] = useState<{ phase: MeetingPhase; voiced: boolean; speaker: HqAgentId | null; index?: number } | null>(null);
   const [caption, setCaption] = useState<Caption>(null);
   const [progress, setProgress] = useState(0);
   const [audio, setAudio] = useState<AudioState>("idle");
   const [muted, setMuted] = useState(false);
   const [captionsOn, setCaptionsOn] = useState(true);
   const [paused, setPaused] = useState(false);
-  const [statuses, setStatuses] = useState<Record<HqAgentId, string>>({ astra: "", nova: "", forge: "" });
+  const [statuses, setStatuses] = useState<Record<HqAgentId, string>>(() => Object.fromEntries(HQ_AGENTS.map((id) => [id, ""])) as Record<HqAgentId, string>);
+  const [meetingLines, setMeetingLines] = useState<MeetingLine[]>([]);
+  const [zoomIndex, setZoomIndex] = useState(0);
+  const userCam = useRef({ z: 1, px: 0, py: 0 });
   const [live, setLive] = useState("");
 
   const pausedRef = useRef(false);
@@ -190,6 +203,24 @@ export function AgentHQ() {
     track("agent_hq_meeting", { voiced });
   };
 
+  /** Stop narration during a full meeting: the voices stop and the meeting carries on in captions. */
+  const meetingToCaptions = () => {
+    silence();
+    setAudio("idle");
+    switchToCaptions(sim, SILENT_MEETING_LINES);
+  };
+
+  const setZoom = (i: number) => {
+    const next = Math.max(0, Math.min(ZOOMS.length - 1, i));
+    userCam.current.z = ZOOMS[next];
+    if (next === 0) {
+      userCam.current.px = 0;
+      userCam.current.py = 0;
+    }
+    setZoomIndex(next);
+  };
+  const resetView = () => setZoom(0);
+
   const endMeeting = () => {
     silence();
     skipMeeting(sim);
@@ -246,15 +277,23 @@ export function AgentHQ() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Escape returns to the office view.
+  // Escape returns to the office view, or leaves a meeting.
+  const meetingOn = !!meeting && meeting.phase !== "returning";
   useEffect(() => {
-    if (!selected) return;
+    if (!selected && !meetingOn) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") backToOffice();
+      if (e.key !== "Escape") return;
+      if (selectedRef.current) backToOffice();
+      else {
+        silence();
+        skipMeeting(sim);
+        setCaption(null);
+        setAudio("idle");
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, backToOffice]);
+  }, [selected, meetingOn, backToOffice, silence, sim]);
 
   // Caption progress at 10 Hz.
   useEffect(() => {
@@ -275,7 +314,10 @@ export function AgentHQ() {
     for (const e of drainEvents(s)) {
       if (e.type === "meeting-phase") {
         setMeeting({ phase: e.phase, voiced: !!s.meeting?.voiced, speaker: null });
-        if (e.phase === "calling") setLive("ASTRA called a meeting. The team is heading to the table.");
+        if (e.phase === "calling") {
+          setMeetingLines(s.meeting?.lines ?? []);
+          setLive("ASTRA called a meeting. The team is heading to the table.");
+        }
         if (e.phase === "returning" && sourceRef.current !== "intro") {
           silence();
           setCaption((c) => (c && c.source !== "intro" ? null : c));
@@ -283,9 +325,10 @@ export function AgentHQ() {
         }
       } else if (e.type === "speaker") {
         const line = s.meeting!.lines[e.index];
-        setMeeting({ phase: "speaking", voiced: e.voiced, speaker: e.agent });
+        setMeeting({ phase: "speaking", voiced: e.voiced, speaker: e.agent, index: e.index });
+        setMeetingLines(s.meeting!.lines);
         if (e.voiced) {
-          speak(e.agent, HQ_INTRO[e.agent].audioFile, line.text, "meeting-voiced", () => advanceSpeaker(s));
+          speak(e.agent, line.audio ?? HQ_INTRO[e.agent].audioFile, line.text, "meeting-voiced", () => advanceSpeaker(s));
         } else {
           sourceRef.current = "meeting-silent";
           setCaption({ agent: e.agent, text: line.text, source: "meeting-silent" });
@@ -363,10 +406,11 @@ export function AgentHQ() {
       // Camera: ease towards the selected character, or back to the whole office.
       const focusId = selectedRef.current;
       const narrow = css.w < 640;
-      // Phones frame the floor more tightly so the characters stay readable.
-      let tz = narrow ? 1.32 : 1;
-      let tx = homeX;
-      let ty = homeY + (narrow ? 14 : 0);
+      // The whole office fits on every screen so all seven are visible; phones can zoom in and drag to look around.
+      const u = userCam.current;
+      let tz = u.z;
+      let tx = homeX + u.px;
+      let ty = homeY + u.py;
       if (focusId) {
         const { feet } = characterTop(charById(s, focusId));
         tz = narrow ? 2.3 : 1.6;
@@ -391,7 +435,10 @@ export function AgentHQ() {
         lastSig = sig;
       } else lastSig = "";
       if (draw) {
-        drawScene(ctx, s, view, { time: animTime, still: s.reduced, selected: focusId, highlighted: null, layer });
+        drawScene(ctx, s, view, { time: animTime, still: s.reduced, selected: focusId, highlighted: null, layer,
+          // A slower-running device gets the background animation at half rate (7.5 updates a second).
+          ambientFps: policy.mode === 60 ? AMBIENT_FPS : AMBIENT_FPS / 2,
+        });
         window.__agentHqDraws = (window.__agentHqDraws ?? 0) + 1;
         if (updateFramePolicy(policy, now, interval, performance.now() - workStart) && rootRef.current) {
           rootRef.current.dataset.fps = String(policy.mode);
@@ -405,7 +452,8 @@ export function AgentHQ() {
         const el = overlayRefs.current[c.id];
         if (!el) continue;
         const { feet, height } = characterTop(c);
-        const w = Math.max(44, 30 * scale);
+        // At least 44 px (with a little margin for subpixel layout) so every character is easy to tap.
+        const w = Math.max(46, 30 * scale);
         const h = Math.max(48, (height + 10) * scale);
         const x = view.ox + feet.X * scale - w / 2;
         const y = view.oy + feet.Y * scale - h + 6 * scale;
@@ -424,6 +472,7 @@ export function AgentHQ() {
         }
       }
       if (writeAttrs && rootRef.current) {
+        rootRef.current.dataset.zoom = cam.z.toFixed(2);
         rootRef.current.dataset.mode = s.mode;
         rootRef.current.dataset.meeting = s.meeting?.phase ?? "none";
         rootRef.current.dataset.time = s.time.toFixed(1);
@@ -467,6 +516,31 @@ export function AgentHQ() {
       else halt();
     };
     document.addEventListener("visibilitychange", onVis);
+    // Drag to pan when zoomed in.
+    let drag: { id: number; x: number; y: number } | null = null;
+    const onDown = (e: PointerEvent) => {
+      if (userCam.current.z <= 1 || e.target !== canvas) return;
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      canvas.setPointerCapture(e.pointerId);
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const sc = fitScale() * cam.z;
+      const u = userCam.current;
+      const limX = WORLD_BOUNDS.width / 2;
+      const limY = WORLD_BOUNDS.height / 2;
+      u.px = Math.max(-limX, Math.min(limX, u.px - (e.clientX - drag.x) / sc));
+      u.py = Math.max(-limY, Math.min(limY, u.py - (e.clientY - drag.y) / sc));
+      drag.x = e.clientX;
+      drag.y = e.clientY;
+    };
+    const onUp = (e: PointerEvent) => {
+      if (drag && e.pointerId === drag.id) drag = null;
+    };
+    canvas.addEventListener("pointerdown", onDown);
+    canvas.addEventListener("pointermove", onMove);
+    canvas.addEventListener("pointerup", onUp);
+    canvas.addEventListener("pointercancel", onUp);
     start();
     setReady(true);
 
@@ -474,6 +548,10 @@ export function AgentHQ() {
       halt();
       io.disconnect();
       ro.disconnect();
+      canvas.removeEventListener("pointerdown", onDown);
+      canvas.removeEventListener("pointermove", onMove);
+      canvas.removeEventListener("pointerup", onUp);
+      canvas.removeEventListener("pointercancel", onUp);
       document.removeEventListener("visibilitychange", onVis);
       window.__agentHqLoops = (window.__agentHqLoops ?? 1) - 1;
     };
@@ -519,6 +597,11 @@ export function AgentHQ() {
                   <SkipForward className="h-4 w-4" aria-hidden="true" /> Next speaker
                 </button>
               )}
+              {meeting?.voiced && (
+                <button type="button" onClick={meetingToCaptions} className="btn-ghost !px-3 !py-2.5 text-sm">
+                  <Square className="h-4 w-4" aria-hidden="true" /> Stop narration
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -529,7 +612,7 @@ export function AgentHQ() {
                 disabled={meeting?.phase === "returning"}
               >
                 <Users className="h-4 w-4" aria-hidden="true" /> Quick meeting
-                <span className="text-xs font-normal opacity-80">· captions, about 25 s</span>
+                <span className="text-xs font-normal opacity-80">· captions, about {QUICK_MEETING_ABOUT} s</span>
               </button>
               <button
                 type="button"
@@ -538,7 +621,7 @@ export function AgentHQ() {
                 disabled={meeting?.phase === "returning"}
               >
                 <Volume2 className="h-4 w-4" aria-hidden="true" /> Full meeting with voices
-                <span className="text-xs font-normal opacity-80">· about 1½ min</span>
+                <span className="text-xs font-normal opacity-80">· {formatClip(FULL_MEETING_AUDIO_SECONDS)} of audio</span>
               </button>
             </>
           )}
@@ -576,23 +659,28 @@ export function AgentHQ() {
           </p>
         </div>
 
-        {meeting?.voiced && meeting.phase === "speaking" && (
+        {meeting?.phase === "speaking" && meetingLines.length > 0 && (
           <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label="Jump to a speaker" data-testid="hq-jump">
             <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-slate-400">Jump to</span>
-            {VOICED_MEETING_LINES.map((l, i) => (
-              <button
-                key={l.agent}
-                type="button"
-                onClick={() => jumpTo(i)}
-                aria-pressed={meeting.speaker === l.agent}
-                className="flex min-h-[44px] items-center gap-2 rounded-full border px-3 text-xs font-semibold text-white hover:bg-white/10 aria-pressed:bg-white/10"
-                style={{ borderColor: `${LOOK[l.agent].accent}66` }}
-              >
-                <span className="h-2 w-2 rounded-full" style={{ background: LOOK[l.agent].accent }} aria-hidden="true" />
-                {hqAgent(l.agent).name}
-                <span className="font-mono font-normal text-slate-400">{formatClip(CLIP_SECONDS[l.agent])}</span>
-              </button>
-            ))}
+            {meetingLines.map((l, i) => {
+              const closing = i > 0 && meetingLines.slice(0, i).some((x) => x.agent === l.agent);
+              return (
+                <button
+                  key={`${l.id ?? l.agent}-${i}`}
+                  type="button"
+                  onClick={() => jumpTo(i)}
+                  aria-pressed={meeting.index === i}
+                  aria-label={`${hqAgent(l.agent).name}${closing ? " closing" : ""}${meeting.voiced ? `, ${formatClip(lineSeconds(l))}` : ""}`}
+                  className="flex min-h-[44px] items-center gap-2 rounded-full border px-3 text-xs font-semibold text-white hover:bg-white/10 aria-pressed:bg-white/10"
+                  style={{ borderColor: `${LOOK[l.agent].accent}66` }}
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ background: LOOK[l.agent].accent }} aria-hidden="true" />
+                  {hqAgent(l.agent).name}
+                  {closing && <span className="font-normal text-slate-400">closing</span>}
+                  {meeting.voiced && <span className="font-mono font-normal text-slate-400">{formatClip(lineSeconds(l))}</span>}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -603,10 +691,47 @@ export function AgentHQ() {
         >
           <canvas
             ref={canvasRef}
-            className="absolute inset-0 h-full w-full"
+            className={`absolute inset-0 h-full w-full ${zoomIndex > 0 ? "cursor-grab touch-none active:cursor-grabbing" : "touch-pan-y"}`}
             role="img"
-            aria-label="Animated isometric office. ASTRA, NOVA and FORGE work at their desks, walk between the coffee station, whiteboard and build server, and meet at the central table."
+            aria-label="Animated isometric office with seven simulated AI agents. ASTRA, NOVA, FORGE, ECHO, ATLAS, PULSE and SENTINEL work at their own stations, visit each other, use the whiteboard, coffee station and build server, and meet at the central table."
           />
+          <div className="absolute bottom-2 right-2 z-10 flex gap-1.5" role="group" aria-label="Camera">
+            <button
+              type="button"
+              onClick={() => setZoom(zoomIndex + 1)}
+              disabled={zoomIndex === ZOOMS.length - 1}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-ink-950/80 text-slate-100 hover:bg-white/10 disabled:opacity-40"
+              aria-label="Zoom in"
+              title="Zoom in"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom(zoomIndex - 1)}
+              disabled={zoomIndex === 0}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-ink-950/80 text-slate-100 hover:bg-white/10 disabled:opacity-40"
+              aria-label="Zoom out"
+              title="Zoom out"
+            >
+              <Minus className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                resetView();
+                if (selectedRef.current) backToOffice();
+              }}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-ink-950/80 text-slate-100 hover:bg-white/10"
+              aria-label="Reset view"
+              title="Reset view"
+            >
+              <Locate className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+          {zoomIndex > 0 && !selected && (
+            <p className="pointer-events-none absolute left-2 top-2 z-10 rounded-full bg-ink-950/80 px-2 py-1 font-mono text-[10px] text-slate-300">Drag to look around</p>
+          )}
           {HQ_AGENTS.map((id) => {
             const a = hqAgent(id);
             const look = LOOK[id];
@@ -667,16 +792,24 @@ export function AgentHQ() {
             </p>
           )}
         </div>
-        {caption?.agent === "forge" && caption.source !== "meeting-silent" && (
-          <p className="mt-2 rounded-lg border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2 text-xs leading-relaxed text-slate-300" data-testid="hq-atlas-note">
-            FORGE&apos;s recorded introduction ends by handing over to ATLAS, the systems architect. ATLAS isn&apos;t part of this
-            three-agent prototype; the{" "}
-            <Link href="/#ai-team" className="text-teal underline underline-offset-2">
-              full AI Team tour
-            </Link>{" "}
-            introduces all seven agents.
-          </p>
-        )}
+        {/* The seven-agent roster: quick to reach on phones, where the side panel sits below the office. */}
+        <ul className="mt-3 grid grid-cols-4 gap-1.5 sm:grid-cols-7 lg:hidden" aria-label="Choose an agent">
+          {HQ_AGENTS.map((id) => (
+            <li key={id}>
+              <button
+                type="button"
+                onClick={() => (selected === id ? backToOffice() : select(id))}
+                aria-pressed={selected === id}
+                data-testid={`hq-chip-${id}`}
+                className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border px-1 font-mono text-[11px] font-bold tracking-[0.06em] text-white aria-pressed:bg-white/10"
+                style={{ borderColor: `${LOOK[id].accent}66` }}
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: LOOK[id].accent }} aria-hidden="true" />
+                {hqAgent(id).name}
+              </button>
+            </li>
+          ))}
+        </ul>
         <p className="sr-only" role="status" aria-live="polite">
           {live}
         </p>
@@ -719,10 +852,10 @@ export function AgentHQ() {
           </div>
         ) : (
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-teal">Prototype · 3 of 7 agents</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-teal">Simulation · all 7 agents</p>
             <p className="mt-2 text-sm leading-relaxed text-slate-300">
               Select a character to hear only its introduction. A quick meeting shows the team gather at the table with one line
-              each; the full meeting plays every recorded introduction in turn.
+              each, in captions; the full meeting plays every recorded introduction in turn and is entirely optional.
             </p>
             <ul className="mt-4 space-y-2" aria-label="Agents in the office">
               {HQ_AGENTS.map((id) => {
@@ -750,15 +883,19 @@ export function AgentHQ() {
               })}
             </ul>
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              The full meeting plays {formatClip(FULL_MEETING_AUDIO_SECONDS)} of recorded audio (ASTRA {formatClip(CLIP_SECONDS.astra)}, NOVA{" "}
-              {formatClip(CLIP_SECONDS.nova)}, FORGE {formatClip(CLIP_SECONDS.forge)}). Use Jump to or Next speaker to skip ahead
+              The full meeting plays {formatClip(FULL_MEETING_AUDIO_SECONDS)} of recorded audio: eight clips of {formatClip(Math.min(...Object.values(CLIP_SECONDS)))}–
+              {formatClip(Math.max(...Object.values(CLIP_SECONDS)))}. Use Jump to, Next speaker or Stop narration at any time
               {muted ? "; voices are muted, so it shows captions only" : ""}.
             </p>
           </div>
         )}
         <p className="mt-5 border-t border-white/10 pt-3 text-[11px] leading-relaxed text-slate-500">
-          A scripted, deterministic animation of the AI team&apos;s roles. No live autonomous agents are running behind it. Voices are the AI team&apos;s
-          existing recorded OpenAI TTS clips.
+          A scripted, deterministic animation of the AI team&apos;s roles. No live autonomous agents are running behind it, and the alerts,
+          warnings and performance figures in the office are simulated. Voices are the AI team&apos;s existing recorded OpenAI TTS clips.{" "}
+          <Link href="/#projects" className="text-teal underline underline-offset-2">
+            See the real projects
+          </Link>
+          .
         </p>
       </aside>
     </div>

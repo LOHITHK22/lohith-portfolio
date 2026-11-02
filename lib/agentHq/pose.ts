@@ -5,7 +5,8 @@ import type { Gesture } from "./sim";
 // tile is 32 wide), then projected isometrically by the renderer. Walking is a real
 // gait cycle: thighs swing in opposition, knees bend on the swing leg, the stance foot
 // stays planted, arms counter-swing and the body bobs. Sitting, typing, waving, talking
-// and the errand gestures are poses blended on the same skeleton.
+// and the errand gestures are poses blended on the same skeleton. Characters differ in
+// shoulder width and in how they stand when idle (arms folded, hands behind the back...).
 
 export type V3 = { f: number; s: number; z: number };
 
@@ -36,7 +37,13 @@ export type PoseInput = {
   armSwing: number;
   /** Freeze looping motion (reduced motion). */
   still: boolean;
+  /** Shoulder width relative to the default build. */
+  shoulder?: number;
+  /** How the character holds its arms when standing with nothing to do. */
+  idle?: IdleStyle;
 };
+
+export type IdleStyle = "default" | "fold" | "guard" | "ready" | "open";
 
 export const BODY = {
   thigh: 10.5,
@@ -52,6 +59,14 @@ export const BODY = {
 };
 
 const v = (f: number, s: number, z: number): V3 => ({ f, s, z });
+
+/** Idle arm poses: upper-arm angle, elbow bend and sideways splay (negative splay crosses the body). */
+const IDLE: Record<Exclude<IdleStyle, "default">, { upper: number; bend: number; splay: number }> = {
+  fold: { upper: 0.5, bend: 1.85, splay: -0.5 },
+  guard: { upper: -0.32, bend: 0.75, splay: 0.5 },
+  ready: { upper: 0.12, bend: 1.35, splay: 3.6 },
+  open: { upper: 0.38, bend: 0.75, splay: 2.2 },
+};
 const add = (a: V3, b: V3): V3 => ({ f: a.f + b.f, s: a.s + b.s, z: a.z + b.z });
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 
@@ -100,7 +115,10 @@ export function computePose(p: PoseInput): Joints {
   const talkBob = p.gesture === "talk" && !p.still ? p.level * 1.2 * Math.sin(t * 11) : 0;
   const head = add(chest, v(Math.sin(lean) * 8 + nod * 0.3, 0, BODY.headR + 2.2 + talkBob * 0.3));
 
-  const shoulder: [V3, V3] = [add(chest, v(0, -BODY.shoulderWidth, -1)), add(chest, v(0, BODY.shoulderWidth, -1))];
+  const sw = BODY.shoulderWidth * (p.shoulder ?? 1);
+  const shoulder: [V3, V3] = [add(chest, v(0, -sw, -1)), add(chest, v(0, sw, -1))];
+  // Idle stance only shows when standing still with nothing in hand; it blends out as soon as the character walks or sits.
+  const idleK = p.gesture === "none" && p.idle && p.idle !== "default" ? (1 - p.walkAmt) * (1 - sit) : 0;
 
   // Arms: [upper angle, elbow bend, splay] per side; index 1 is the right arm.
   const arms = [0, 1].map((i) => {
@@ -169,6 +187,20 @@ export function computePose(p: PoseInput): Joints {
         bend = 0.3;
         lift = 0;
         break;
+      case "present": {
+        // Presenting to a room: both arms open, sweeping in turn.
+        upper = 0.85 + Math.sin(t * 1.7 + i * Math.PI) * 0.28;
+        bend = 0.45 + Math.sin(t * 2.3 + i) * 0.2;
+        splay = side * 3.2;
+        break;
+      }
+    }
+    if (idleK > 0) {
+      const pose = IDLE[p.idle as Exclude<IdleStyle, "default">];
+      const breatheArm = p.still ? 0 : Math.sin(t * 1.4 + i) * 0.03;
+      upper = lerp(upper, pose.upper + breatheArm, idleK);
+      bend = lerp(bend, pose.bend, idleK);
+      splay = lerp(splay, side * pose.splay, idleK);
     }
     return { upper, bend, splay, lift };
   });

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { CLIP_SECONDS, HQ_INTRO, SILENT_MEETING_LINES } from "../../data/agentHq";
-import { MEETING_SPOTS, walkableFor, type HqAgentId } from "../../lib/agentHq/layout";
+import { FULL_MEETING_AUDIO_SECONDS, HQ_INTRO, SILENT_MEETING_LINES, VOICED_MEETING_LINES, formatClip, lineSeconds } from "../../data/agentHq";
+import { HQ_AGENTS, MEETING_SPOTS, walkableFor, type HqAgentId } from "../../lib/agentHq/layout";
 
 // Browser tests for /agent-hq: the canvas office, overlay buttons that follow the
 // characters, meetings, selection with narration and captions, audio coordination
@@ -9,7 +9,7 @@ import { MEETING_SPOTS, walkableFor, type HqAgentId } from "../../lib/agentHq/la
 // and samples how many play at once.
 
 const ROUTE = "/agent-hq";
-const AGENTS: HqAgentId[] = ["astra", "nova", "forge"];
+const AGENTS: HqAgentId[] = HQ_AGENTS;
 
 type W = { __media: HTMLMediaElement[]; __max: number; __agentHqLoops?: number; __agentHqDraws?: number };
 
@@ -96,12 +96,14 @@ const playedSeconds = (page: Page) =>
 test.describe("Agent HQ", () => {
   test.beforeEach(async ({ page }) => instrument(page));
 
-  test("draws the office with three characters and an honest description, without errors", async ({ page }) => {
+  test("draws the office with all seven characters and an honest description, without errors", async ({ page }) => {
     const errors = consoleErrors(page);
     await open(page);
     for (const id of AGENTS) await expect(agent(page, id)).toBeVisible();
-    await expect(page.getByText("No live autonomous agents are running behind it.")).toBeVisible();
-    await expect(page.getByText("Prototype · 3 of 7 agents")).toBeVisible();
+    await expect(page.getByText(/No live autonomous agents are running behind it/)).toBeVisible();
+    await expect(page.getByText(/alerts, warnings and performance figures in the office are simulated/)).toBeVisible();
+    await expect(page.getByText("Simulation · all 7 agents")).toBeVisible();
+    await expect(page.getByRole("link", { name: "See the real projects" })).toHaveAttribute("href", "/#projects");
     // The canvas has real pixels drawn: many distinct colours, not a blank fill.
     const colours = await page.locator("canvas").evaluate((c: HTMLCanvasElement) => {
       const ctx = c.getContext("2d")!;
@@ -170,30 +172,89 @@ test.describe("Agent HQ", () => {
     expect(await maxConcurrent(page)).toBe(1);
   });
 
-  test("the full meeting shows its length, and Jump to goes straight to FORGE's clip with the ATLAS handover note", async ({ page }) => {
+  test("the full meeting is optional and shows its length; Jump to plays any of the eight recorded turns", async ({ page }) => {
     await open(page);
-    await expect(page.getByRole("button", { name: /^Full meeting with voices/ })).toContainText("about 1½ min");
-    await expect(page.getByRole("button", { name: /^Quick meeting/ })).toContainText("about 25 s");
-    await expect(page.getByText(/The full meeting plays 1:21 of recorded audio/)).toBeVisible();
+    const full = formatClip(FULL_MEETING_AUDIO_SECONDS);
+    expect(full).toBe("3:19");
+    await expect(page.getByRole("button", { name: /^Full meeting with voices/ })).toContainText(`${full} of audio`);
+    await expect(page.getByRole("button", { name: /^Quick meeting/ })).toContainText("about 40 s");
+    await expect(page.getByText(/The full meeting plays 3:19 of recorded audio/)).toBeVisible();
     await page.getByRole("button", { name: /^Full meeting with voices/ }).click();
     await expect(root(page)).toHaveAttribute("data-speaker", "astra", { timeout: 20_000 });
     const jump = page.getByTestId("hq-jump");
-    await expect(jump.getByRole("button", { name: /ASTRA/ })).toHaveAttribute("aria-pressed", "true");
-    await expect(jump.getByRole("button", { name: /FORGE/ })).toContainText("0:27");
+    await expect(jump.getByRole("button")).toHaveCount(VOICED_MEETING_LINES.length);
+    await expect(jump.getByRole("button", { name: /^ASTRA,/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(jump.getByRole("button", { name: /^FORGE/ })).toContainText("0:27");
     await expect.poll(() => playing(page), { timeout: 5000 }).toEqual([HQ_INTRO.astra.audioFile]);
+    // The three-agent prototype's ATLAS note is gone: ATLAS is in the office now.
     await expect(page.getByTestId("hq-atlas-note")).toHaveCount(0);
-    await jump.getByRole("button", { name: /FORGE/ }).click();
+    await jump.getByRole("button", { name: /^FORGE/ }).click();
     await expect(root(page)).toHaveAttribute("data-speaker", "forge");
-    await expect(jump.getByRole("button", { name: /FORGE/ })).toHaveAttribute("aria-pressed", "true");
     await expect.poll(() => playing(page), { timeout: 5000 }).toEqual([HQ_INTRO.forge.audioFile]);
-    await expect.poll(() => playedSeconds(page), { timeout: 8000 }).toBeGreaterThan(0.5);
     await expect(page.getByTestId("hq-captions")).toContainText("Atlas, our systems architect");
-    const note = page.getByTestId("hq-atlas-note");
-    await expect(note).toContainText("ATLAS isn't part of this three-agent prototype");
-    await expect(note.getByRole("link", { name: "full AI Team tour" })).toHaveAttribute("href", "/#ai-team");
+    // FORGE hands over to ATLAS, whose own recording plays next.
+    await jump.getByRole("button", { name: /^ATLAS/ }).click();
+    await expect(root(page)).toHaveAttribute("data-speaker", "atlas");
+    await expect.poll(() => playing(page), { timeout: 5000 }).toEqual(["/audio/team/atlas.mp3"]);
+    await expect.poll(() => playedSeconds(page), { timeout: 8000 }).toBeGreaterThan(0.5);
+    // ASTRA's recorded closing is the last turn.
+    await jump.getByRole("button", { name: /^ASTRA closing/ }).click();
+    await expect.poll(() => playing(page), { timeout: 5000 }).toEqual([VOICED_MEETING_LINES.at(-1)!.audio!]);
     await page.getByRole("button", { name: "Skip meeting" }).click();
     await expect.poll(() => playing(page)).toEqual([]);
     expect(await maxConcurrent(page)).toBe(1);
+  });
+
+  test("Stop narration turns a full meeting into captions; Escape leaves the meeting", async ({ page }) => {
+    await open(page);
+    await page.getByRole("button", { name: /^Full meeting with voices/ }).click();
+    await expect(root(page)).toHaveAttribute("data-speaker", "astra", { timeout: 20_000 });
+    await expect.poll(() => playing(page), { timeout: 5000 }).toEqual([HQ_INTRO.astra.audioFile]);
+    await page.getByRole("button", { name: "Next speaker" }).click();
+    await expect(root(page)).toHaveAttribute("data-speaker", "nova");
+    await page.getByRole("button", { name: "Stop narration" }).click();
+    await expect.poll(() => playing(page)).toEqual([]);
+    // The meeting carries on with NOVA's quoted line in a speech bubble, then the next speaker, silently.
+    await expect(page.getByTestId("hq-bubble-nova")).toContainText(SILENT_MEETING_LINES[1].text);
+    await expect(page.getByRole("button", { name: "Stop narration" })).toHaveCount(0);
+    await expect(root(page)).toHaveAttribute("data-speaker", "forge", { timeout: 10_000 });
+    expect(await playing(page)).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(root(page)).toHaveAttribute("data-meeting", "returning");
+    // Never two voices at once.
+    expect(await maxConcurrent(page)).toBeLessThanOrEqual(1);
+  });
+
+  test("a quick meeting can jump to any of the seven", async ({ page }) => {
+    await open(page);
+    await page.getByRole("button", { name: /^Quick meeting/ }).click();
+    await expect(root(page)).toHaveAttribute("data-speaker", "astra", { timeout: 20_000 });
+    const jump = page.getByTestId("hq-jump");
+    await expect(jump.getByRole("button")).toHaveCount(7);
+    await jump.getByRole("button", { name: "SENTINEL" }).click();
+    await expect(root(page)).toHaveAttribute("data-speaker", "sentinel");
+    await expect(page.getByTestId("hq-bubble-sentinel")).toContainText(SILENT_MEETING_LINES[5].text);
+    await expect(root(page)).toHaveAttribute("data-speaker", "echo", { timeout: 10_000 });
+    await expect(page.getByTestId("hq-bubble-echo")).toContainText("Together, our team represents");
+    expect(await playing(page)).toEqual([]);
+  });
+
+  test("zoom in, drag to look around, and reset the view", async ({ page }) => {
+    await open(page);
+    await expect.poll(async () => Number(await root(page).getAttribute("data-zoom"))).toBeCloseTo(1, 1);
+    await page.getByRole("button", { name: "Zoom in" }).click();
+    await page.getByRole("button", { name: "Zoom in" }).click();
+    await expect.poll(async () => Number(await root(page).getAttribute("data-zoom"))).toBeGreaterThan(1.9);
+    const before = (await agent(page, "echo").boundingBox())!;
+    const c = (await page.locator('[data-testid="agent-hq"] canvas').boundingBox())!;
+    await page.mouse.move(c.x + c.width * 0.3, c.y + c.height * 0.5);
+    await page.mouse.down();
+    await page.mouse.move(c.x + c.width * 0.6, c.y + c.height * 0.55, { steps: 6 });
+    await page.mouse.up();
+    // The scene moved with the drag (overlays follow the characters).
+    await expect.poll(async () => (await agent(page, "echo").boundingBox())!.x - before.x).toBeGreaterThan(40);
+    await page.getByRole("button", { name: "Reset view" }).click();
+    await expect.poll(async () => Number(await root(page).getAttribute("data-zoom"))).toBeCloseTo(1, 1);
   });
 
   test("the clip lengths shown match the recordings the browser decodes", async ({ page }) => {
@@ -212,9 +273,9 @@ test.describe("Agent HQ", () => {
               })
           )
         ),
-      AGENTS.map((id) => HQ_INTRO[id].audioFile)
+      VOICED_MEETING_LINES.map((l) => l.audio!)
     );
-    AGENTS.forEach((id, i) => expect(Math.abs(decoded[i] - CLIP_SECONDS[id]), id).toBeLessThan(0.3));
+    VOICED_MEETING_LINES.forEach((l, i) => expect(Math.abs(decoded[i] - lineSeconds(l)), l.id).toBeLessThan(0.3));
   });
 
   test("clicking a character focuses it: greeting, its own narration, captions and role panel; back returns", async ({ page }) => {
@@ -284,6 +345,21 @@ test.describe("Agent HQ", () => {
     await expect(root(page)).toHaveAttribute("data-selected", "forge");
   });
 
+  test("every one of the seven can be met from the keyboard, with its own role panel and recording", async ({ page }) => {
+    await open(page);
+    for (const id of AGENTS) {
+      await agent(page, id).focus();
+      await page.keyboard.press("Enter");
+      await expect(root(page)).toHaveAttribute("data-selected", id);
+      await expect(page.getByTestId("hq-panel").getByRole("heading", { name: id.toUpperCase() })).toBeVisible();
+      await expect.poll(() => playing(page), { timeout: 5000 }).toEqual([HQ_INTRO[id].audioFile]);
+      await page.keyboard.press("Escape");
+      await expect(root(page)).toHaveAttribute("data-selected", "");
+      await expect(agent(page, id)).toBeFocused();
+    }
+    expect(await maxConcurrent(page)).toBe(1);
+  });
+
   test("pause motion freezes the scene", async ({ page }) => {
     await open(page);
     await page.getByRole("button", { name: "Pause motion" }).click();
@@ -338,6 +414,38 @@ test.describe("Agent HQ", () => {
     await expect(root(page)).toHaveAttribute("data-ready", "true");
     await expect.poll(() => page.evaluate(() => (window as unknown as W).__agentHqLoops)).toBe(1);
     await expect(root(page)).toHaveAttribute("data-selected", "");
+  });
+
+  test("repeated visits leave nothing behind: DOM nodes and event listeners stay flat", async ({ page }) => {
+    // Measured with the DevTools protocol after a forced garbage collection. Only locators are used
+    // (no element handles), because a held handle would itself keep an old page alive.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Performance.enable");
+    const sample = async () => {
+      await cdp.send("HeapProfiler.collectGarbage");
+      const { metrics } = await cdp.send("Performance.getMetrics");
+      const m = Object.fromEntries(metrics.map((x: { name: string; value: number }) => [x.name, x.value]));
+      return { nodes: m.Nodes as number, listeners: m.JSEventListeners as number };
+    };
+    await open(page);
+    const counts: { nodes: number; listeners: number }[] = [];
+    for (let i = 0; i < 6; i++) {
+      // Use the page as a visitor would: a meeting call and a selection, then leave and come back.
+      await page.getByRole("button", { name: /^Quick meeting/ }).click();
+      await agent(page, "sentinel").click();
+      await expect(root(page)).toHaveAttribute("data-selected", "sentinel");
+      await page.getByRole("link", { name: "Agents", exact: true }).first().click();
+      await expect(page).toHaveURL(/\/agents$/);
+      await page.goBack();
+      await expect(root(page)).toHaveAttribute("data-ready", "true");
+      await expect.poll(() => page.evaluate(() => (window as unknown as W).__agentHqLoops)).toBe(1);
+      counts.push(await sample());
+    }
+    test.info().annotations.push({ type: "nodes/listeners per visit", description: JSON.stringify(counts) });
+    // After the first visits warm the caches, further visits add nothing.
+    const [a, b] = [counts[1], counts.at(-1)!];
+    expect(b.listeners - a.listeners).toBeLessThanOrEqual(2);
+    expect(b.nodes - a.nodes).toBeLessThanOrEqual(40);
   });
 });
 
@@ -408,5 +516,30 @@ test.describe("Agent HQ on a phone", () => {
     await expect(root(page)).toHaveAttribute("data-selected", "");
     expect(await noHorizontalOverflow(page)).toBe(true);
     expect(errors).toEqual([]);
+  });
+
+  test("the seven-agent roster and the camera controls are large enough to tap @mobile", async ({ page }) => {
+    // The chip roster is the phone and tablet layout; wide screens list the agents in the side panel.
+    test.skip((page.viewportSize()?.width ?? 0) >= 1024, "phone and tablet layout only");
+    await open(page);
+    for (const id of AGENTS) {
+      const chip = page.getByTestId(`hq-chip-${id}`);
+      const b = (await chip.boundingBox())!;
+      expect(b.width, id).toBeGreaterThanOrEqual(44);
+      expect(b.height, id).toBeGreaterThanOrEqual(44);
+    }
+    for (const name of ["Zoom in", "Zoom out", "Reset view"]) {
+      const b = (await page.getByRole("button", { name }).boundingBox())!;
+      expect(b.width).toBeGreaterThanOrEqual(44);
+      expect(b.height).toBeGreaterThanOrEqual(44);
+    }
+    await page.getByTestId("hq-chip-echo").tap();
+    await expect(root(page)).toHaveAttribute("data-selected", "echo");
+    await expect(page.getByTestId("hq-panel")).toContainText("ECHO");
+    await page.getByRole("button", { name: "Reset view" }).tap();
+    await expect(root(page)).toHaveAttribute("data-selected", "");
+    await page.getByRole("button", { name: "Zoom in" }).tap();
+    await expect.poll(async () => Number(await root(page).getAttribute("data-zoom"))).toBeGreaterThan(1.4);
+    expect(await noHorizontalOverflow(page)).toBe(true);
   });
 });

@@ -10,6 +10,10 @@ export const HQ_INTRO: Record<HqAgentId, { caption: string; audioFile: string }>
   astra: pick("astra-intro"),
   nova: pick("nova"),
   forge: pick("forge"),
+  atlas: pick("atlas"),
+  pulse: pick("pulse"),
+  sentinel: pick("sentinel"),
+  echo: pick("echo"),
 };
 
 function pick(stepId: string) {
@@ -20,29 +24,63 @@ function pick(stepId: string) {
 
 /**
  * Lines shown in speech bubbles during a captions-only meeting: one sentence from
- * each character's existing caption, quoted exactly.
+ * each character's existing caption, quoted exactly. ASTRA opens; ECHO closes with
+ * the team summary.
  */
 export const SILENT_MEETING_LINES: MeetingLine[] = [
   { agent: "astra", text: "Every system starts with a clear plan." },
   { agent: "nova", text: "My goal is to make complex technology feel elegant and understandable." },
   { agent: "forge", text: "I transform design systems into working applications, building responsive interfaces, interactive components, and polished user experiences." },
+  { agent: "atlas", text: "I focus on AI architecture, agent orchestration, tool calling, and data infrastructure." },
+  { agent: "pulse", text: "I'm Pulse, the performance and optimization agent." },
+  { agent: "sentinel", text: "My responsibility is quality, reliability, accessibility, and security." },
+  { agent: "echo", text: "Together, our team represents the different disciplines involved in building reliable digital systems." },
 ];
 
-/** A voiced meeting plays each character's full recorded introduction, in handoff order. */
-export const VOICED_MEETING_LINES: MeetingLine[] = (["astra", "nova", "forge"] as HqAgentId[]).map((agent) => ({
-  agent,
-  text: HQ_INTRO[agent].caption,
-}));
+/**
+ * A voiced meeting plays the team's recorded introductions in their handoff order:
+ * ASTRA opens, each specialist hands to the next, ECHO sums up and hands back, and
+ * ASTRA's recorded closing ends it.
+ */
+export const VOICED_MEETING_LINES: MeetingLine[] = teamSteps.map((s) => ({ agent: s.agentId, text: s.caption, audio: s.audioFile, id: s.id }));
 
 /**
- * Length of each existing recording in seconds, measured from the MP3 frame headers
- * (an e2e test checks these against the browser's own decoded durations).
+ * Length of each existing recording in seconds, by team step id, measured from the
+ * browser's decoded audio (an e2e test checks these against the decoded durations).
  */
-export const CLIP_SECONDS: Record<HqAgentId, number> = { astra: 29.9, nova: 24.8, forge: 26.7 };
+export const CLIP_SECONDS: Record<string, number> = {
+  "astra-intro": 29.9,
+  nova: 24.8,
+  forge: 26.7,
+  atlas: 29.6,
+  pulse: 24.9,
+  sentinel: 23.5,
+  echo: 20.9,
+  "astra-closing": 18.8,
+};
+
+/** The recording a character plays when a visitor selects it. */
+export const INTRO_STEP: Record<HqAgentId, string> = {
+  astra: "astra-intro",
+  nova: "nova",
+  forge: "forge",
+  atlas: "atlas",
+  pulse: "pulse",
+  sentinel: "sentinel",
+  echo: "echo",
+};
+
+export const lineSeconds = (l: MeetingLine) => CLIP_SECONDS[l.id ?? INTRO_STEP[l.agent]] ?? 0;
 
 /** Total recorded audio in a full voiced meeting. */
-export const FULL_MEETING_AUDIO_SECONDS = VOICED_MEETING_LINES.reduce((n, l) => n + CLIP_SECONDS[l.agent], 0);
+export const FULL_MEETING_AUDIO_SECONDS = VOICED_MEETING_LINES.reduce((n, l) => n + lineSeconds(l), 0);
 
-export const formatClip = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+/** Reading time of the quick meeting's lines (the same pacing the simulation uses). */
+export const QUICK_MEETING_SPEAKING_SECONDS = SILENT_MEETING_LINES.reduce((n, l) => n + Math.max(3.2, l.text.trim().split(/\s+/).length / 2.6), 0);
+
+export const formatClip = (s: number) => {
+  const r = Math.round(s);
+  return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, "0")}`;
+};
 
 export const hqAgent = (id: HqAgentId) => agentById[id];
