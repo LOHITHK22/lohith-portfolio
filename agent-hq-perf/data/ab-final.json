@@ -1,0 +1,1688 @@
+{
+  "label": "ab-final",
+  "date": "2026-11-02T03:27:47.980Z",
+  "chrome": "156.0.8078.74",
+  "runs": 3,
+  "secs": 8,
+  "scenarios": {
+    "desktop-dpr1-cpu1": {
+      "conditions": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "dpr": 1,
+        "cpuThrottle": 1,
+        "mobileEmulation": false
+      },
+      "base": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.1,
+          "p99": 17.2
+        },
+        "rafCallbackMs": {
+          "mean": 1.82,
+          "p95": 2.4
+        },
+        "scriptPctOfWall": 10.9,
+        "longTasks": 0,
+        "heapMB": 5.9,
+        "fpsModes": [
+          "n/a",
+          "n/a",
+          "n/a"
+        ]
+      },
+      "opt": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.1,
+          "p99": 17.3
+        },
+        "rafCallbackMs": {
+          "mean": 1.54,
+          "p95": 2.1
+        },
+        "scriptPctOfWall": 9.3,
+        "longTasks": 0,
+        "heapMB": 4.96,
+        "fpsModes": [
+          "60",
+          "60",
+          "60"
+        ]
+      },
+      "raw": {
+        "base": [
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.1,
+              "p99": 17.5
+            },
+            "rafCallbackMs": {
+              "p50": 1.8,
+              "p95": 2.4,
+              "p99": 2.7,
+              "mean": 1.78
+            },
+            "scriptPctOfWall": 10.7,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.73,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1003.4,
+                "GPU Process/CrGpuMain": 759.5,
+                "Renderer/CrRendererMain": 203.2,
+                "Browser/ThreadPoolBackgroundWorker": 96.9,
+                "Renderer/Compositor": 66.3,
+                "GPU Process/VizCompositorThread": 37.8,
+                "Renderer/ThreadPoolForegroundWorker": 22.4,
+                "Browser/ThreadPoolSingleThreadCOMSTASharedBackgroundBlocking": 16.3,
+                "Browser/ThreadPoolForegroundWorker": 7.5,
+                "Renderer/Chrome_ChildIOThread": 5.4,
+                "Browser/ThreadPoolSingleThreadForegroundBlocking": 3.6,
+                "Browser/CrBrowserMain": 3.1,
+                "Browser/PerfettoTrace": 0.4,
+                "Renderer/PerfettoTrace": 0.3
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 113.7,
+                "FunctionCall": 111.5,
+                "Commit": 25.4,
+                "UpdateLayoutTree": 19.5,
+                "Layerize": 10.1,
+                "PrePaint": 7.6,
+                "MinorGC": 3.6,
+                "V8.GC_SCAVENGER": 3.1,
+                "Paint": 0.2,
+                "Layout": 0.2
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 6,
+                "STATE_PRESENTED_ALL": 485,
+                "STATE_PRESENTED_PARTIAL": 483
+              }
+            }
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17,
+              "p99": 17.2
+            },
+            "rafCallbackMs": {
+              "p50": 2,
+              "p95": 2.5,
+              "p99": 2.9,
+              "mean": 1.96
+            },
+            "scriptPctOfWall": 11.8,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.9,
+            "trace": null
+          },
+          {
+            "fps": 59.9,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.1,
+              "p99": 17.2
+            },
+            "rafCallbackMs": {
+              "p50": 1.8,
+              "p95": 2.3,
+              "p99": 2.6,
+              "mean": 1.82
+            },
+            "scriptPctOfWall": 10.9,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 6.04,
+            "trace": null
+          }
+        ],
+        "opt": [
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.1,
+              "p99": 17.3
+            },
+            "rafCallbackMs": {
+              "p50": 1.5,
+              "p95": 2.1,
+              "p99": 3,
+              "mean": 1.53
+            },
+            "scriptPctOfWall": 9.2,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 6.65,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1001.3,
+                "GPU Process/CrGpuMain": 633.1,
+                "Renderer/CrRendererMain": 182.3,
+                "Renderer/Compositor": 70,
+                "GPU Process/VizCompositorThread": 41.7,
+                "Renderer/ThreadPoolForegroundWorker": 23.1,
+                "Renderer/Chrome_ChildIOThread": 5.2,
+                "Browser/ThreadPoolBackgroundWorker": 2.5,
+                "Browser/CrBrowserMain": 1.9,
+                "Browser/ThreadPoolForegroundWorker": 1.3,
+                "Browser/PerfettoTrace": 0.7,
+                "Renderer/PerfettoTrace": 0.5,
+                "GPU Process/PerfettoTrace": 0.4,
+                "Browser/ThreadPoolServiceThread": 0.2
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 97,
+                "FunctionCall": 95.2,
+                "Commit": 22.2,
+                "UpdateLayoutTree": 20.2,
+                "Layerize": 10.5,
+                "PrePaint": 7.8,
+                "MinorGC": 2.8,
+                "V8.GC_SCAVENGER": 2.4,
+                "Paint": 0.3,
+                "Layout": 0.2
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 5,
+                "STATE_PRESENTED_ALL": 483,
+                "STATE_PRESENTED_PARTIAL": 482
+              }
+            }
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17,
+              "p99": 17.1
+            },
+            "rafCallbackMs": {
+              "p50": 1.5,
+              "p95": 2.1,
+              "p99": 2.7,
+              "mean": 1.54
+            },
+            "scriptPctOfWall": 9.3,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 4.96,
+            "trace": null
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.1,
+              "p99": 17.4
+            },
+            "rafCallbackMs": {
+              "p50": 1.6,
+              "p95": 2.1,
+              "p99": 2.5,
+              "mean": 1.62
+            },
+            "scriptPctOfWall": 9.7,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 4.96,
+            "trace": null
+          }
+        ]
+      }
+    },
+    "desktop-dpr2-cpu1": {
+      "conditions": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "dpr": 2,
+        "cpuThrottle": 1,
+        "mobileEmulation": false
+      },
+      "base": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.1,
+          "p99": 17.4
+        },
+        "rafCallbackMs": {
+          "mean": 1.6,
+          "p95": 2.2
+        },
+        "scriptPctOfWall": 9.6,
+        "longTasks": 0,
+        "heapMB": 5.89,
+        "fpsModes": [
+          "n/a",
+          "n/a",
+          "n/a"
+        ]
+      },
+      "opt": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.6,
+          "p95": 17.1,
+          "p99": 17.3
+        },
+        "rafCallbackMs": {
+          "mean": 1.47,
+          "p95": 1.9
+        },
+        "scriptPctOfWall": 8.8,
+        "longTasks": 0,
+        "heapMB": 4.99,
+        "fpsModes": [
+          "60",
+          "60",
+          "60"
+        ]
+      },
+      "raw": {
+        "base": [
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.2,
+              "p99": 17.4
+            },
+            "rafCallbackMs": {
+              "p50": 1.6,
+              "p95": 2.2,
+              "p99": 2.4,
+              "mean": 1.59
+            },
+            "scriptPctOfWall": 9.6,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.71,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1003.5,
+                "GPU Process/CrGpuMain": 886.3,
+                "Renderer/CrRendererMain": 183.2,
+                "Renderer/Compositor": 58.9,
+                "GPU Process/VizCompositorThread": 35.6,
+                "Renderer/ThreadPoolForegroundWorker": 19.2,
+                "Renderer/Chrome_ChildIOThread": 5,
+                "Browser/ThreadPoolBackgroundWorker": 3.4,
+                "Browser/CrBrowserMain": 2.1,
+                "Browser/ThreadPoolForegroundWorker": 1.2,
+                "Browser/PerfettoTrace": 0.7,
+                "Renderer/PerfettoTrace": 0.5,
+                "GPU Process/PerfettoTrace": 0.3,
+                "Browser/DevToolsPipeHandlerWriteThread": 0.1
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 102.3,
+                "FunctionCall": 100.1,
+                "Commit": 23,
+                "UpdateLayoutTree": 17.5,
+                "Layerize": 9,
+                "PrePaint": 6.9,
+                "MinorGC": 3.2,
+                "V8.GC_SCAVENGER": 2.8,
+                "Paint": 0.2,
+                "Layout": 0.2
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 6,
+                "STATE_PRESENTED_ALL": 484,
+                "STATE_PRESENTED_PARTIAL": 483
+              }
+            }
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.1,
+              "p99": 17.4
+            },
+            "rafCallbackMs": {
+              "p50": 1.6,
+              "p95": 2.2,
+              "p99": 2.5,
+              "mean": 1.6
+            },
+            "scriptPctOfWall": 9.6,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.89,
+            "trace": null
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.1,
+              "p99": 17.3
+            },
+            "rafCallbackMs": {
+              "p50": 1.7,
+              "p95": 2.5,
+              "p99": 3,
+              "mean": 1.72
+            },
+            "scriptPctOfWall": 10.3,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.89,
+            "trace": null
+          }
+        ],
+        "opt": [
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.6,
+              "p95": 17.1,
+              "p99": 17.5
+            },
+            "rafCallbackMs": {
+              "p50": 1.3,
+              "p95": 1.7,
+              "p99": 2,
+              "mean": 1.34
+            },
+            "scriptPctOfWall": 8.1,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 6.43,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1003.4,
+                "GPU Process/CrGpuMain": 788.2,
+                "Renderer/CrRendererMain": 177.7,
+                "Renderer/Compositor": 69.8,
+                "GPU Process/VizCompositorThread": 40.8,
+                "Renderer/ThreadPoolForegroundWorker": 22.8,
+                "Renderer/Chrome_ChildIOThread": 6.1,
+                "Browser/ThreadPoolBackgroundWorker": 2.4,
+                "Browser/CrBrowserMain": 2.2,
+                "Browser/ThreadPoolForegroundWorker": 1.5,
+                "Browser/PerfettoTrace": 0.9,
+                "Renderer/PerfettoTrace": 0.5,
+                "GPU Process/PerfettoTrace": 0.3,
+                "Browser/MemoryInfra": 0.2
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 88.8,
+                "FunctionCall": 85.9,
+                "Commit": 23.1,
+                "UpdateLayoutTree": 20.6,
+                "Layerize": 10.6,
+                "PrePaint": 8,
+                "MinorGC": 2.2,
+                "V8.GC_SCAVENGER": 1.9,
+                "Paint": 0.3,
+                "Layout": 0.2
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 6,
+                "STATE_PRESENTED_ALL": 484,
+                "STATE_PRESENTED_PARTIAL": 483,
+                "STATE_DROPPED": 1
+              }
+            }
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.6,
+              "p95": 17,
+              "p99": 17.2
+            },
+            "rafCallbackMs": {
+              "p50": 1.5,
+              "p95": 1.9,
+              "p99": 2.2,
+              "mean": 1.47
+            },
+            "scriptPctOfWall": 8.8,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 4.99,
+            "trace": null
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.1,
+              "p99": 17.3
+            },
+            "rafCallbackMs": {
+              "p50": 1.5,
+              "p95": 1.9,
+              "p99": 2.2,
+              "mean": 1.52
+            },
+            "scriptPctOfWall": 9.2,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 4.96,
+            "trace": null
+          }
+        ]
+      }
+    },
+    "desktop-dpr1-cpu4": {
+      "conditions": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "dpr": 1,
+        "cpuThrottle": 4,
+        "mobileEmulation": false
+      },
+      "base": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.3,
+          "p99": 19.3
+        },
+        "rafCallbackMs": {
+          "mean": 6.54,
+          "p95": 10.5
+        },
+        "scriptPctOfWall": 39.3,
+        "longTasks": 0,
+        "heapMB": 5.7,
+        "fpsModes": [
+          "n/a",
+          "n/a",
+          "n/a"
+        ]
+      },
+      "opt": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.4,
+          "p99": 19.9
+        },
+        "rafCallbackMs": {
+          "mean": 5.44,
+          "p95": 9.5
+        },
+        "scriptPctOfWall": 32.7,
+        "longTasks": 0,
+        "heapMB": 6.54,
+        "fpsModes": [
+          "60",
+          "60",
+          "60"
+        ]
+      },
+      "raw": {
+        "base": [
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.5,
+              "p99": 19.2
+            },
+            "rafCallbackMs": {
+              "p50": 5.9,
+              "p95": 9.9,
+              "p99": 12.7,
+              "mean": 6.37
+            },
+            "scriptPctOfWall": 38.3,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.91,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1003.6,
+                "Renderer/CrRendererMain": 698.6,
+                "GPU Process/CrGpuMain": 449.1,
+                "Renderer/Compositor": 40.2,
+                "GPU Process/VizCompositorThread": 23.6,
+                "Renderer/ThreadPoolForegroundWorker": 13.2,
+                "Renderer/Chrome_ChildIOThread": 3,
+                "Browser/ThreadPoolBackgroundWorker": 2,
+                "Browser/CrBrowserMain": 1.4,
+                "Browser/ThreadPoolForegroundWorker": 0.9,
+                "Browser/PerfettoTrace": 0.4,
+                "Renderer/PerfettoTrace": 0.3,
+                "GPU Process/PerfettoTrace": 0.2,
+                "Browser/Chrome_IOThread": 0.2
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 395.3,
+                "FunctionCall": 390.9,
+                "Commit": 94.6,
+                "UpdateLayoutTree": 61.1,
+                "Layerize": 29.9,
+                "PrePaint": 22.8,
+                "MinorGC": 8.8,
+                "V8.GC_SCAVENGER": 7.5,
+                "Paint": 0.7,
+                "Layout": 0.7
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 6,
+                "STATE_PRESENTED_ALL": 484,
+                "STATE_PRESENTED_PARTIAL": 483
+              }
+            }
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.2,
+              "p99": 19.3
+            },
+            "rafCallbackMs": {
+              "p50": 6.1,
+              "p95": 10.5,
+              "p99": 13.1,
+              "mean": 6.54
+            },
+            "scriptPctOfWall": 39.3,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.7,
+            "trace": null
+          },
+          {
+            "fps": 59.9,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.3,
+              "p99": 20
+            },
+            "rafCallbackMs": {
+              "p50": 6.4,
+              "p95": 10.8,
+              "p99": 13.6,
+              "mean": 6.67
+            },
+            "scriptPctOfWall": 40,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.68,
+            "trace": null
+          }
+        ],
+        "opt": [
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 18.1,
+              "p99": 21.3
+            },
+            "rafCallbackMs": {
+              "p50": 5.2,
+              "p95": 9.5,
+              "p99": 12.1,
+              "mean": 5.44
+            },
+            "scriptPctOfWall": 32.7,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 5.93,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1003.5,
+                "Renderer/CrRendererMain": 683.3,
+                "GPU Process/CrGpuMain": 378.2,
+                "Renderer/Compositor": 43.8,
+                "GPU Process/VizCompositorThread": 25.2,
+                "Renderer/ThreadPoolForegroundWorker": 13.2,
+                "Renderer/Chrome_ChildIOThread": 3.4,
+                "Browser/ThreadPoolBackgroundWorker": 2.5,
+                "Browser/CrBrowserMain": 1.6,
+                "Browser/ThreadPoolForegroundWorker": 0.9,
+                "Browser/PerfettoTrace": 0.4,
+                "Renderer/PerfettoTrace": 0.3,
+                "GPU Process/PerfettoTrace": 0.2,
+                "Browser/Chrome_IOThread": 0.2
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 342.8,
+                "FunctionCall": 338.2,
+                "Commit": 94.7,
+                "UpdateLayoutTree": 70.8,
+                "Layerize": 34.3,
+                "PrePaint": 25.8,
+                "MinorGC": 5.5,
+                "V8.GC_SCAVENGER": 4.5,
+                "Paint": 1.2,
+                "Layout": 0.6
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 5,
+                "STATE_PRESENTED_ALL": 484,
+                "STATE_PRESENTED_PARTIAL": 482
+              }
+            }
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.4,
+              "p99": 19.9
+            },
+            "rafCallbackMs": {
+              "p50": 5.4,
+              "p95": 9.5,
+              "p99": 12.6,
+              "mean": 5.7
+            },
+            "scriptPctOfWall": 34.3,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 6.56,
+            "trace": null
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.2,
+              "p99": 17.9
+            },
+            "rafCallbackMs": {
+              "p50": 4.8,
+              "p95": 8.8,
+              "p99": 11.2,
+              "mean": 5.14
+            },
+            "scriptPctOfWall": 30.9,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 6.54,
+            "trace": null
+          }
+        ]
+      }
+    },
+    "mobile-dpr2.6-cpu1": {
+      "conditions": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "dpr": 2.625,
+        "cpuThrottle": 1,
+        "mobileEmulation": true
+      },
+      "base": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.1,
+          "p99": 17.3
+        },
+        "rafCallbackMs": {
+          "mean": 1.85,
+          "p95": 2.3
+        },
+        "scriptPctOfWall": 11.1,
+        "longTasks": 0,
+        "heapMB": 5.92,
+        "fpsModes": [
+          "n/a",
+          "n/a",
+          "n/a"
+        ]
+      },
+      "opt": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.6,
+          "p95": 17.1,
+          "p99": 17.4
+        },
+        "rafCallbackMs": {
+          "mean": 1.49,
+          "p95": 1.9
+        },
+        "scriptPctOfWall": 8.9,
+        "longTasks": 0,
+        "heapMB": 5.09,
+        "fpsModes": [
+          "60",
+          "60",
+          "60"
+        ]
+      },
+      "raw": {
+        "base": [
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.6,
+              "p95": 17.1,
+              "p99": 17.3
+            },
+            "rafCallbackMs": {
+              "p50": 1.9,
+              "p95": 2.3,
+              "p99": 2.7,
+              "mean": 1.86
+            },
+            "scriptPctOfWall": 11.2,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 6.13,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1001.4,
+                "GPU Process/CrGpuMain": 744.3,
+                "Renderer/CrRendererMain": 198.1,
+                "Renderer/Compositor": 60.4,
+                "GPU Process/VizCompositorThread": 36.6,
+                "Renderer/ThreadPoolForegroundWorker": 21.7,
+                "Renderer/Chrome_ChildIOThread": 4.4,
+                "Browser/ThreadPoolBackgroundWorker": 3.5,
+                "Browser/CrBrowserMain": 3,
+                "Browser/ThreadPoolForegroundWorker": 2,
+                "Browser/PerfettoTrace": 0.6,
+                "Renderer/PerfettoTrace": 0.6,
+                "Browser/MemoryInfra": 0.5,
+                "GPU Process/PerfettoTrace": 0.3
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 116.5,
+                "FunctionCall": 115,
+                "Commit": 23.2,
+                "UpdateLayoutTree": 18.4,
+                "Layerize": 9,
+                "PrePaint": 7.2,
+                "MinorGC": 3.4,
+                "V8.GC_SCAVENGER": 3,
+                "Paint": 0.3,
+                "Layout": 0.2
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 5,
+                "STATE_PRESENTED_ALL": 483,
+                "STATE_PRESENTED_PARTIAL": 482
+              }
+            }
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17,
+              "p99": 17.3
+            },
+            "rafCallbackMs": {
+              "p50": 1.8,
+              "p95": 2.3,
+              "p99": 2.7,
+              "mean": 1.83
+            },
+            "scriptPctOfWall": 11,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.87,
+            "trace": null
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.1,
+              "p99": 17.3
+            },
+            "rafCallbackMs": {
+              "p50": 1.8,
+              "p95": 2.3,
+              "p99": 2.6,
+              "mean": 1.85
+            },
+            "scriptPctOfWall": 11.1,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.92,
+            "trace": null
+          }
+        ],
+        "opt": [
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.6,
+              "p95": 17.1,
+              "p99": 17.4
+            },
+            "rafCallbackMs": {
+              "p50": 1.5,
+              "p95": 2.1,
+              "p99": 2.6,
+              "mean": 1.56
+            },
+            "scriptPctOfWall": 9.4,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 5.09,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1001.3,
+                "GPU Process/CrGpuMain": 620.3,
+                "Renderer/CrRendererMain": 183.2,
+                "Renderer/Compositor": 68.6,
+                "GPU Process/VizCompositorThread": 43.5,
+                "Renderer/ThreadPoolForegroundWorker": 22.7,
+                "Renderer/Chrome_ChildIOThread": 5.2,
+                "Browser/ThreadPoolBackgroundWorker": 2.6,
+                "Browser/CrBrowserMain": 2.6,
+                "Browser/ThreadPoolForegroundWorker": 1.6,
+                "Browser/PerfettoTrace": 0.7,
+                "Renderer/PerfettoTrace": 0.6,
+                "GPU Process/PerfettoTrace": 0.4,
+                "Browser/MemoryInfra": 0.3
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 100.1,
+                "FunctionCall": 98,
+                "Commit": 21.1,
+                "UpdateLayoutTree": 20,
+                "Layerize": 9.7,
+                "PrePaint": 7.7,
+                "MinorGC": 2.4,
+                "V8.GC_SCAVENGER": 2.1,
+                "Paint": 0.3,
+                "Layout": 0.2
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 5,
+                "STATE_PRESENTED_ALL": 483,
+                "STATE_PRESENTED_PARTIAL": 482
+              }
+            }
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.6,
+              "p95": 17.1,
+              "p99": 17.3
+            },
+            "rafCallbackMs": {
+              "p50": 1.5,
+              "p95": 1.9,
+              "p99": 2.7,
+              "mean": 1.49
+            },
+            "scriptPctOfWall": 8.9,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 5.06,
+            "trace": null
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.3,
+              "p99": 17.6
+            },
+            "rafCallbackMs": {
+              "p50": 1.3,
+              "p95": 1.7,
+              "p99": 2.1,
+              "mean": 1.32
+            },
+            "scriptPctOfWall": 8,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 5.17,
+            "trace": null
+          }
+        ]
+      }
+    },
+    "mobile-dpr2.6-cpu4": {
+      "conditions": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "dpr": 2.625,
+        "cpuThrottle": 4,
+        "mobileEmulation": true
+      },
+      "base": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.3,
+          "p99": 21
+        },
+        "rafCallbackMs": {
+          "mean": 6.66,
+          "p95": 10.8
+        },
+        "scriptPctOfWall": 40.1,
+        "longTasks": 0,
+        "heapMB": 5.89,
+        "fpsModes": [
+          "n/a",
+          "n/a",
+          "n/a"
+        ]
+      },
+      "opt": {
+        "fps": 60,
+        "frameMs": {
+          "p50": 16.7,
+          "p95": 17.4,
+          "p99": 19.5
+        },
+        "rafCallbackMs": {
+          "mean": 5.64,
+          "p95": 10.1
+        },
+        "scriptPctOfWall": 33.5,
+        "longTasks": 0,
+        "heapMB": 6.64,
+        "fpsModes": [
+          "60",
+          "60",
+          "60"
+        ]
+      },
+      "raw": {
+        "base": [
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.8,
+              "p99": 21.7
+            },
+            "rafCallbackMs": {
+              "p50": 6.3,
+              "p95": 10.8,
+              "p99": 15,
+              "mean": 6.66
+            },
+            "scriptPctOfWall": 40.1,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.71,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1003.6,
+                "Renderer/CrRendererMain": 731,
+                "GPU Process/CrGpuMain": 446.8,
+                "Renderer/Compositor": 38.8,
+                "GPU Process/VizCompositorThread": 22.5,
+                "Renderer/ThreadPoolForegroundWorker": 13.5,
+                "Renderer/Chrome_ChildIOThread": 3,
+                "Browser/ThreadPoolBackgroundWorker": 2.2,
+                "Browser/CrBrowserMain": 1.5,
+                "Browser/ThreadPoolForegroundWorker": 1.1,
+                "Browser/PerfettoTrace": 0.4,
+                "Renderer/PerfettoTrace": 0.3,
+                "GPU Process/PerfettoTrace": 0.2,
+                "Browser/Chrome_IOThread": 0.2
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 413.2,
+                "FunctionCall": 408.3,
+                "Commit": 94.6,
+                "UpdateLayoutTree": 65.9,
+                "Layerize": 30,
+                "PrePaint": 24.8,
+                "MinorGC": 8.7,
+                "V8.GC_SCAVENGER": 6.3,
+                "Paint": 0.8,
+                "Layout": 0.6
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 6,
+                "STATE_PRESENTED_ALL": 485,
+                "STATE_PRESENTED_PARTIAL": 483
+              }
+            }
+          },
+          {
+            "fps": 59.8,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.3,
+              "p99": 21
+            },
+            "rafCallbackMs": {
+              "p50": 6.9,
+              "p95": 11.5,
+              "p99": 13.3,
+              "mean": 7.26
+            },
+            "scriptPctOfWall": 43.5,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.89,
+            "trace": null
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.3,
+              "p99": 20.4
+            },
+            "rafCallbackMs": {
+              "p50": 5.9,
+              "p95": 10.4,
+              "p99": 13,
+              "mean": 6.51
+            },
+            "scriptPctOfWall": 39.2,
+            "longTasks": 0,
+            "fpsMode": "n/a",
+            "heapMB": 5.9,
+            "trace": null
+          }
+        ],
+        "opt": [
+          {
+            "fps": 59.3,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 20.2,
+              "p99": 26.7
+            },
+            "rafCallbackMs": {
+              "p50": 5.1,
+              "p95": 10.7,
+              "p99": 14.7,
+              "mean": 5.64
+            },
+            "scriptPctOfWall": 33.5,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 6.65,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1003.6,
+                "Renderer/CrRendererMain": 696.4,
+                "GPU Process/CrGpuMain": 373.5,
+                "Renderer/Compositor": 43.2,
+                "GPU Process/VizCompositorThread": 25.2,
+                "Renderer/ThreadPoolForegroundWorker": 14.8,
+                "Renderer/Chrome_ChildIOThread": 3.1,
+                "Browser/ThreadPoolBackgroundWorker": 2.6,
+                "Browser/CrBrowserMain": 1.7,
+                "Browser/ThreadPoolForegroundWorker": 1.6,
+                "Browser/PerfettoTrace": 0.4,
+                "Renderer/PerfettoTrace": 0.3,
+                "GPU Process/PerfettoTrace": 0.2,
+                "Browser/Chrome_IOThread": 0.1
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 355.9,
+                "FunctionCall": 349,
+                "Commit": 93.7,
+                "UpdateLayoutTree": 69.1,
+                "Layerize": 32.6,
+                "PrePaint": 26.4,
+                "MinorGC": 5.4,
+                "V8.GC_SCAVENGER": 4.2,
+                "Paint": 0.7,
+                "Layout": 0.6
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 6,
+                "STATE_PRESENTED_ALL": 477,
+                "STATE_PRESENTED_PARTIAL": 476,
+                "STATE_DROPPED": 6
+              }
+            }
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.2,
+              "p99": 19.5
+            },
+            "rafCallbackMs": {
+              "p50": 5.8,
+              "p95": 10.1,
+              "p99": 12,
+              "mean": 6.13
+            },
+            "scriptPctOfWall": 36.8,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 6.64,
+            "trace": null
+          },
+          {
+            "fps": 60,
+            "frameMs": {
+              "p50": 16.7,
+              "p95": 17.4,
+              "p99": 19.1
+            },
+            "rafCallbackMs": {
+              "p50": 4.7,
+              "p95": 8.9,
+              "p99": 11,
+              "mean": 5.11
+            },
+            "scriptPctOfWall": 30.7,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 6.61,
+            "trace": null
+          }
+        ]
+      }
+    },
+    "mobile-dpr2.6-cpu8": {
+      "conditions": {
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "dpr": 2.625,
+        "cpuThrottle": 8,
+        "mobileEmulation": true
+      },
+      "base": {
+        "fps": 38.1,
+        "frameMs": {
+          "p50": 25,
+          "p95": 42.8,
+          "p99": 46.5
+        },
+        "rafCallbackMs": {
+          "mean": 16.94,
+          "p95": 28.7
+        },
+        "scriptPctOfWall": 63.7,
+        "longTasks": 1,
+        "heapMB": 6.74,
+        "fpsModes": [
+          "n/a",
+          "n/a",
+          "n/a"
+        ]
+      },
+      "opt": {
+        "fps": 46.6,
+        "frameMs": {
+          "p50": 20,
+          "p95": 32.6,
+          "p99": 42.5
+        },
+        "rafCallbackMs": {
+          "mean": 12.03,
+          "p95": 20.8
+        },
+        "scriptPctOfWall": 56.2,
+        "longTasks": 0,
+        "heapMB": 6.33,
+        "fpsModes": [
+          "30",
+          "60",
+          "60"
+        ]
+      },
+      "raw": {
+        "base": [
+          {
+            "fps": 33.5,
+            "frameMs": {
+              "p50": 28.5,
+              "p95": 46.3,
+              "p99": 54.5
+            },
+            "rafCallbackMs": {
+              "p50": 16.7,
+              "p95": 28.7,
+              "p99": 34.9,
+              "mean": 17.52
+            },
+            "scriptPctOfWall": 58.9,
+            "longTasks": 2,
+            "fpsMode": "n/a",
+            "heapMB": 6.69,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1005.7,
+                "Renderer/CrRendererMain": 1000.4,
+                "GPU Process/CrGpuMain": 276.4,
+                "Renderer/Compositor": 27.5,
+                "GPU Process/VizCompositorThread": 17.3,
+                "Renderer/ThreadPoolForegroundWorker": 9,
+                "Renderer/Chrome_ChildIOThread": 1.9,
+                "Browser/CrBrowserMain": 1.1,
+                "Browser/ThreadPoolForegroundWorker": 0.8,
+                "GPU Process/PerfettoTrace": 0.4,
+                "Browser/PerfettoTrace": 0.4,
+                "Renderer/PerfettoTrace": 0.3,
+                "Browser/Chrome_IOThread": 0.2,
+                "Browser/ThreadPoolServiceThread": 0.1
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 605.8,
+                "FunctionCall": 600.5,
+                "Commit": 114.6,
+                "UpdateLayoutTree": 97.5,
+                "Layerize": 48.9,
+                "PrePaint": 36.4,
+                "MinorGC": 12.3,
+                "V8.GC_SCAVENGER": 9.6,
+                "Paint": 2.1,
+                "Layout": 1.4
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 2,
+                "STATE_PRESENTED_ALL": 271,
+                "STATE_DROPPED": 215,
+                "STATE_PRESENTED_PARTIAL": 270
+              }
+            }
+          },
+          {
+            "fps": 38.1,
+            "frameMs": {
+              "p50": 25,
+              "p95": 40.2,
+              "p99": 45.2
+            },
+            "rafCallbackMs": {
+              "p50": 15.5,
+              "p95": 27.2,
+              "p99": 32.4,
+              "mean": 16.94
+            },
+            "scriptPctOfWall": 64.7,
+            "longTasks": 1,
+            "fpsMode": "n/a",
+            "heapMB": 6.74,
+            "trace": null
+          },
+          {
+            "fps": 39.1,
+            "frameMs": {
+              "p50": 23.8,
+              "p95": 42.8,
+              "p99": 46.5
+            },
+            "rafCallbackMs": {
+              "p50": 14.6,
+              "p95": 29.1,
+              "p99": 33.3,
+              "mean": 16.25
+            },
+            "scriptPctOfWall": 63.7,
+            "longTasks": 1,
+            "fpsMode": "n/a",
+            "heapMB": 6.91,
+            "trace": null
+          }
+        ],
+        "opt": [
+          {
+            "fps": 32.5,
+            "frameMs": {
+              "p50": 32.1,
+              "p95": 40.6,
+              "p99": 50.9
+            },
+            "rafCallbackMs": {
+              "p50": 12.5,
+              "p95": 21.3,
+              "p99": 25.3,
+              "mean": 13.1
+            },
+            "scriptPctOfWall": 42.8,
+            "longTasks": 0,
+            "fpsMode": "30",
+            "heapMB": 6.33,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1005.6,
+                "Renderer/CrRendererMain": 889.5,
+                "GPU Process/CrGpuMain": 213.7,
+                "Renderer/Compositor": 27.9,
+                "GPU Process/VizCompositorThread": 17.4,
+                "Renderer/ThreadPoolForegroundWorker": 9.1,
+                "Renderer/Chrome_ChildIOThread": 2,
+                "Browser/CrBrowserMain": 1.2,
+                "Browser/ThreadPoolForegroundWorker": 1,
+                "Browser/PerfettoTrace": 0.3,
+                "Renderer/PerfettoTrace": 0.2,
+                "GPU Process/PerfettoTrace": 0.2,
+                "Browser/Chrome_IOThread": 0.2,
+                "Browser/ThreadPoolServiceThread": 0.1
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 461.6,
+                "FunctionCall": 452,
+                "Commit": 110,
+                "UpdateLayoutTree": 102.7,
+                "Layerize": 48.4,
+                "PrePaint": 36.4,
+                "MinorGC": 7,
+                "V8.GC_SCAVENGER": 4.9,
+                "Layout": 1.6,
+                "Paint": 1.5
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 146,
+                "STATE_PRESENTED_ALL": 396,
+                "STATE_PRESENTED_PARTIAL": 126,
+                "STATE_DROPPED": 209
+              }
+            }
+          },
+          {
+            "fps": 48.6,
+            "frameMs": {
+              "p50": 19.4,
+              "p95": 32.6,
+              "p99": 37.1
+            },
+            "rafCallbackMs": {
+              "p50": 10.5,
+              "p95": 20.8,
+              "p99": 25.7,
+              "mean": 11.62
+            },
+            "scriptPctOfWall": 56.6,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 6.15,
+            "trace": null
+          },
+          {
+            "fps": 46.6,
+            "frameMs": {
+              "p50": 20,
+              "p95": 32.4,
+              "p99": 42.5
+            },
+            "rafCallbackMs": {
+              "p50": 10.7,
+              "p95": 20.8,
+              "p99": 26.5,
+              "mean": 12.03
+            },
+            "scriptPctOfWall": 56.2,
+            "longTasks": 0,
+            "fpsMode": "60",
+            "heapMB": 6.39,
+            "trace": null
+          }
+        ]
+      }
+    },
+    "desktop-dpr1-cpu8": {
+      "conditions": {
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "dpr": 1,
+        "cpuThrottle": 8,
+        "mobileEmulation": false
+      },
+      "base": {
+        "fps": 37.1,
+        "frameMs": {
+          "p50": 25.6,
+          "p95": 42.3,
+          "p99": 51.7
+        },
+        "rafCallbackMs": {
+          "mean": 17.31,
+          "p95": 29.2
+        },
+        "scriptPctOfWall": 64,
+        "longTasks": 2,
+        "heapMB": 6.71,
+        "fpsModes": [
+          "n/a",
+          "n/a",
+          "n/a"
+        ]
+      },
+      "opt": {
+        "fps": 31.4,
+        "frameMs": {
+          "p50": 33.1,
+          "p95": 41,
+          "p99": 51.1
+        },
+        "rafCallbackMs": {
+          "mean": 13.63,
+          "p95": 24.9
+        },
+        "scriptPctOfWall": 42.9,
+        "longTasks": 0,
+        "heapMB": 5.93,
+        "fpsModes": [
+          "30",
+          "30",
+          "30"
+        ]
+      },
+      "raw": {
+        "base": [
+          {
+            "fps": 32,
+            "frameMs": {
+              "p50": 30.1,
+              "p95": 46,
+              "p99": 57.1
+            },
+            "rafCallbackMs": {
+              "p50": 17.3,
+              "p95": 29.2,
+              "p99": 32.7,
+              "mean": 18.42
+            },
+            "scriptPctOfWall": 59.1,
+            "longTasks": 3,
+            "fpsMode": "n/a",
+            "heapMB": 6.71,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1005.6,
+                "Renderer/CrRendererMain": 995,
+                "GPU Process/CrGpuMain": 279.7,
+                "Renderer/Compositor": 27.1,
+                "GPU Process/VizCompositorThread": 17.5,
+                "Renderer/ThreadPoolForegroundWorker": 8.1,
+                "Renderer/Chrome_ChildIOThread": 1.9,
+                "Browser/ThreadPoolForegroundWorker": 1.2,
+                "Browser/CrBrowserMain": 1.1,
+                "Browser/PerfettoTrace": 0.3,
+                "Renderer/PerfettoTrace": 0.3,
+                "GPU Process/PerfettoTrace": 0.2,
+                "Browser/Chrome_IOThread": 0.2,
+                "Browser/ThreadPoolServiceThread": 0.1
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 610.3,
+                "FunctionCall": 603.2,
+                "Commit": 113.3,
+                "UpdateLayoutTree": 94.9,
+                "Layerize": 47.4,
+                "PrePaint": 34.4,
+                "MinorGC": 9.6,
+                "V8.GC_SCAVENGER": 7.4,
+                "Paint": 1.7,
+                "Layout": 1
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 2,
+                "STATE_PRESENTED_ALL": 259,
+                "STATE_PRESENTED_PARTIAL": 258,
+                "STATE_DROPPED": 227
+              }
+            }
+          },
+          {
+            "fps": 37.1,
+            "frameMs": {
+              "p50": 25.6,
+              "p95": 42.3,
+              "p99": 48.1
+            },
+            "rafCallbackMs": {
+              "p50": 16,
+              "p95": 29.3,
+              "p99": 34.3,
+              "mean": 17.31
+            },
+            "scriptPctOfWall": 64.5,
+            "longTasks": 2,
+            "fpsMode": "n/a",
+            "heapMB": 6.7,
+            "trace": null
+          },
+          {
+            "fps": 38.2,
+            "frameMs": {
+              "p50": 24.4,
+              "p95": 41.7,
+              "p99": 51.7
+            },
+            "rafCallbackMs": {
+              "p50": 14.9,
+              "p95": 28.5,
+              "p99": 37,
+              "mean": 16.69
+            },
+            "scriptPctOfWall": 64,
+            "longTasks": 2,
+            "fpsMode": "n/a",
+            "heapMB": 6.89,
+            "trace": null
+          }
+        ],
+        "opt": [
+          {
+            "fps": 29.3,
+            "frameMs": {
+              "p50": 33.7,
+              "p95": 44.3,
+              "p99": 49.6
+            },
+            "rafCallbackMs": {
+              "p50": 12.1,
+              "p95": 24.9,
+              "p99": 28.4,
+              "mean": 13.44
+            },
+            "scriptPctOfWall": 39.5,
+            "longTasks": 0,
+            "fpsMode": "30",
+            "heapMB": 5.93,
+            "trace": {
+              "busyMsPerSec": {
+                "GPU Process/GpuVSyncThread": 1005.6,
+                "Renderer/CrRendererMain": 854.9,
+                "GPU Process/CrGpuMain": 196.3,
+                "Renderer/Compositor": 25.7,
+                "GPU Process/VizCompositorThread": 16.5,
+                "Renderer/ThreadPoolForegroundWorker": 8.5,
+                "Renderer/Chrome_ChildIOThread": 1.7,
+                "Browser/CrBrowserMain": 1.1,
+                "Browser/ThreadPoolForegroundWorker": 0.6,
+                "Browser/PerfettoTrace": 0.4,
+                "Renderer/PerfettoTrace": 0.3,
+                "GPU Process/PerfettoTrace": 0.2,
+                "Browser/Chrome_IOThread": 0.2,
+                "Browser/ThreadPoolServiceThread": 0.1
+              },
+              "rendererMainMsPerSec": {
+                "FireAnimationFrame": 430,
+                "FunctionCall": 416.2,
+                "Commit": 113.5,
+                "UpdateLayoutTree": 91.8,
+                "Layerize": 45.1,
+                "PrePaint": 37.8,
+                "MinorGC": 7.1,
+                "V8.GC_SCAVENGER": 5.6,
+                "Paint": 1.6,
+                "Layout": 0.9
+              },
+              "frameReporter": {
+                "STATE_NO_UPDATE_DESIRED": 173,
+                "STATE_PRESENTED_ALL": 394,
+                "STATE_PRESENTED_PARTIAL": 76,
+                "STATE_DROPPED": 229
+              }
+            }
+          },
+          {
+            "fps": 31.4,
+            "frameMs": {
+              "p50": 33.1,
+              "p95": 41,
+              "p99": 51.1
+            },
+            "rafCallbackMs": {
+              "p50": 12,
+              "p95": 25.5,
+              "p99": 31.9,
+              "mean": 13.63
+            },
+            "scriptPctOfWall": 42.9,
+            "longTasks": 2,
+            "fpsMode": "30",
+            "heapMB": 5.79,
+            "trace": null
+          },
+          {
+            "fps": 31.5,
+            "frameMs": {
+              "p50": 33.1,
+              "p95": 38.4,
+              "p99": 51.9
+            },
+            "rafCallbackMs": {
+              "p50": 13.1,
+              "p95": 22.4,
+              "p99": 24.7,
+              "mean": 13.81
+            },
+            "scriptPctOfWall": 43.6,
+            "longTasks": 0,
+            "fpsMode": "30",
+            "heapMB": 5.95,
+            "trace": null
+          }
+        ]
+      }
+    }
+  }
+}

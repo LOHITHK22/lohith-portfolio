@@ -1,0 +1,6 @@
+desktop-dpr2-meeting.png: 1692x1162 changed 48081 (2.445%), >16/255: 704 (0.0358%), max 115, bbox (20, 22, 1672, 1121)
+desktop-dpr2-office.png: 1692x1160 changed 58297 (2.970%), >16/255: 839 (0.0427%), max 108, bbox (20, 20, 1672, 1121)
+desktop-meeting.png: 846x581 changed 9657 (1.965%), >16/255: 259 (0.0527%), max 44, bbox (9, 10, 837, 494)
+desktop-office.png: 846x580 changed 10003 (2.039%), >16/255: 191 (0.0389%), max 44, bbox (9, 9, 837, 494)
+mobile-meeting.png: 914x916 changed 16997 (2.030%), >16/255: 206 (0.0246%), max 101, bbox (0, 31, 914, 722)
+mobile-office.png: 914x916 changed 17871 (2.135%), >16/255: 220 (0.0263%), max 97, bbox (0, 32, 914, 723)

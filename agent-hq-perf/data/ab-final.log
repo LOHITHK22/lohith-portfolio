@@ -1,0 +1,21 @@
+desktop-dpr1-cpu1
+  base: 60fps p50/p95/p99 16.7/17.1/17.2 JS 1.82ms long 0 modes n/a/n/a/n/a | GPU 760 main 203 drop 0
+  opt : 60fps p50/p95/p99 16.7/17.1/17.3 JS 1.54ms long 0 modes 60/60/60 | GPU 633 main 182 drop 0
+desktop-dpr2-cpu1
+  base: 60fps p50/p95/p99 16.7/17.1/17.4 JS 1.6ms long 0 modes n/a/n/a/n/a | GPU 886 main 183 drop 0
+  opt : 60fps p50/p95/p99 16.6/17.1/17.3 JS 1.47ms long 0 modes 60/60/60 | GPU 788 main 178 drop 1
+desktop-dpr1-cpu4
+  base: 60fps p50/p95/p99 16.7/17.3/19.3 JS 6.54ms long 0 modes n/a/n/a/n/a | GPU 449 main 699 drop 0
+  opt : 60fps p50/p95/p99 16.7/17.4/19.9 JS 5.44ms long 0 modes 60/60/60 | GPU 378 main 683 drop 0
+mobile-dpr2.6-cpu1
+  base: 60fps p50/p95/p99 16.7/17.1/17.3 JS 1.85ms long 0 modes n/a/n/a/n/a | GPU 744 main 198 drop 0
+  opt : 60fps p50/p95/p99 16.6/17.1/17.4 JS 1.49ms long 0 modes 60/60/60 | GPU 620 main 183 drop 0
+mobile-dpr2.6-cpu4
+  base: 60fps p50/p95/p99 16.7/17.3/21 JS 6.66ms long 0 modes n/a/n/a/n/a | GPU 447 main 731 drop 0
+  opt : 60fps p50/p95/p99 16.7/17.4/19.5 JS 5.64ms long 0 modes 60/60/60 | GPU 374 main 696 drop 6
+mobile-dpr2.6-cpu8
+  base: 38.1fps p50/p95/p99 25/42.8/46.5 JS 16.94ms long 1 modes n/a/n/a/n/a | GPU 276 main 1000 drop 215
+  opt : 46.6fps p50/p95/p99 20/32.6/42.5 JS 12.03ms long 0 modes 30/60/60 | GPU 214 main 890 drop 209
+desktop-dpr1-cpu8
+  base: 37.1fps p50/p95/p99 25.6/42.3/51.7 JS 17.31ms long 2 modes n/a/n/a/n/a | GPU 280 main 995 drop 227
+  opt : 31.4fps p50/p95/p99 33.1/41/51.1 JS 13.63ms long 0 modes 30/30/30 | GPU 196 main 855 drop 229

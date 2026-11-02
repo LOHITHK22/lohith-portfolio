@@ -1,0 +1,11 @@
+cycle 1 {"heapMB":4.66,"nodes":914,"listeners":315,"loops":0}
+cycle 2 {"heapMB":4.86,"nodes":1060,"listeners":326,"loops":0}
+cycle 3 {"heapMB":4.97,"nodes":1206,"listeners":337,"loops":0}
+cycle 4 {"heapMB":5.04,"nodes":1352,"listeners":348,"loops":0}
+cycle 5 {"heapMB":5.21,"nodes":1498,"listeners":359,"loops":0}
+cycle 6 {"heapMB":5.2,"nodes":1644,"listeners":370,"loops":0}
+cycle 7 {"heapMB":5.24,"nodes":1790,"listeners":381,"loops":0}
+cycle 8 {"heapMB":5.29,"nodes":1936,"listeners":392,"loops":0}
+cycle 9 {"heapMB":5.48,"nodes":2082,"listeners":403,"loops":0}
+cycle 10 {"heapMB":5.45,"nodes":2228,"listeners":414,"loops":0}
+RESULT {"origin":"http://localhost:3101","first":{"heapMB":4.66,"nodes":914,"listeners":315,"loops":0},"last":{"heapMB":5.45,"nodes":2228,"listeners":414,"loops":0},"rows":[{"heapMB":4.66,"nodes":914,"listeners":315,"loops":0},{"heapMB":4.86,"nodes":1060,"listeners":326,"loops":0},{"heapMB":4.97,"nodes":1206,"listeners":337,"loops":0},{"heapMB":5.04,"nodes":1352,"listeners":348,"loops":0},{"heapMB":5.21,"nodes":1498,"listeners":359,"loops":0},{"heapMB":5.2,"nodes":1644,"listeners":370,"loops":0},{"heapMB":5.24,"nodes":1790,"listeners":381,"loops":0},{"heapMB":5.29,"nodes":1936,"listeners":392,"loops":0},{"heapMB":5.48,"nodes":2082,"listeners":403,"loops":0},{"heapMB":5.45,"nodes":2228,"listeners":414,"loops":0}]}
