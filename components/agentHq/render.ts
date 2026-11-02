@@ -19,7 +19,20 @@ export type DrawOptions = {
   still: boolean;
   selected: HqAgentId | null;
   highlighted: HqAgentId | null;
+  /** Optional cache for the static scenery (background, floor, walls). */
+  layer?: StaticLayer;
 };
+
+/**
+ * The background, floor and walls never move, so they are drawn once into an offscreen
+ * canvas for the current view and copied each frame. While the camera is moving the
+ * scenery is drawn directly; the cache is rebuilt once the view holds still.
+ */
+export type StaticLayer = { canvas: HTMLCanvasElement | null; key: string; lastViewKey: string; hits: number; builds: number };
+
+export function createStaticLayer(): StaticLayer {
+  return { canvas: null, key: "", lastViewKey: "", hits: 0, builds: 0 };
+}
 
 export const LOOK: Record<HqAgentId, { body: string; shade: string; trim: string; accent: string; legs: string; name: string }> = {
   astra: { body: "#dbe7ec", shade: "#9fb4be", trim: "#5f7a86", accent: "#22d3ee", legs: "#2b3c46", name: "ASTRA" },
@@ -47,7 +60,8 @@ export function renderPos(c: Character) {
   return { x: c.x + Math.cos(c.face) * k, y: c.y + Math.sin(c.face) * k };
 }
 
-export function drawScene(ctx: CanvasRenderingContext2D, sim: Sim, view: View, o: DrawOptions) {
+/** Background, floor tiles, rugs, walls and everything on them that does not animate. */
+function drawStatic(ctx: CanvasRenderingContext2D, view: View) {
   const { dpr } = view;
   const cw = ctx.canvas.width;
   const ch = ctx.canvas.height;
@@ -58,10 +72,48 @@ export function drawScene(ctx: CanvasRenderingContext2D, sim: Sim, view: View, o
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, cw, ch);
   ctx.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.ox, dpr * view.oy);
+  drawFloorStatic(ctx);
+  drawWallsStatic(ctx);
+}
+
+function paintStatic(ctx: CanvasRenderingContext2D, view: View, layer: StaticLayer | undefined) {
+  const cw = ctx.canvas.width;
+  const ch = ctx.canvas.height;
+  if (!layer || typeof document === "undefined") return drawStatic(ctx, view);
+  const viewKey = `${cw}x${ch}|${view.dpr}|${view.scale.toFixed(4)}|${view.ox.toFixed(2)}|${view.oy.toFixed(2)}`;
+  const settled = viewKey === layer.lastViewKey;
+  layer.lastViewKey = viewKey;
+  if (layer.canvas && layer.key === viewKey) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(layer.canvas, 0, 0);
+    layer.hits++;
+    return;
+  }
+  // The camera is still moving: draw directly rather than rebuilding the cache every frame.
+  if (!settled) return drawStatic(ctx, view);
+  if (!layer.canvas) layer.canvas = document.createElement("canvas");
+  const c = layer.canvas;
+  if (c.width !== cw || c.height !== ch) {
+    c.width = cw;
+    c.height = ch;
+  }
+  const lctx = c.getContext("2d");
+  if (!lctx) return drawStatic(ctx, view);
+  drawStatic(lctx, view);
+  layer.key = viewKey;
+  layer.builds++;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(c, 0, 0);
+}
+
+export function drawScene(ctx: CanvasRenderingContext2D, sim: Sim, view: View, o: DrawOptions) {
+  const { dpr } = view;
+  paintStatic(ctx, view, o.layer);
+  ctx.setTransform(dpr * view.scale, 0, 0, dpr * view.scale, dpr * view.ox, dpr * view.oy);
 
   const t = o.still ? 0 : o.time;
-  drawFloor(ctx, t);
-  drawWalls(ctx, t);
+  drawFloorDynamic(ctx, t);
+  drawWallsDynamic(ctx, t);
   drawFloorLights(ctx, sim, t);
 
   type Item = { key: number; draw: () => void };
@@ -155,7 +207,7 @@ function hexA(hex: string, a: number) {
 
 const walkway = new Set(WALKWAY.map((t) => `${t.x},${t.y}`));
 
-function drawFloor(ctx: CanvasRenderingContext2D, t: number) {
+function drawFloorStatic(ctx: CanvasRenderingContext2D) {
   for (let x = 0; x < W; x++) {
     for (let y = 0; y < H; y++) {
       const path = walkway.has(`${x},${y}`);
@@ -163,7 +215,15 @@ function drawFloor(ctx: CanvasRenderingContext2D, t: number) {
       poly(ctx, [P(x, y), P(x + 1, y), P(x + 1, y + 1), P(x, y + 1)], path ? "#0f282e" : shade, "rgba(25,211,197,0.07)", 0.6);
     }
   }
-  // Walkway guide lines: a faint inlaid strip down the middle of the aisle.
+  // Lounge rug in front of the sofa.
+  poly(ctx, [P(1.4, 5.7), P(4.6, 5.7), P(4.6, 6.95), P(1.4, 6.95)], "rgba(167,139,250,0.05)", "rgba(167,139,250,0.22)", 0.8);
+  // Rug under the meeting table.
+  poly(ctx, [P(5.35, 3.35), P(8.65, 3.35), P(8.65, 6.65), P(5.35, 6.65)], "rgba(25,211,197,0.06)", "rgba(25,211,197,0.32)", 0.9);
+  poly(ctx, [P(5.55, 3.55), P(8.45, 3.55), P(8.45, 6.45), P(5.55, 6.45)], "rgba(0,0,0,0)", "rgba(25,211,197,0.14)", 0.6);
+}
+
+/** Walkway guide lines: a faint inlaid strip down the middle of the aisle, drifting slowly. */
+function drawFloorDynamic(ctx: CanvasRenderingContext2D, t: number) {
   ctx.strokeStyle = "rgba(94,234,212,0.16)";
   ctx.lineWidth = 0.8;
   ctx.setLineDash([5, 7]);
@@ -178,11 +238,7 @@ function drawFloor(ctx: CanvasRenderingContext2D, t: number) {
   ctx.lineTo(b.X, b.Y);
   ctx.stroke();
   ctx.setLineDash([]);
-  // Lounge rug in front of the sofa.
-  poly(ctx, [P(1.4, 5.7), P(4.6, 5.7), P(4.6, 6.95), P(1.4, 6.95)], "rgba(167,139,250,0.05)", "rgba(167,139,250,0.22)", 0.8);
-  // Rug under the meeting table.
-  poly(ctx, [P(5.35, 3.35), P(8.65, 3.35), P(8.65, 6.65), P(5.35, 6.65)], "rgba(25,211,197,0.06)", "rgba(25,211,197,0.32)", 0.9);
-  poly(ctx, [P(5.55, 3.55), P(8.45, 3.55), P(8.45, 6.45), P(5.55, 6.45)], "rgba(0,0,0,0)", "rgba(25,211,197,0.14)", 0.6);
+  ctx.lineDashOffset = 0;
 }
 
 // Deterministic "city lights" seen through the windows.
@@ -193,7 +249,27 @@ const CITY = Array.from({ length: 46 }, (_, i) => {
   return { u: f, v: r2 - Math.floor(r2), c: i % 5 === 0 ? "#f59e0b" : i % 3 === 0 ? "#a78bfa" : "#5eead4" };
 });
 
-function drawWalls(ctx: CanvasRenderingContext2D, t: number) {
+const WINDOWS: [number, number][] = [
+  [3.12, 3.88],
+  [6.12, 6.88],
+  [9.12, 9.88],
+];
+
+type CityLight = (typeof CITY)[number];
+
+/** City lights flicker by opacity; drawn with globalAlpha so no colour strings are built per frame. */
+function cityLights(ctx: CanvasRenderingContext2D, alphaAt: (c: CityLight) => number, rect: (c: CityLight) => void, skip?: (c: CityLight) => boolean) {
+  for (const c of CITY) {
+    if (skip?.(c)) continue;
+    ctx.globalAlpha = alphaAt(c);
+    ctx.fillStyle = c.c;
+    rect(c);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** Walls and the parts of the windows, displays, whiteboard and sign that never change. */
+function drawWallsStatic(ctx: CanvasRenderingContext2D) {
   // Left wall (x = 0) and back wall (y = 0).
   const lg = ctx.createLinearGradient(0, P(0, 0, WALL_H).Y, 0, P(0, H, 0).Y);
   lg.addColorStop(0, "#0c2329");
@@ -204,37 +280,19 @@ function drawWalls(ctx: CanvasRenderingContext2D, t: number) {
   rg.addColorStop(1, "#0a1d22");
   poly(ctx, [P(0, 0, 0), P(W, 0, 0), P(W, 0, WALL_H), P(0, 0, WALL_H)], rg);
 
-  // Windows on the back wall between the desks, with a night skyline.
-  for (const [xa, xb] of [
-    [3.12, 3.88],
-    [6.12, 6.88],
-    [9.12, 9.88],
-  ]) {
+  // Window glass on the back wall (the skyline lights and frames are drawn on top each frame).
+  for (const [xa, xb] of WINDOWS) {
     onFaceY(ctx, xa, 0, 92, () => {
       const w = (xb - xa) * 32;
-      const h = 64;
-      const g = ctx.createLinearGradient(0, 0, 0, h);
+      const g = ctx.createLinearGradient(0, 0, 0, 64);
       g.addColorStop(0, "#071827");
       g.addColorStop(1, "#0b2a33");
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-      for (const c of CITY) {
-        if (c.u > 0.92) continue;
-        const flick = 0.45 + 0.4 * Math.sin(t * 0.7 + c.u * 40);
-        ctx.fillStyle = hexA(c.c, flick);
-        ctx.fillRect(c.u * w, 26 + c.v * 34, 1.3, 1.3);
-      }
-      ctx.strokeStyle = "rgba(160,255,240,0.28)";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(0, 0, w, h);
-      ctx.beginPath();
-      ctx.moveTo(w / 2, 0);
-      ctx.lineTo(w / 2, h);
-      ctx.stroke();
+      ctx.fillRect(0, 0, w, 64);
     });
   }
 
-  // A status display above each desk.
+  // Status display panels above each desk (the bars are drawn each frame).
   for (const id of HQ_AGENTS) {
     const d = DESKS[id].desk;
     const look = LOOK[id];
@@ -248,11 +306,6 @@ function drawWalls(ctx: CanvasRenderingContext2D, t: number) {
       ctx.fillStyle = look.accent;
       ctx.font = "bold 6px ui-monospace, monospace";
       ctx.fillText(look.name, 4, 8);
-      for (let i = 0; i < 8; i++) {
-        const hgt = 4 + 10 * (0.5 + 0.5 * Math.sin(t * 1.6 + i * 0.9 + d.x0));
-        ctx.fillStyle = hexA(look.accent, 0.35 + 0.05 * i);
-        ctx.fillRect(4 + i * ((w - 8) / 8), 27 - hgt, (w - 8) / 8 - 1.5, hgt);
-      }
     });
   }
 
@@ -290,19 +343,13 @@ function drawWalls(ctx: CanvasRenderingContext2D, t: number) {
     ctx.font = "5px ui-monospace, monospace";
     ctx.fillText("ORCHESTRATION · DESIGN · FRONTEND", 0, 9);
   });
+  // Skyline panel glass on the left wall.
   onWallX(ctx, 6.9, 66, () => {
-    const w = 2.2 * 32;
     const g = ctx.createLinearGradient(0, 0, 0, 40);
     g.addColorStop(0, "#071827");
     g.addColorStop(1, "#0b2a33");
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, 40);
-    for (const c of CITY) {
-      ctx.fillStyle = hexA(c.c, 0.35 + 0.35 * Math.sin(t * 0.5 + c.v * 30));
-      ctx.fillRect(c.u * w, 14 + c.v * 24, 1.2, 1.2);
-    }
-    ctx.strokeStyle = "rgba(160,255,240,0.25)";
-    ctx.strokeRect(0, 0, w, 40);
+    ctx.fillRect(0, 0, 2.2 * 32, 40);
   });
 
   // Trim along the top and the skirting.
@@ -321,6 +368,54 @@ function drawWalls(ctx: CanvasRenderingContext2D, t: number) {
   ctx.lineTo(e.X, e.Y);
   ctx.lineTo(f.X, f.Y);
   ctx.stroke();
+}
+
+/** The animated wall details: flickering skyline lights (under the window frames) and the status bars. */
+function drawWallsDynamic(ctx: CanvasRenderingContext2D, t: number) {
+  for (const [xa, xb] of WINDOWS) {
+    onFaceY(ctx, xa, 0, 92, () => {
+      const w = (xb - xa) * 32;
+      const h = 64;
+      cityLights(
+        ctx,
+        (c) => 0.45 + 0.4 * Math.sin(t * 0.7 + c.u * 40),
+        (c) => ctx.fillRect(c.u * w, 26 + c.v * 34, 1.3, 1.3),
+        (c) => c.u > 0.92
+      );
+      ctx.strokeStyle = "rgba(160,255,240,0.28)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(0, 0, w, h);
+      ctx.beginPath();
+      ctx.moveTo(w / 2, 0);
+      ctx.lineTo(w / 2, h);
+      ctx.stroke();
+    });
+  }
+  for (const id of HQ_AGENTS) {
+    const d = DESKS[id].desk;
+    const look = LOOK[id];
+    onFaceY(ctx, d.x0 + 0.18, 0, 92, () => {
+      const w = (d.x1 - d.x0 - 0.36) * 32;
+      ctx.fillStyle = look.accent;
+      for (let i = 0; i < 8; i++) {
+        const hgt = 4 + 10 * (0.5 + 0.5 * Math.sin(t * 1.6 + i * 0.9 + d.x0));
+        ctx.globalAlpha = 0.35 + 0.05 * i;
+        ctx.fillRect(4 + i * ((w - 8) / 8), 27 - hgt, (w - 8) / 8 - 1.5, hgt);
+      }
+      ctx.globalAlpha = 1;
+    });
+  }
+  onWallX(ctx, 6.9, 66, () => {
+    const w = 2.2 * 32;
+    cityLights(
+      ctx,
+      (c) => 0.35 + 0.35 * Math.sin(t * 0.5 + c.v * 30),
+      (c) => ctx.fillRect(c.u * w, 14 + c.v * 24, 1.2, 1.2)
+    );
+    ctx.strokeStyle = "rgba(160,255,240,0.25)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, w, 40);
+  });
 }
 
 function drawFloorLights(ctx: CanvasRenderingContext2D, sim: Sim, t: number) {

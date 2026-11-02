@@ -37,6 +37,7 @@ import {
 } from "../../lib/agentHq/sim";
 import { HQ_INTRO, SILENT_MEETING_LINES, VOICED_MEETING_LINES } from "../../data/agentHq";
 import { agentById, teamSteps } from "../../data/agentTeam";
+import { POLICY, createFramePolicy, minFrameGap, updateFramePolicy, type FramePolicy } from "../../lib/agentHq/framePolicy";
 
 // Engine tests for Agent HQ: the floor plan, pathfinding, collision avoidance, the
 // meeting director, selection, reduced motion and the walk-cycle skeleton. The
@@ -484,5 +485,147 @@ test.describe("Agent HQ content", () => {
     const sim = createSim();
     step(sim);
     expect(sim.time).toBeCloseTo(DT, 12);
+  });
+});
+
+// The adaptive frame rate is a pure function of the frame timings it is fed, so every
+// transition can be driven with synthetic timestamps: no browser, no real delays.
+test.describe("Agent HQ adaptive frame rate", () => {
+  /** Feeds `count` drawn frames at a fixed interval and work cost; returns the times the mode changed. */
+  function feed(p: FramePolicy, clock: { t: number }, count: number, interval: number, work = 2) {
+    const changes: { at: number; mode: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      clock.t += interval;
+      if (updateFramePolicy(p, clock.t, interval, work)) changes.push({ at: clock.t, mode: p.mode });
+    }
+    return changes;
+  }
+  /** Feeds frames until the mode changes (at most `limit`); returns when it changed, or null. */
+  function untilChange(p: FramePolicy, clock: { t: number }, limit: number, interval: number, work: number) {
+    for (let i = 0; i < limit; i++) {
+      clock.t += interval;
+      if (updateFramePolicy(p, clock.t, interval, work)) return { at: clock.t, mode: p.mode };
+    }
+    return null;
+  }
+  const fresh = () => {
+    const clock = { t: 0 };
+    const p = createFramePolicy(0);
+    feed(p, clock, 70, 1000 / 60); // past warm-up
+    return { p, clock };
+  };
+
+  test("a device that keeps 60 fps stays at 60 indefinitely, with no frame gap", () => {
+    const { p, clock } = fresh();
+    expect(feed(p, clock, 60 * 600, 1000 / 60)).toEqual([]); // ten minutes
+    expect(p.mode).toBe(60);
+    expect(minFrameGap(p)).toBe(0);
+  });
+
+  test("sustained slow frames drop to 30 fps after about 1.5 s, and 30 fps mode spaces frames ~33 ms apart", () => {
+    const { p, clock } = fresh();
+    const start = clock.t;
+    const changes = feed(p, clock, 200, 30, 12); // ~33 fps with heavy frames
+    expect(changes.map((c) => c.mode)).toEqual([30]);
+    const after = changes[0].at - start;
+    expect(after).toBeGreaterThanOrEqual(POLICY.slowForMs);
+    expect(after).toBeLessThan(POLICY.slowForMs + 1500); // includes the smoothing lag
+    expect(minFrameGap(p)).toBeGreaterThan(1000 / 60);
+    expect(minFrameGap(p)).toBeLessThan(1000 / 30);
+  });
+
+  test("short spikes do not change the mode", () => {
+    const { p, clock } = fresh();
+    for (let i = 0; i < 100; i++) {
+      // 0.5 s of slow frames (well under the 1.5 s threshold), then 2 s of normal frames.
+      expect(feed(p, clock, 15, 33, 12)).toEqual([]);
+      expect(feed(p, clock, 120, 1000 / 60)).toEqual([]);
+    }
+    // Isolated long frames (GC, a decode) every second.
+    for (let i = 0; i < 300; i++) {
+      expect(feed(p, clock, 1, 90, 20)).toEqual([]);
+      expect(feed(p, clock, 59, 1000 / 60)).toEqual([]);
+    }
+    expect(p.mode).toBe(60);
+  });
+
+  test("warm-up and stalls (tab switch, debugger) are ignored", () => {
+    const clock = { t: 0 };
+    const p = createFramePolicy(0);
+    expect(feed(p, clock, 20, 45, 30)).toEqual([]); // first 0.9 s: loading, very slow
+    expect(p.emaInterval).toBeCloseTo(1000 / 60, 9); // not even measured
+    feed(p, clock, 10, 1000 / 60);
+    const before = { ...p };
+    for (let i = 0; i < 50; i++) expect(feed(p, clock, 1, POLICY.stallMs + 1, 5)).toEqual([]);
+    expect(p.emaInterval).toBe(before.emaInterval);
+    expect(p.slowFor).toBe(0);
+    expect(updateFramePolicy(p, clock.t, 0, 1)).toBe(false); // zero/negative intervals
+    expect(p.mode).toBe(60);
+  });
+
+  test("recovers from 30 to 60 once the hold has passed and frames are cheap again, never before", () => {
+    const { p, clock } = fresh();
+    const [drop] = feed(p, clock, 200, 30, 12);
+    expect(drop.mode).toBe(30);
+    // Still heavy: stays at 30 well past the hold.
+    expect(feed(p, clock, 300, 1000 / 30, 12)).toEqual([]);
+    // Load goes away. Cheap frames at 30 fps: back to 60 after the hold and the smoothing.
+    const back = untilChange(p, clock, 600, 1000 / 30, 2);
+    expect(back?.mode).toBe(60);
+    expect(back!.at).toBeGreaterThanOrEqual(drop.at + POLICY.firstHoldMs);
+    expect(minFrameGap(p)).toBe(0);
+    // And it stays at 60 while the device keeps up.
+    expect(feed(p, clock, 60 * 120, 1000 / 60)).toEqual([]);
+  });
+
+  test("cheap frames do not cut the hold short", () => {
+    const { p, clock } = fresh();
+    const [drop] = feed(p, clock, 200, 30, 12);
+    const back = untilChange(p, clock, 600, 1000 / 30, 0.5);
+    expect(back!.at - drop.at).toBeGreaterThanOrEqual(POLICY.firstHoldMs);
+  });
+
+  test("a device that keeps falling back waits longer each time (backoff doubles, capped at a minute)", () => {
+    const { p, clock } = fresh();
+    const holds: number[] = [];
+    for (let round = 0; round < 7; round++) {
+      // Retrying 60 fails again: frames arrive late at 60, so it falls back to 30.
+      const drop = untilChange(p, clock, 400, 30, 12);
+      expect(drop?.mode).toBe(30);
+      holds.push(Math.round(p.holdUntil - drop!.at));
+      const up = untilChange(p, clock, 3000, 1000 / 30, 2);
+      expect(up?.mode).toBe(60);
+    }
+    expect(holds).toEqual([5000, 10000, 20000, 40000, 60000, 60000, 60000]);
+    expect(p.switches).toBe(14);
+  });
+
+  test("the simulation keeps real time at either frame rate: same steps, same positions", () => {
+    // The render loop feeds wall-clock time into a fixed-step accumulator; at 30 fps it
+    // simply runs two steps per drawn frame. Emulate both cadences for 60 s of wall time.
+    const drive = (fps: number) => {
+      const sim = createSim({ silentLines: lines });
+      let acc = 0;
+      let steps = 0;
+      const frameMs = 1000 / fps;
+      for (let i = 0; i < 60 * fps; i++) {
+        acc += Math.min(0.25, frameMs / 1000);
+        while (acc >= DT) {
+          step(sim, DT);
+          acc -= DT;
+          steps++;
+        }
+      }
+      return { sim, steps };
+    };
+    const fast = drive(60);
+    const slow = drive(30);
+    expect(Math.abs(fast.steps - 3600)).toBeLessThanOrEqual(1);
+    expect(Math.abs(slow.steps - 3600)).toBeLessThanOrEqual(1);
+    // Bring both to the same step count, then the office must be in the same state.
+    while (fast.steps < slow.steps) { step(fast.sim, DT); fast.steps++; }
+    while (slow.steps < fast.steps) { step(slow.sim, DT); slow.steps++; }
+    expect(slow.sim.time).toBeCloseTo(fast.sim.time, 9);
+    expect(slow.sim.chars.map((c) => [c.x, c.y, c.face, c.activity])).toEqual(fast.sim.chars.map((c) => [c.x, c.y, c.face, c.activity]));
   });
 });
