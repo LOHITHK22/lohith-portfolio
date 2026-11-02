@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef } from "react";
 
 type PlayOptions = {
   onEnd?: () => void;
-  onError?: () => void;
+  /** `blocked`: the browser refused to start playback without a user gesture (autoplay policy). */
+  onError?: (reason: "blocked" | "error") => void;
   /** Called every animation frame while playing, with a 0-1 loudness level. */
   onLevel?: (level: number) => void;
 };
@@ -79,7 +80,7 @@ export function useAudioNarration() {
   const play = useCallback((src: string, { onEnd, onError, onLevel }: PlayOptions = {}) => {
     const audio = audioRef.current;
     if (!audio) {
-      onError?.();
+      onError?.("error");
       return;
     }
 
@@ -89,12 +90,12 @@ export function useAudioNarration() {
 
     // A clip can fail via both `onerror` and the play() promise; report once.
     let failed = false;
-    const fail = () => {
+    const fail = (reason: "blocked" | "error" = "error") => {
       if (failed) return;
       failed = true;
       stopLevelLoop();
       onLevel?.(0);
-      onError?.();
+      onError?.(reason);
     };
 
     audio.onended = () => {
@@ -102,7 +103,7 @@ export function useAudioNarration() {
       onLevel?.(0);
       onEnd?.();
     };
-    audio.onerror = fail;
+    audio.onerror = () => fail("error");
 
     audio.src = src;
     audio
@@ -112,7 +113,7 @@ export function useAudioNarration() {
         // pause()/stop() before playback starts rejects with AbortError. That's
         // the user pausing, not a broken clip, so don't fall back.
         if (err instanceof DOMException && err.name === "AbortError") return;
-        fail();
+        fail(err instanceof DOMException && err.name === "NotAllowedError" ? "blocked" : "error");
       });
   }, [ensureGraph]);
 

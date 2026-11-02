@@ -114,6 +114,13 @@ export const MEETING_SPOTS: Record<HqAgentId, Spot> = {
 /** The architecture whiteboard on the left wall, between ATLAS's desk and PULSE's. */
 export const WHITEBOARD = { y0: 4.9, y1: 6.95 };
 
+/**
+ * Where each agent stands to introduce itself to the visitor in the "Meet the team"
+ * introduction: the stage mark at the front left of the office, facing the visitor.
+ * Of the open spots it has the shortest walks from the seven desks on average.
+ */
+export const PRESENTATION_SPOT: Spot = { x: 4, y: 8, face: FACE.viewer };
+
 export const ERRANDS: Errand[] = [
   { id: "coffee", gesture: "sip", spot: { x: 11, y: 4, face: FACE.px }, label: "Getting a coffee" },
   {

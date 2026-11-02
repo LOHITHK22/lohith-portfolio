@@ -10,7 +10,6 @@ import { agents } from "@/data/agentTeam";
 import { track } from "@/lib/analytics";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants } from "@/lib/motion";
-import { openAgentTeam } from "@/lib/agentTeamEvents";
 import { HeroScene } from "./HeroScene";
 
 function useIsDesktop() {
@@ -25,15 +24,16 @@ function useIsDesktop() {
   return desktop;
 }
 
-/** Floating "AI TEAM · 7 AGENTS" launcher; opens the narrated command center. */
+/**
+ * Floating "AI TEAM · 7 AGENTS" launcher: "Meet the team" opens Agent HQ, where the seven
+ * agents introduce themselves one by one (?intro=1 starts the introduction on arrival).
+ * The narrated command center is still in the navigation, command palette and team section.
+ */
 function AgentDock({ className = "" }: { className?: string }) {
   return (
-    <button
-      type="button"
-      onClick={() => {
-        track("hero_cta_click", { cta: "ai_team_dock" });
-        openAgentTeam();
-      }}
+    <Link
+      href="/agent-hq?intro=1"
+      onClick={() => track("hero_cta_click", { cta: "ai_team_dock" })}
       className={`group flex items-center gap-3 rounded-2xl border border-teal/30 sm:gap-4 bg-ink-900/80 py-3 pl-4 pr-3 text-left shadow-[0_20px_60px_-20px_rgba(25,211,197,0.45)] backdrop-blur-md transition-all hover:-translate-y-0.5 hover:border-teal/70 hover:bg-ink-800/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal ${className}`}
     >
       <span className="flex shrink-0 -space-x-2.5 sm:-space-x-2" aria-hidden="true">
@@ -57,7 +57,7 @@ function AgentDock({ className = "" }: { className?: string }) {
         <span className="absolute inline-flex h-full w-full rounded-full bg-teal opacity-70 motion-safe:animate-ping" />
         <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-teal" />
       </span>
-    </button>
+    </Link>
   );
 }
 

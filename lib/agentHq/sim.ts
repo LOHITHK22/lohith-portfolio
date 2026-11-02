@@ -5,6 +5,7 @@ import {
   FACE,
   HQ_AGENTS,
   MEETING_SPOTS,
+  PRESENTATION_SPOT,
   ROUTINES,
   errandLabel,
   walkableFor,
@@ -105,16 +106,28 @@ export type MeetingPhase = "calling" | "gathering" | "speaking" | "closing" | "r
 
 export type Meeting = { phase: MeetingPhase; speaker: number; t: number; voiced: boolean; lines: MeetingLine[] };
 
+/**
+ * The "Meet the team" introduction: one agent at a time walks to the presentation spot,
+ * faces the visitor, waves and introduces itself, then walks back to its desk while the
+ * next one comes forward. A speaker only starts once the previous one is back in its chair.
+ */
+export type IntroStage = "approach" | "speaking";
+export type Intro = { order: HqAgentId[]; index: number; stage: IntroStage; returning: HqAgentId[] };
+
 export type SimEvent =
   | { type: "meeting-phase"; phase: MeetingPhase }
   | { type: "speaker"; index: number; agent: HqAgentId; voiced: boolean }
-  | { type: "meeting-end" };
+  | { type: "meeting-end" }
+  | { type: "intro-approach"; index: number; agent: HqAgentId }
+  | { type: "intro-speaker"; index: number; agent: HqAgentId }
+  | { type: "intro-end" };
 
 export type Sim = {
   time: number;
   chars: Character[];
-  mode: "ambient" | "meeting" | "focus";
+  mode: "ambient" | "meeting" | "focus" | "intro";
   meeting: Meeting | null;
+  intro: Intro | null;
   focus: HqAgentId | null;
   reduced: boolean;
   nextAutoMeeting: number;
@@ -128,6 +141,8 @@ const WAIT_REPLAN = 0.7;
 const WAIT_SIDESTEP = 2.5;
 const WAIT_YIELD = 0.3;
 export const MEETING_HURRY = 1.3;
+/** The presenting agent walks to the stage (and the previous one back to its desk) at the brisk pace of a meeting call. */
+export const INTRO_HURRY = 1.3;
 export const FIRST_AUTO_MEETING = 30;
 export const AUTO_MEETING_EVERY = 150;
 
@@ -202,6 +217,7 @@ export function createSim({ reduced = false, silentLines = [] as MeetingLine[], 
     chars,
     mode: "ambient",
     meeting: null,
+    intro: null,
     focus: null,
     reduced,
     nextAutoMeeting: reduced ? Infinity : FIRST_AUTO_MEETING,
@@ -330,7 +346,13 @@ function stepGoto(sim: Sim, c: Character, goal: Spot, dt: number): boolean {
   const style = STYLES[c.id];
   if (c.to) {
     // Called to a meeting, everyone walks a little faster (a longer, quicker stride, same gait).
-    const speed = style.speed * (sim.meeting?.phase === "gathering" ? MEETING_HURRY : 1);
+    const hurry =
+      sim.meeting?.phase === "gathering"
+        ? MEETING_HURRY
+        : sim.intro && (introPresenter(sim) === c.id || sim.intro.returning.includes(c.id))
+          ? INTRO_HURRY
+          : 1;
+    const speed = style.speed * hurry;
     c.t += speed * dt;
     c.walkPhase += ((speed * dt) / style.stride) * Math.PI;
     const dir = Math.atan2(c.to.y - c.at.y, c.to.x - c.at.x);
@@ -547,6 +569,7 @@ function lineDuration(text: string) {
 }
 
 function tickDirector(sim: Sim, dt: number) {
+  if (sim.intro) tickIntro(sim);
   if (sim.mode === "ambient" && sim.time >= sim.nextAutoMeeting) {
     if (sim.silentLines.length) callMeeting(sim, { voiced: false, lines: sim.silentLines });
     sim.nextAutoMeeting = sim.time + AUTO_MEETING_EVERY;
@@ -718,9 +741,10 @@ export function setLevel(sim: Sim, id: HqAgentId, level: number) {
   charById(sim, id).level = level;
 }
 
-/** Turns heads: listeners look at the speaker, a seated colleague looks at a visitor. */
+/** Turns heads: listeners look at the speaker, a seated colleague looks at a visitor or at whoever is presenting. */
 function updateLooks(sim: Sim, dt: number) {
   const speakerId = sim.meeting?.phase === "speaking" ? sim.meeting.lines[sim.meeting.speaker]?.agent : null;
+  const presenter = sim.intro?.stage === "speaking" ? introPresenter(sim) : null;
   for (const c of sim.chars) {
     let target = 0;
     const lookAt = (o: Character) => {
@@ -728,6 +752,7 @@ function updateLooks(sim: Sim, dt: number) {
       target = Math.max(-0.9, Math.min(0.9, angleDiff(c.face, want)));
     };
     if (speakerId && speakerId !== c.id && c.activity === "meeting") lookAt(charById(sim, speakerId));
+    else if (presenter && presenter !== c.id && c.sit === 1 && c.activity === "working") lookAt(charById(sim, presenter));
     else if (c.sit === 1 && c.activity === "working") {
       const visitor = sim.chars.find((o) => o.errand === `visit-${c.id}` && o.activity === "errand");
       if (visitor) lookAt(visitor);
@@ -760,7 +785,7 @@ export function step(sim: Sim, dt: number = DT) {
   sim.time += dt;
   tickDirector(sim, dt);
   for (const c of sim.chars) {
-    const controlled = sim.mode === "meeting" || sim.focus === c.id;
+    const controlled = sim.mode === "meeting" || sim.mode === "intro" || sim.focus === c.id;
     if (!c.tasks.length && !c.to && !controlled) refill(sim, c);
     if (c.to || c.tasks.length) {
       if (c.to && (!c.tasks.length || c.tasks[0].k !== "goto")) {
@@ -800,7 +825,105 @@ export function setReduced(sim: Sim, reduced: boolean) {
   sim.reduced = reduced;
   sim.nextAutoMeeting = reduced ? Infinity : sim.time + FIRST_AUTO_MEETING;
   for (const c of sim.chars) {
-    if (sim.mode === "meeting" || sim.focus === c.id) continue;
+    if (sim.mode === "meeting" || sim.mode === "intro" || sim.focus === c.id) continue;
     setTasks(c, reduced ? seatTasks(c.id, Infinity) : []);
   }
+}
+
+// ---------- "Meet the team" introduction ----------
+
+/** The agent currently presenting (walking to the stage or speaking), if an introduction is running. */
+export function introPresenter(sim: Sim): HqAgentId | null {
+  const it = sim.intro;
+  return it && it.index >= 0 ? it.order[it.index] : null;
+}
+
+/** Back to the desk and stay there working until the introduction is over. */
+function sendToDesk(sim: Sim, id: HqAgentId) {
+  const c = charById(sim, id);
+  c.level = 0;
+  setTasks(c, seatTasks(id, Infinity));
+}
+
+/** `index` comes forward to present; whoever was presenting goes back to its desk. */
+function present(sim: Sim, index: number) {
+  const it = sim.intro!;
+  const prev = introPresenter(sim);
+  const id = it.order[index];
+  if (prev && prev !== id) {
+    sendToDesk(sim, prev);
+    if (!it.returning.includes(prev)) it.returning.push(prev);
+  }
+  it.returning = it.returning.filter((x) => x !== id);
+  it.index = index;
+  it.stage = "approach";
+  const c = charById(sim, id);
+  c.level = 0;
+  setTasks(c, [
+    { k: "stand" },
+    { k: "goto", to: PRESENTATION_SPOT, label: "Walking to the presentation area" },
+    { k: "face", angle: PRESENTATION_SPOT.face },
+    { k: "do", gesture: "wave", dur: sim.reduced ? 0.01 : 1.2, activity: "greeting", label: "Saying hello" },
+    { k: "hold", gesture: "none", activity: "presenting", label: "About to introduce itself" },
+  ]);
+  emit(sim, { type: "intro-approach", index, agent: id });
+}
+
+/**
+ * Starts the introduction: everyone else settles at their desk, and the first agent in
+ * `order` walks to the presentation spot. Any meeting or focused character is released.
+ */
+export function startIntro(sim: Sim, order: HqAgentId[] = HQ_AGENTS) {
+  if (sim.focus) clearFocus(sim);
+  if (sim.meeting) emit(sim, { type: "meeting-end" });
+  sim.meeting = null;
+  sim.mode = "intro";
+  sim.intro = { order: [...order], index: -1, stage: "approach", returning: [] };
+  for (const c of sim.chars) if (c.id !== order[0]) sendToDesk(sim, c.id);
+  present(sim, 0);
+}
+
+/** The presenter is in place and the previous one is back in its chair: it starts speaking. */
+function tickIntro(sim: Sim) {
+  const it = sim.intro!;
+  it.returning = it.returning.filter((id) => !seatedAtDesk(charById(sim, id)));
+  if (it.stage !== "approach" || it.returning.length) return;
+  const id = introPresenter(sim)!;
+  const c = charById(sim, id);
+  if (!isHolding(c)) return;
+  it.stage = "speaking";
+  c.tasks[0] = { k: "hold", gesture: "talk", activity: "speaking", label: "Introducing itself" };
+  emit(sim, { type: "intro-speaker", index: it.index, agent: id });
+}
+
+/** The presenter's narration (or its captions) finished: the next agent comes forward, or the introduction ends. */
+export function introNarrationDone(sim: Sim, index: number) {
+  const it = sim.intro;
+  if (!it || it.index !== index || it.stage !== "speaking") return;
+  charById(sim, it.order[index]).level = 0;
+  if (index < it.order.length - 1) present(sim, index + 1);
+  else finishIntro(sim);
+}
+
+/** Next / previous / jump: the chosen agent comes forward (from wherever it is) and the current one goes back. */
+export function introGoTo(sim: Sim, index: number) {
+  const it = sim.intro;
+  if (!it || index < 0 || index >= it.order.length) return;
+  present(sim, index);
+}
+
+/**
+ * Ends the introduction (after the last agent, or when skipped): whoever is away from
+ * their desk walks back, and the office returns to its normal routines.
+ */
+export function finishIntro(sim: Sim) {
+  if (!sim.intro) return;
+  sim.intro = null;
+  sim.mode = sim.focus ? "focus" : "ambient";
+  for (const c of sim.chars) {
+    c.level = 0;
+    setTasks(c, seatedAtDesk(c) ? [] : seatTasks(c.id, sim.reduced ? Infinity : 6 + c.rng() * 6));
+  }
+  if (!sim.reduced) sim.nextAutoMeeting = sim.time + FIRST_AUTO_MEETING;
+  emit(sim, { type: "intro-end" });
 }
