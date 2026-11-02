@@ -72,6 +72,9 @@ export function TeamSection() {
             <Link href="/event" prefetch={false} className="btn-secondary !py-3.5" onClick={() => track("hero_cta_click", { cta: "event_from_team" })}>
               45-second version <ArrowRight className="h-4 w-4" />
             </Link>
+            <Link href="/agent-hq" className="btn-ghost !py-3.5" onClick={() => track("hero_cta_click", { cta: "agent_hq_from_team" })}>
+              Agent HQ prototype <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
 
           <p className="mt-6 max-w-lg border-l-2 border-white/10 pl-4 text-xs leading-relaxed text-slate-400">

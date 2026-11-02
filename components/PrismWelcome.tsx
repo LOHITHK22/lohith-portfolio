@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Activity, ChevronDown, ChevronUp, FolderKanban, Pause, Play, RotateCcw, Users, Volume2, VolumeX, X } from "lucide-react";
 import { openAgentTeam, OPEN_AGENT_TEAM_EVENT } from "@/lib/agentTeamEvents";
 import { track } from "@/lib/analytics";
+import { announceAudio, onOtherAudio } from "@/lib/siteAudio";
 import { PRISM_CAPTIONS, PRISM_SESSION_KEY, PRISM_SOUND_KEY } from "@/data/prismWelcome";
 import manifest from "@/data/prismWelcomeManifest.json";
 
@@ -86,6 +87,7 @@ export function PrismWelcome() {
       setPhase("loading");
       try {
         await a.play();
+        announceAudio("prism");
         track("prism_welcome_play", { auto });
       } catch (e) {
         const blocked = e instanceof DOMException && e.name === "NotAllowedError";
@@ -152,11 +154,13 @@ export function PrismWelcome() {
       if (document.visibilityState === "hidden") stop();
     };
     window.addEventListener(OPEN_AGENT_TEAM_EVENT, stop);
+    const offOtherAudio = onOtherAudio("prism", stop);
     document.addEventListener("play", onOtherPlay, true);
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("pagehide", stop);
     return () => {
       window.removeEventListener(OPEN_AGENT_TEAM_EVENT, stop);
+      offOtherAudio();
       document.removeEventListener("play", onOtherPlay, true);
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("pagehide", stop);
