@@ -144,21 +144,22 @@ test.describe("Agent HQ pathfinding", () => {
   });
 
   test("routes around blocked tiles, refuses solid goals, and is deterministic", () => {
-    const from = { x: 0, y: 3 };
-    const to = { x: 9, y: 2 };
+    const from = { x: 2, y: 3 };
+    const to = { x: 12, y: 2 };
     const direct = findPath("astra", from, to)!;
     const blocked = new Set(direct.slice(2, 4).map((t) => `${t.x},${t.y}`));
     const detour = findPath("astra", from, to, blocked)!;
     expect(detour.some((t) => blocked.has(`${t.x},${t.y}`))).toBe(false);
     expect(detour.at(-1)).toEqual(to);
-    expect(findPath("astra", from, { x: 6, y: 4 })).toBeNull(); // the table
+    expect(findPath("astra", from, { x: 6, y: 5 })).toBeNull(); // the table
+    expect(findPath("astra", from, { x: 0, y: 3 })).toBeNull(); // ATLAS's desk against the left wall
     expect(findPath("nova", from, DESKS.astra.seat)).toBeNull(); // someone else's chair
     expect(findPath("astra", from, to)).toEqual(direct);
   });
 
   test("prefers straight lines: no more corners than needed", () => {
     // Along the open aisle the route is a straight line.
-    const path = findPath("forge", { x: 0, y: 3 }, { x: 8, y: 3 })!;
+    const path = findPath("forge", { x: 2, y: 3 }, { x: 12, y: 3 })!;
     expect(path.every((t) => t.y === 3)).toBe(true);
   });
 });
@@ -229,11 +230,16 @@ test.describe("Agent HQ meetings", () => {
     const speakers: HqAgentId[] = [];
     let maxTalking = 0;
     let atTableWhileSpeaking = true;
-    runChecked(sim, 60, (s) => {
+    let seatedAtEnd: boolean[] = [];
+    runChecked(sim, 100, (s) => {
       for (const e of drainEvents(s)) {
         if (e.type === "meeting-phase") phases.push(e.phase);
         if (e.type === "speaker") speakers.push(e.agent);
-        if (e.type === "meeting-end") phases.push("end");
+        if (e.type === "meeting-end") {
+          phases.push("end");
+          // The meeting ends when everyone is back at their desk (afterwards the office carries on).
+          seatedAtEnd = s.chars.map(seatedAtDesk);
+        }
       }
       maxTalking = Math.max(maxTalking, s.chars.filter((c) => c.gesture === "talk").length);
       if (s.meeting?.phase === "speaking") {
@@ -244,11 +250,12 @@ test.describe("Agent HQ meetings", () => {
       }
     });
     expect(phases).toEqual(["calling", "gathering", "speaking", "closing", "returning", "end"]);
-    expect(speakers).toEqual(["astra", "nova", "forge"]);
+    // ASTRA opens, each specialist speaks in team order, and ECHO closes with the team summary.
+    expect(speakers).toEqual(["astra", "nova", "forge", "atlas", "pulse", "sentinel", "echo"]);
     expect(maxTalking).toBe(1);
     expect(atTableWhileSpeaking).toBe(true);
     expect(sim.meeting).toBeNull();
-    for (const c of sim.chars) expect(seatedAtDesk(c)).toBe(true);
+    expect(seatedAtEnd).toEqual(HQ_AGENTS.map(() => true));
   });
 
   test("listeners turn their heads towards the speaker", () => {
@@ -296,8 +303,12 @@ test.describe("Agent HQ meetings", () => {
     expect(charById(sim, "nova").activity).toBe("meeting");
     // Jumping to the current speaker, out of range, or outside the speaking phase does nothing.
     jumpToSpeaker(sim, 2);
-    jumpToSpeaker(sim, 7);
+    jumpToSpeaker(sim, VOICED_MEETING_LINES.length);
+    jumpToSpeaker(sim, -1);
     expect(drainEvents(sim)).toEqual([]);
+    // The last line is ASTRA's recorded closing; after it the meeting wraps up.
+    jumpToSpeaker(sim, VOICED_MEETING_LINES.length - 1);
+    expect(drainEvents(sim)).toEqual([{ type: "speaker", index: VOICED_MEETING_LINES.length - 1, agent: "astra", voiced: true }]);
     advanceSpeaker(sim);
     expect(sim.meeting?.phase).toBe("closing");
     drainEvents(sim);
@@ -305,18 +316,18 @@ test.describe("Agent HQ meetings", () => {
     expect(drainEvents(sim)).toEqual([]);
   });
 
-  test("a quick captions-only meeting wraps up in under 30 seconds", () => {
+  test("a quick captions-only meeting with all seven wraps up in under 45 seconds", () => {
     for (const warm of [0, 7, 13, 19]) {
       const sim = createSim({ silentLines: [] });
       run(sim, warm);
       drainEvents(sim);
       const t0 = sim.time;
       callMeeting(sim, { voiced: false, lines });
-      const events = collectEvents(sim, 40);
+      const events = collectEvents(sim, 60);
       const returning = events.find((e) => e.type === "meeting-phase" && e.phase === "returning");
       expect(returning, `warm-up ${warm}s`).toBeTruthy();
-      expect(returning!.at - t0, `warm-up ${warm}s`).toBeLessThan(30);
-      expect(events.filter((e) => e.type === "speaker")).toHaveLength(3);
+      expect(returning!.at - t0, `warm-up ${warm}s`).toBeLessThan(45);
+      expect(events.filter((e) => e.type === "speaker")).toHaveLength(7);
     }
   });
 
@@ -327,10 +338,17 @@ test.describe("Agent HQ meetings", () => {
     expect(sim.meeting?.phase).toBe("gathering");
     skipMeeting(sim);
     drainEvents(sim);
-    const events = collectEvents(sim, 30);
+    const events: SimEvent[] = [];
+    let seatedAtEnd: boolean[] = [];
+    run(sim, 30, (s) => {
+      for (const e of drainEvents(s)) {
+        events.push(e);
+        if (e.type === "meeting-end") seatedAtEnd = s.chars.map(seatedAtDesk);
+      }
+    });
     expect(events.some((e) => e.type === "speaker")).toBe(false);
-    expect(events.at(-1)?.type).toBe("meeting-end");
-    for (const c of sim.chars) expect(seatedAtDesk(c)).toBe(true);
+    expect(events.filter((e) => e.type !== "meeting-phase").map((e) => e.type)).toEqual(["meeting-end"]);
+    expect(seatedAtEnd).toEqual(HQ_AGENTS.map(() => true));
   });
 
   test("ambient meetings happen on a schedule and are captions-only", () => {
@@ -367,7 +385,7 @@ test.describe("Agent HQ selection", () => {
     expect(order).toContain("walking");
     expect(order.indexOf("greeting")).toBeGreaterThan(order.indexOf("walking"));
     expect(order.at(-1)).toBe("speaking");
-    expect(forge.at).toEqual({ x: DESKS.forge.seat.x, y: DESKS.forge.seat.y + 1 });
+    expect(forge.at).toEqual(DESKS.forge.front);
     expect(forge.face).toBeCloseTo(FACE.viewer, 5);
     expect(forge.gesture).toBe("talk");
   });
@@ -478,7 +496,9 @@ test.describe("Agent HQ content", () => {
       expect(agentById[id].name).toBe(id.toUpperCase());
     }
     for (const l of SILENT_MEETING_LINES) expect(HQ_INTRO[l.agent].caption).toContain(l.text);
-    expect(VOICED_MEETING_LINES.map((l) => l.text)).toEqual(HQ_AGENTS.map((id) => HQ_INTRO[id].caption));
+    // The full meeting is the AI team's recorded hand-off, line for line: the eight existing clips in their order.
+    expect(VOICED_MEETING_LINES.map((l) => [l.agent, l.text, l.audio])).toEqual(teamSteps.map((s) => [s.agentId, s.caption, s.audioFile]));
+    expect(SILENT_MEETING_LINES.map((l) => l.agent)).toEqual(HQ_AGENTS);
   });
 
   test("one step of the simulation is the fixed timestep", () => {

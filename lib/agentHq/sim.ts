@@ -1,10 +1,12 @@
 import {
   DESKS,
+  DESK_ACTIVITIES,
   ERRANDS,
   FACE,
   HQ_AGENTS,
   MEETING_SPOTS,
   ROUTINES,
+  errandLabel,
   walkableFor,
   type HqAgentId,
   type Spot,
@@ -12,7 +14,7 @@ import {
 } from "./layout";
 import { findPath } from "./path";
 
-// Agent HQ simulation: a deterministic, fixed-timestep model of three characters in
+// Agent HQ simulation: a deterministic, fixed-timestep model of the seven characters in
 // the office. Each character works through a task queue (walk somewhere, sit, stand,
 // do a gesture, hold). An ambient routine refills the queue (work at the desk, run an
 // errand, come back), and a director overrides it for meetings and for the character
@@ -21,9 +23,10 @@ import { findPath } from "./path";
 //
 // Collision rules: a character occupies its current tile and, while moving, the tile it
 // is moving into. Nobody may enter an occupied tile. A character that is kept waiting
-// re-plans around the others, and steps aside if it is still stuck.
+// re-plans around the others, and steps aside if it is still stuck. Two characters that
+// block each other head-on resolve it by the lower-ranked one giving way.
 
-export type Gesture = "none" | "type" | "sip" | "write" | "inspect" | "chat" | "wave" | "talk" | "point" | "listen";
+export type Gesture = "none" | "type" | "sip" | "write" | "inspect" | "chat" | "wave" | "talk" | "point" | "listen" | "present";
 
 export type Activity =
   | "working"
@@ -41,7 +44,9 @@ export type Activity =
   | "idle";
 
 type Task =
-  | { k: "goto"; to: Spot; label: string }
+  | { k: "goto"; to: Spot; label: string; errand?: string }
+  /** Drops the rest of a visit if the colleague has left their desk in the meantime. */
+  | { k: "visit-check"; host: HqAgentId }
   | { k: "sit" }
   | { k: "stand" }
   | { k: "face"; angle: number }
@@ -55,6 +60,12 @@ export const STYLES: Record<HqAgentId, MovementStyle> = {
   astra: { speed: 1.3, stride: 0.82, bob: 1.0, armSwing: 0.32 },
   nova: { speed: 1.45, stride: 0.74, bob: 1.8, armSwing: 0.4 },
   forge: { speed: 1.65, stride: 0.86, bob: 1.2, armSwing: 0.55 },
+  // ATLAS takes long, deliberate strides; PULSE is the quickest, light on its feet; SENTINEL keeps a steady,
+  // upright patrol pace with almost no bounce; ECHO moves with an easy, expressive swing.
+  atlas: { speed: 1.2, stride: 0.92, bob: 0.7, armSwing: 0.24 },
+  pulse: { speed: 1.85, stride: 0.7, bob: 1.6, armSwing: 0.5 },
+  sentinel: { speed: 1.38, stride: 0.84, bob: 0.4, armSwing: 0.18 },
+  echo: { speed: 1.5, stride: 0.76, bob: 1.3, armSwing: 0.46 },
 };
 
 export type Character = {
@@ -83,9 +94,12 @@ export type Character = {
   level: number;
   rng: () => number;
   errand: string | null;
+  /** The routine entry run last time, so the same errand is not picked twice in a row. */
+  lastRoutine: string | null;
 };
 
-export type MeetingLine = { agent: HqAgentId; text: string };
+/** One turn at a meeting. `audio` is the recording a voiced meeting plays (defaults to the agent's introduction). */
+export type MeetingLine = { agent: HqAgentId; text: string; audio?: string; id?: string };
 
 export type MeetingPhase = "calling" | "gathering" | "speaking" | "closing" | "returning";
 
@@ -112,8 +126,10 @@ export const DT = 1 / 60;
 const TURN_SPEED = 9;
 const WAIT_REPLAN = 0.7;
 const WAIT_SIDESTEP = 2.5;
-export const FIRST_AUTO_MEETING = 20;
-export const AUTO_MEETING_EVERY = 80;
+const WAIT_YIELD = 0.3;
+export const MEETING_HURRY = 1.3;
+export const FIRST_AUTO_MEETING = 30;
+export const AUTO_MEETING_EVERY = 150;
 
 function mulberry32(seed: number) {
   let a = seed >>> 0;
@@ -134,6 +150,18 @@ export function angleDiff(a: number, b: number) {
 }
 
 const tileKey = (t: Tile) => `${t.x},${t.y}`;
+
+const neighbours = (t: Tile): Tile[] => [
+  { x: t.x + 1, y: t.y },
+  { x: t.x, y: t.y + 1 },
+  { x: t.x - 1, y: t.y },
+  { x: t.x, y: t.y - 1 },
+];
+
+/** Who gives way in a head-on standoff: someone heading to a meeting outranks an errand; then team order. */
+function rank(sim: Sim, c: Character) {
+  return (sim.mode === "meeting" ? 0 : c.errand ? 10 : 5) + HQ_AGENTS.indexOf(c.id);
+}
 
 /** Initial state: everyone seated at their desk, working. The first errands are staggered. */
 export function createSim({ reduced = false, silentLines = [] as MeetingLine[], seed = 7 } = {}): Sim {
@@ -163,9 +191,10 @@ export function createSim({ reduced = false, silentLines = [] as MeetingLine[], 
       level: 0,
       rng: mulberry32(seed * 131 + i * 977),
       errand: null,
+      lastRoutine: null,
     };
     // Stagger the first errand so the office comes alive quickly but not all at once.
-    c.tasks = [{ k: "do", gesture: "type", dur: reduced ? Infinity : 2.5 + i * 3.5, activity: "working", label: "Working at the desk" }];
+    c.tasks = [{ k: "do", gesture: "type", dur: reduced ? Infinity : 2 + i * 1.9, activity: "working", label: "Working at the desk" }];
     return c;
   });
   return {
@@ -202,8 +231,17 @@ function othersTiles(sim: Sim, self: Character, onlyStill: boolean) {
   return s;
 }
 
+/** Also avoids the tiles others are heading for (their meeting places, errand spots), so routes don't cut through them. */
+function withClaims(sim: Sim, self: Character, tiles: Set<string>, goal: Tile) {
+  const s = new Set(tiles);
+  for (const o of sim.chars) if (o !== self && o.claim && o.tasks[0]?.k === "goto") s.add(o.claim);
+  s.delete(tileKey(goal));
+  return s;
+}
+
 function setTasks(c: Character, tasks: Task[]) {
   c.tasks = tasks;
+  c.errand = null;
   c.taskT = 0;
   c.path = [];
   c.waitT = 0;
@@ -218,7 +256,31 @@ function seatTasks(id: HqAgentId, workDur: number): Task[] {
   ];
 }
 
-/** The ambient routine: from the desk, run an errand and come back; from anywhere else, go back to the desk. */
+/** Whether a colleague is sitting at its own desk working, so a visit makes sense. */
+function hostAvailable(sim: Sim, host: HqAgentId) {
+  const h = charById(sim, host);
+  // Working now and not about to leave: nothing in its plan takes it away from the desk.
+  return seatedAtDesk(h) && sim.focus !== host && h.activity === "working" && h.tasks.length > 0 && h.tasks[0].k === "do" && !h.tasks.some((t) => t.k === "goto");
+}
+
+/** Someone is on the way to, or standing at, `host`'s desk for a chat. */
+function beingVisited(sim: Sim, host: HqAgentId) {
+  const visits = (id: string | null | undefined) => !!id && ERRANDS.find((e) => e.id === id)?.visit === host;
+  // Includes a visit someone has planned but not started walking to yet.
+  return sim.chars.some((o) => visits(o.errand) || o.tasks.some((t) => (t.k === "visit-check" && t.host === host) || (t.k === "goto" && visits(t.errand))));
+}
+
+function errandTasks(c: Character, id: string): Task[] {
+  const e = ERRANDS.find((x) => x.id === id)!;
+  const label = errandLabel(e, c.id);
+  return [
+    ...(e.visit ? [{ k: "visit-check" as const, host: e.visit }] : []),
+    { k: "goto", to: e.spot, label, errand: e.id },
+    { k: "do", gesture: e.gesture, dur: 4 + c.rng() * 2.5, activity: "errand", label },
+  ];
+}
+
+/** The ambient routine: from the desk, run an errand (or a short chain of them) and come back; from anywhere else, go back to the desk. */
 function refill(sim: Sim, c: Character) {
   const seat = DESKS[c.id].seat;
   const atSeat = c.at.x === seat.x && c.at.y === seat.y && !c.to;
@@ -230,29 +292,47 @@ function refill(sim: Sim, c: Character) {
     setTasks(c, seatTasks(c.id, 9 + c.rng() * 7));
     return;
   }
-  const claimed = new Set(sim.chars.filter((o) => o !== c).flatMap((o) => [o.claim, tileKey(o.at)]));
-  const options = ROUTINES[c.id]
-    .map((id) => ERRANDS.find((e) => e.id === id)!)
-    .filter((e) => !claimed.has(tileKey(e.spot)) && (!e.visit || e.visit !== c.id));
-  const errand = options[Math.floor(c.rng() * options.length)];
-  if (!errand) {
+  // A colleague is coming over or is here to talk: stay and keep working with them.
+  if (beingVisited(sim, c.id)) {
+    setTasks(c, [{ k: "do", gesture: "type", dur: 2, activity: "working", label: "Working at the desk" }]);
+    return;
+  }
+  // A spot is taken if someone is there, heading there, or has it later in their plan (after a desk activity, or as the second errand of a chain).
+  const claimed = new Set(
+    sim.chars
+      .filter((o) => o !== c)
+      .flatMap((o) => [o.claim, tileKey(o.at), ...o.tasks.flatMap((t) => (t.k === "goto" && t.errand ? [tileKey(t.to)] : []))])
+  );
+  const free = (id: string) => {
+    const e = ERRANDS.find((x) => x.id === id)!;
+    return !claimed.has(tileKey(e.spot)) && (!e.visit || (e.visit !== c.id && hostAvailable(sim, e.visit) && !beingVisited(sim, e.visit)));
+  };
+  const options = ROUTINES[c.id].filter((entry) => entry.split(">").every((part) => part.startsWith("@") || free(part)));
+  const fresh = options.length > 1 ? options.filter((o) => o !== c.lastRoutine) : options;
+  const entry = fresh[Math.floor(c.rng() * fresh.length)];
+  if (entry) c.lastRoutine = entry;
+  if (!entry) {
     setTasks(c, [{ k: "do", gesture: "type", dur: 5, activity: "working", label: "Working at the desk" }]);
     return;
   }
-  c.errand = errand.id;
-  setTasks(c, [
-    { k: "goto", to: errand.spot, label: errand.label },
-    { k: "do", gesture: errand.gesture, dur: 4 + c.rng() * 2.5, activity: "errand", label: errand.label },
-    ...seatTasks(c.id, 10 + c.rng() * 8),
-  ]);
+  const tasks: Task[] = [];
+  for (const part of entry.split(">")) {
+    if (part.startsWith("@")) {
+      const act = DESK_ACTIVITIES.find((x) => x.id === part.slice(1))!;
+      tasks.push({ k: "do", gesture: act.gesture, dur: act.dur[0] + c.rng() * (act.dur[1] - act.dur[0]), activity: "working", label: act.label });
+    } else tasks.push(...errandTasks(c, part));
+  }
+  setTasks(c, [...tasks, ...seatTasks(c.id, 10 + c.rng() * 8)]);
 }
 
 /** Moves the character one step along its path; returns true once it stands on `goal` facing the right way. */
 function stepGoto(sim: Sim, c: Character, goal: Spot, dt: number): boolean {
   const style = STYLES[c.id];
   if (c.to) {
-    c.t += style.speed * dt;
-    c.walkPhase += ((style.speed * dt) / style.stride) * Math.PI;
+    // Called to a meeting, everyone walks a little faster (a longer, quicker stride, same gait).
+    const speed = style.speed * (sim.meeting?.phase === "gathering" ? MEETING_HURRY : 1);
+    c.t += speed * dt;
+    c.walkPhase += ((speed * dt) / style.stride) * Math.PI;
     const dir = Math.atan2(c.to.y - c.at.y, c.to.x - c.at.x);
     c.face += Math.sign(angleDiff(c.face, dir)) * Math.min(Math.abs(angleDiff(c.face, dir)), TURN_SPEED * dt);
     if (c.t >= 1) {
@@ -295,7 +375,8 @@ function stepGoto(sim: Sim, c: Character, goal: Spot, dt: number): boolean {
   }
 
   if (!c.path.length) {
-    c.path = findPath(c.id, c.at, goal, othersTiles(sim, c, true)) ?? findPath(c.id, c.at, goal) ?? [];
+    const still = othersTiles(sim, c, true);
+    c.path = findPath(c.id, c.at, goal, withClaims(sim, c, still, goal)) ?? findPath(c.id, c.at, goal, still) ?? findPath(c.id, c.at, goal) ?? [];
     if (!c.path.length) {
       c.activity = "waiting";
       return false;
@@ -306,21 +387,33 @@ function stepGoto(sim: Sim, c: Character, goal: Spot, dt: number): boolean {
   if (occupiedBy(sim, c, next)) {
     c.waitT += dt;
     c.activity = "waiting";
+    const blocker = sim.chars.find((o) => o !== c && !o.to && o.at.x === next.x && o.at.y === next.y);
+    const headOn = !!blocker && !!blocker.path[0] && blocker.path[0].x === c.at.x && blocker.path[0].y === c.at.y;
+    if (headOn && rank(sim, c) > rank(sim, blocker!) && c.waitT > WAIT_YIELD) {
+      // Two characters want each other's tiles: the lower-ranked one steps off the other's route.
+      const theirRoute = new Set(blocker!.path.map(tileKey));
+      const aside = neighbours(c.at).find((n) => walkableFor(c.id, n.x, n.y) && !occupiedBy(sim, c, n) && !theirRoute.has(tileKey(n)));
+      if (aside) {
+        c.path = [aside];
+        c.waitT = 0;
+        return false;
+      }
+    }
     if (c.waitT > WAIT_SIDESTEP) {
       // Still stuck: step onto any free neighbouring tile, then plan again from there.
-      const free = [
-        { x: c.at.x + 1, y: c.at.y },
-        { x: c.at.x, y: c.at.y + 1 },
-        { x: c.at.x - 1, y: c.at.y },
-        { x: c.at.x, y: c.at.y - 1 },
-      ].find((n) => walkableFor(c.id, n.x, n.y) && !occupiedBy(sim, c, n));
+      const free = neighbours(c.at).find((n) => walkableFor(c.id, n.x, n.y) && !occupiedBy(sim, c, n));
       if (free) {
         c.path = [free];
         c.waitT = 0;
       }
     } else if (c.waitT > WAIT_REPLAN) {
-      const detour = findPath(c.id, c.at, goal, othersTiles(sim, c, false));
-      if (detour && detour.length) {
+      const around = othersTiles(sim, c, false);
+      const detour = findPath(c.id, c.at, goal, withClaims(sim, c, around, goal)) ?? findPath(c.id, c.at, goal, around);
+      // Someone who is only passing through will be gone in a moment: take a detour round them
+      // only if it is short. Someone standing still for a while is walked round whatever the length.
+      const mover = sim.chars.find((o) => o !== c && ((o.at.x === next.x && o.at.y === next.y) || (o.to && o.to.x === next.x && o.to.y === next.y)));
+      const passing = !!mover && (!!mover.to || mover.tasks[0]?.k === "goto");
+      if (detour && detour.length && (!passing || detour.length <= c.path.length + 3)) {
         c.path = detour;
         c.waitT = WAIT_REPLAN * 0.5;
       }
@@ -358,8 +451,18 @@ function runTasks(sim: Sim, c: Character, dt: number) {
     case "goto": {
       c.gesture = "none";
       c.label = task.label;
+      if (task.errand) c.errand = task.errand;
       if (!c.claim || c.claim !== tileKey(task.to)) c.claim = tileKey(task.to);
       done = stepGoto(sim, c, task.to, dt);
+      break;
+    }
+    case "visit-check": {
+      done = true;
+      if (!hostAvailable(sim, task.host)) {
+        // The colleague has gone: skip the visit (its walk and chat) and carry on with the rest.
+        const visitEnd = c.tasks.findIndex((t, i) => i > 0 && t.k === "do" && t.activity === "errand");
+        if (visitEnd > 0) c.tasks.splice(1, visitEnd);
+      }
       break;
     }
     case "sit":
@@ -532,6 +635,27 @@ export function jumpToSpeaker(sim: Sim, index: number) {
   startSpeaker(sim, index);
 }
 
+/**
+ * Stops the recorded voices but keeps the meeting going with the quick meeting's caption
+ * lines: the current speaker carries on in captions, and the rest follow at reading pace.
+ */
+export function switchToCaptions(sim: Sim, lines: MeetingLine[]) {
+  const m = sim.meeting;
+  if (!m || !m.voiced || !lines.length) return;
+  const current = m.speaker >= 0 ? m.lines[m.speaker] : null;
+  const wasLast = m.speaker === m.lines.length - 1;
+  m.voiced = false;
+  m.lines = lines;
+  if (m.phase !== "speaking" || !current) return;
+  if (wasLast && lines[lines.length - 1].agent !== current.agent) {
+    // ASTRA's recorded closing has no caption-only line: the meeting wraps up.
+    m.speaker = lines.length - 1;
+    advanceSpeaker(sim);
+    return;
+  }
+  startSpeaker(sim, Math.max(0, lines.findIndex((l) => l.agent === current.agent)));
+}
+
 /** Ends the meeting early: everyone heads straight back to their desk. */
 export function skipMeeting(sim: Sim) {
   if (!sim.meeting || sim.meeting.phase === "returning") return;
@@ -547,12 +671,13 @@ export function selectAgent(sim: Sim, id: HqAgentId) {
   sim.focus = id;
   sim.mode = "focus";
   const c = charById(sim, id);
-  const seat = DESKS[id].seat;
+  const { seat, front } = DESKS[id];
   const atDesk = !c.to && c.at.x === seat.x && c.at.y === seat.y;
+  c.errand = null;
   setTasks(c, [
     { k: "stand" },
     // At the desk, step out from behind the chair first so the visitor can see it.
-    ...(atDesk ? [{ k: "goto" as const, to: { x: seat.x, y: seat.y + 1, face: FACE.viewer }, label: "Stepping out to say hello" }] : []),
+    ...(atDesk ? [{ k: "goto" as const, to: { x: front.x, y: front.y, face: FACE.viewer }, label: "Stepping out to say hello" }] : []),
     { k: "face", angle: FACE.viewer },
     { k: "do", gesture: "wave", dur: sim.reduced ? 0.01 : 1.5, activity: "greeting", label: "Saying hello" },
     { k: "hold", gesture: "talk", activity: "speaking", label: "Introducing itself" },
@@ -611,6 +736,25 @@ function updateLooks(sim: Sim, dt: number) {
   }
 }
 
+const TURN_SECONDS = 1.8;
+
+/**
+ * A visit is a conversation: the visitor speaks first, then they take turns. The host,
+ * still at its desk, alternates between answering and listening while it keeps working.
+ */
+function updateConversations(sim: Sim) {
+  if (sim.mode === "meeting") return;
+  for (const v of sim.chars) {
+    if (v.activity !== "errand" || !v.errand || sim.focus === v.id) continue;
+    const e = ERRANDS.find((x) => x.id === v.errand);
+    if (!e?.visit) continue;
+    const host = charById(sim, e.visit);
+    const visitorTalks = Math.floor(v.taskT / TURN_SECONDS) % 2 === 0;
+    v.gesture = visitorTalks ? "chat" : "listen";
+    if (seatedAtDesk(host) && host.activity === "working" && sim.focus !== host.id) host.gesture = visitorTalks ? "listen" : "chat";
+  }
+}
+
 /** Advances the simulation by `dt` seconds (call with DT for deterministic results). */
 export function step(sim: Sim, dt: number = DT) {
   sim.time += dt;
@@ -631,6 +775,7 @@ export function step(sim: Sim, dt: number = DT) {
     c.x = (c.to ? c.at.x + (c.to.x - c.at.x) * c.t : c.at.x) + 0.5;
     c.y = (c.to ? c.at.y + (c.to.y - c.at.y) * c.t : c.at.y) + 0.5;
   }
+  updateConversations(sim);
   updateLooks(sim, dt);
 }
 
