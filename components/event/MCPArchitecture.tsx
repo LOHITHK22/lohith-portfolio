@@ -112,7 +112,7 @@ export function MCPArchitecture() {
             href={pmFile(node.source.path)}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-1.5 font-mono text-xs text-cyan-300 hover:underline"
+            className="-mb-3 mt-1 inline-flex min-h-10 items-center gap-1.5 font-mono text-xs text-cyan-300 hover:underline sm:mb-0 sm:mt-4 sm:min-h-0"
           >
             {node.source.label} <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </a>
@@ -132,7 +132,7 @@ export function MCPArchitecture() {
                   role="radio"
                   aria-checked={fullTools === opt.full}
                   onClick={() => setFullTools(opt.full)}
-                  className={`rounded-full px-3 py-1.5 font-mono transition-colors ${fullTools === opt.full ? "bg-white text-base-950" : "text-slate-300 hover:text-white"}`}
+                  className={`min-h-10 rounded-full px-3 py-1.5 font-mono transition-colors sm:min-h-0 ${fullTools === opt.full ? "bg-white text-base-950" : "text-slate-300 hover:text-white"}`}
                 >
                   {opt.label}
                 </button>
@@ -175,7 +175,7 @@ export function MCPArchitecture() {
             Red: never registered in any configuration. Verified: MCP Inspector 2.10.1 (CLI) and live Kafka/Postgres/Flink/Airflow for
             schema drift, poison message, and Airflow failure scenarios. Not verified: Claude Desktop, Cursor, Claude Code clients, and
             non-mock LLM providers. This browser never connects to the MCP server (stdio only).{" "}
-            <a href={PM_REPO} target="_blank" rel="noopener noreferrer" className="text-cyan-300 hover:underline">
+            <a href={PM_REPO} target="_blank" rel="noopener noreferrer" className="-my-3 inline-flex min-h-10 items-center text-cyan-300 hover:underline sm:inline sm:min-h-0 sm:my-0">
               View the repository
             </a>
             .

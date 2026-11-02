@@ -66,10 +66,6 @@ test.describe("/event tap targets on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: "reduce" });
 
   test("no visible control on the page is smaller than 40×40px at 390×844", async ({ page }) => {
-    // Known failure: 26 controls are below 40px today (issue #6). Remove this
-    // line in the change that fixes them; Playwright fails the run if the test
-    // starts passing while it is still marked as failing.
-    test.fail(true, "Tracked in issue #6");
 
     await page.goto("/event");
     await page.waitForLoadState("networkidle");
@@ -78,9 +74,6 @@ test.describe("/event tap targets on a phone", () => {
   });
 
   test("no visible control in the playing narrated demo is smaller than 40×40px at 390×844", async ({ page }) => {
-    // Known failure: the 7 scene buttons in the player are 47.7×24px today
-    // (issue #6). Remove this line in the change that fixes them.
-    test.fail(true, "Tracked in issue #6");
 
     await page.goto("/event");
     await page.getByRole("button", { name: "Start 45-Second AI Experience" }).click();

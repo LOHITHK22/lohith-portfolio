@@ -24,10 +24,10 @@ export function EventQRCode({ size = "md", showDownloads = false }: { size?: "md
       </figcaption>
       {showDownloads && (
         <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs">
-          <a href="/event/qr-event.svg" download className="inline-flex items-center gap-1 text-cyan-300 hover:underline">
+          <a href="/event/qr-event.svg" download className="-my-3 inline-flex min-h-10 items-center gap-1 text-cyan-300 hover:underline sm:min-h-0 sm:my-0">
             <Download className="h-3 w-3" aria-hidden="true" /> SVG
           </a>
-          <a href="/event/qr-event-print.png" download className="inline-flex items-center gap-1 text-cyan-300 hover:underline">
+          <a href="/event/qr-event-print.png" download className="-my-3 inline-flex min-h-10 items-center gap-1 text-cyan-300 hover:underline sm:min-h-0 sm:my-0">
             <Download className="h-3 w-3" aria-hidden="true" /> Print PNG (2048 px)
           </a>
         </div>
