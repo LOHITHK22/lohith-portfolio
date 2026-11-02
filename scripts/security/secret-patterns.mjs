@@ -42,9 +42,13 @@ export function scanText(text, where) {
   return findings;
 }
 
-/** Variable names that hold private values (anything not NEXT_PUBLIC_ that looks like a credential). */
+/**
+ * Variable names that hold private values: not NEXT_PUBLIC_, and named like a credential. Judged by
+ * the name's ending only, so public CI metadata (GITHUB_SERVER_URL, GITHUB_REPOSITORY, ...) is not
+ * mistaken for a secret, while GITHUB_TOKEN, OPENAI_API_KEY and AWS_SECRET_ACCESS_KEY are caught.
+ */
 export function isPrivateEnvName(name) {
-  return !name.startsWith("NEXT_PUBLIC_") && /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|PRIVATE|CREDENTIAL|DATABASE_URL|_DSN)$|^(?:OPENAI|ELEVENLABS|ANTHROPIC|VERCEL|GITHUB|AWS)_/.test(name);
+  return !name.startsWith("NEXT_PUBLIC_") && /(?:KEY|KEY_ID|TOKEN|SECRET|PASSWORD|PASSWD|PRIVATE|CREDENTIALS?|DATABASE_URL|_DSN|_URI)$/.test(name);
 }
 
 /** Every NEXT_PUBLIC_ variable is shipped to browsers. Only these may exist. */

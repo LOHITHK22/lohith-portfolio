@@ -52,7 +52,9 @@ test("ordinary code does not trip the rules", () => {
 
 test("private vs public environment variable names", () => {
   for (const n of ["OPENAI_API_KEY", "ELEVENLABS_API_KEY", "GITHUB_TOKEN", "SESSION_SECRET", "DATABASE_URL", "VERCEL_TOKEN"]) assert.ok(isPrivateEnvName(n), n);
-  for (const n of ["NEXT_PUBLIC_SITE_URL", "BASE_URL", "PW_CHANNEL", "RUN_URL"]) assert.ok(!isPrivateEnvName(n), n);
+  // Public CI metadata and ordinary settings are not secrets (they legitimately appear in pages).
+  for (const n of ["NEXT_PUBLIC_SITE_URL", "BASE_URL", "PW_CHANNEL", "RUN_URL", "GITHUB_SERVER_URL", "GITHUB_REPOSITORY", "GITHUB_RUN_ID", "OPENAI_MODEL", "ELEVENLABS_VOICE_ID"]) assert.ok(!isPrivateEnvName(n), n);
+  for (const n of ["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "MONGODB_URI", "SENTRY_DSN", "CLAUDE_CODE_OAUTH_TOKEN", "GOOGLE_APPLICATION_CREDENTIALS"]) assert.ok(isPrivateEnvName(n), n);
   assert.ok(looksLikeSecretPublicVar("NEXT_PUBLIC_OPENAI_API_KEY"));
   assert.ok(!looksLikeSecretPublicVar("NEXT_PUBLIC_SITE_URL"));
 });
