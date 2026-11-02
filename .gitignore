@@ -22,9 +22,24 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
+# local env files (every variant; only the empty template is committed)
 .env*.local
 .env
+.env.*
+!.env.example
+
+# credentials and keys
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+credentials*.json
+service-account*.json
+
+# private working copy of the resume (the published one is public/Lohith_Kovuri_Resume.pdf)
+public/Lohith_Resume_Base.pdf
 
 # vercel
 .vercel
