@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Headphones } from "lucide-react";
+import { ArrowRight, Captions, Headphones } from "lucide-react";
 import { agents } from "@/data/agentTeam";
+import { INTRO_FULL_LABEL, INTRO_QUICK_LABEL } from "@/data/agentHq";
 import { track } from "@/lib/analytics";
 import { openAgentTeam } from "@/lib/agentTeamEvents";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -64,7 +65,14 @@ export function TeamSection() {
               onClick={() => track("hero_cta_click", { cta: "ai_team_section" })}
               className="inline-flex items-center gap-2 rounded-xl bg-teal px-5 py-3.5 text-sm font-bold text-[#021b19] shadow-[0_14px_40px_-12px_rgba(25,211,197,0.8)] transition-transform hover:-translate-y-0.5"
             >
-              <Headphones className="h-4 w-4" /> Meet the team · about 4 min
+              <Headphones className="h-4 w-4" /> Meet the team · {INTRO_FULL_LABEL}
+            </Link>
+            <Link
+              href="/agent-hq?intro=quick"
+              onClick={() => track("hero_cta_click", { cta: "ai_team_quick_tour" })}
+              className="btn-secondary !py-3.5"
+            >
+              <Captions className="h-4 w-4" /> Quick tour · captions only, {INTRO_QUICK_LABEL}
             </Link>
             <Link href="/event" prefetch={false} className="btn-secondary !py-3.5" onClick={() => track("hero_cta_click", { cta: "event_from_team" })}>
               45-second version <ArrowRight className="h-4 w-4" />

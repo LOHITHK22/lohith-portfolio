@@ -121,6 +121,13 @@ export const WHITEBOARD = { y0: 4.9, y1: 6.95 };
  */
 export const PRESENTATION_SPOT: Spot = { x: 4, y: 8, face: FACE.viewer };
 
+/**
+ * Where the next presenter waits while the current one speaks: one step to the side of the
+ * stage, turned towards it. The way back to every desk leads up or left from the stage, so the
+ * agent waiting here is never in the way of the one leaving.
+ */
+export const ON_DECK_SPOT: Spot = { x: 5, y: 8, face: FACE.nx };
+
 export const ERRANDS: Errand[] = [
   { id: "coffee", gesture: "sip", spot: { x: 11, y: 4, face: FACE.px }, label: "Getting a coffee" },
   {

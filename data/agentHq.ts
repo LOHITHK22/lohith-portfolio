@@ -75,6 +75,19 @@ export const lineSeconds = (l: MeetingLine) => CLIP_SECONDS[l.id ?? INTRO_STEP[l
 /** Total recorded audio in a full voiced meeting. */
 export const FULL_MEETING_AUDIO_SECONDS = VOICED_MEETING_LINES.reduce((n, l) => n + lineSeconds(l), 0);
 
+/**
+ * "Meet the team" comes in two versions. The full one plays every agent's recorded
+ * introduction; the quick one is captions only, one line each, for a visitor short on time
+ * (or without sound). Both use the same choreography and controls. The durations below are
+ * what the simulation measures with the real clip lengths and reading pace (an e2e test
+ * keeps them honest), rounded for the labels.
+ */
+export const INTRO_QUICK_LINES = Object.fromEntries(SILENT_MEETING_LINES.map((l) => [l.agent, l.text])) as Record<HqAgentId, string>;
+export const INTRO_FULL_ABOUT_SECONDS = 210;
+export const INTRO_FULL_LABEL = "about 3½ min";
+export const INTRO_QUICK_ABOUT_SECONDS = 60;
+export const INTRO_QUICK_LABEL = "about 1 min";
+
 /** Reading time of the quick meeting's lines (the same pacing the simulation uses). */
 export const QUICK_MEETING_SPEAKING_SECONDS = SILENT_MEETING_LINES.reduce((n, l) => n + Math.max(3.2, l.text.trim().split(/\s+/).length / 2.6), 0);
 

@@ -25,6 +25,9 @@ import {
   CLIP_SECONDS,
   FULL_MEETING_AUDIO_SECONDS,
   HQ_INTRO,
+  INTRO_FULL_LABEL,
+  INTRO_QUICK_LABEL,
+  INTRO_QUICK_LINES,
   QUICK_MEETING_SPEAKING_SECONDS,
   SILENT_MEETING_LINES,
   VOICED_MEETING_LINES,
@@ -68,8 +71,8 @@ import { track } from "@/lib/analytics";
 import { AMBIENT_FPS, LOOK, WORLD_BOUNDS, characterTop, createStaticLayer, drawScene, type View } from "./render";
 
 type Caption = { agent: HqAgentId; text: string; source: "intro" | "intro-sequence" | "meeting-voiced" | "meeting-silent" } | null;
-/** The "Meet the team" introduction as the page shows it. */
-type IntroView = { index: number; agent: HqAgentId; stage: IntroStage };
+/** The "Meet the team" introduction as the page shows it. `quick`: the captions-only version. */
+type IntroView = { index: number; agent: HqAgentId; stage: IntroStage; quick: boolean };
 type AudioState = "idle" | "playing" | "ended" | "stopped" | "captions";
 
 declare global {
@@ -93,7 +96,7 @@ const QUICK_MEETING_ABOUT = Math.round((QUICK_MEETING_SPEAKING_SECONDS + 10) / 5
 /** Order of the "Meet the team" introduction (the team's handoff order). */
 const INTRO_ORDER: HqAgentId[] = HQ_AGENTS;
 
-/** URL flag that starts the introduction on arrival (set by the homepage's "Meet the team"). */
+/** URL flag that starts the introduction on arrival (set by the homepage's "Meet the team"): `1` full, `quick` captions only. */
 export const INTRO_PARAM = "intro";
 
 const PHASE_TEXT: Record<MeetingPhase, string> = {
@@ -138,6 +141,8 @@ export function AgentHQ() {
   introRef.current = intro;
   const introPausedRef = useRef(false);
   introPausedRef.current = introPaused;
+  /** Which version is running; set before the first sim event so every handler sees it. */
+  const introQuickRef = useRef(false);
   const introStatusRef = useRef<HTMLParagraphElement>(null);
   const playIntroRef = useRef<HTMLButtonElement>(null);
   const preloadRef = useRef<HTMLAudioElement | null>(null);
@@ -177,6 +182,8 @@ export function AgentHQ() {
   /** Captions-only timing, pausable: `done` runs once `dur` ms of unpaused time have passed. */
   const runTextTimer = (dur: number, done: () => void) => {
     const t = textTimer.current;
+    // Only ever one caption timer: a new one replaces any still pending.
+    if (t.id !== null) window.clearTimeout(t.id);
     t.start = performance.now();
     t.dur = dur;
     t.done = done;
@@ -249,6 +256,24 @@ export function AgentHQ() {
     [narration, silence, sim]
   );
 
+  /** Captions only, at reading pace (the quick introduction): nothing plays, so nothing can be blocked. */
+  const showCaptionsOnly = useCallback(
+    (agent: HqAgentId, text: string, source: NonNullable<Caption>["source"], onDone: () => void) => {
+      silence();
+      sourceRef.current = source;
+      setCaption({ agent, text, source });
+      setProgress(0);
+      setAudio("captions");
+      runTextTimer(readingTimeMs(text), () => {
+        setProgress(1);
+        setAudio("ended");
+        onDone();
+      });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [silence]
+  );
+
   const introduce = useCallback(
     (id: HqAgentId) => {
       narrationStarted(sim, id);
@@ -293,10 +318,11 @@ export function AgentHQ() {
 
   // ---------- "Meet the team" introduction ----------
 
-  /** Starts (or replays) the introduction from ASTRA. */
+  /** Starts (or replays) the introduction from ASTRA: the full narrated version, or the quick captions-only one. */
   const beginIntro = useCallback(
-    (source: "homepage" | "button" | "replay") => {
+    (source: "homepage" | "button" | "replay", quick = false) => {
       silence();
+      introQuickRef.current = quick;
       if (selectedRef.current) {
         clearFocus(sim);
         setSelected(null);
@@ -310,8 +336,8 @@ export function AgentHQ() {
       userCam.current = { z: 1, px: 0, py: 0 };
       setZoomIndex(0);
       startIntro(sim, INTRO_ORDER);
-      setIntro({ index: 0, agent: INTRO_ORDER[0], stage: "approach" });
-      track("agent_hq_intro", { action: "start", source });
+      setIntro({ index: 0, agent: INTRO_ORDER[0], stage: "approach", quick });
+      track("agent_hq_intro", { action: "start", source, mode: quick ? "quick" : "full" });
       focusRequest.current = "intro";
       // Arriving from the homepage: bring the office and its controls into view.
       if (source === "homepage") window.setTimeout(() => rootRef.current?.scrollIntoView({ block: "start", behavior: sim.reduced ? "auto" : "smooth" }), 0);
@@ -356,10 +382,13 @@ export function AgentHQ() {
     resumeTextTimer();
   };
 
-  /** Next / previous: that agent comes forward; the current one heads back to its desk. */
+  /**
+   * Next / previous: that agent comes forward; the current one heads back to its desk.
+   * Counts from the simulation, not the rendered state, so two quick presses move two agents.
+   */
   const introStep = (delta: number) => {
-    const it = introRef.current;
-    if (!it) return;
+    const it = sim.intro;
+    if (!it || !introRef.current) return;
     const next = it.index + delta;
     if (next >= INTRO_ORDER.length) return endIntro("skip");
     if (next < 0) return;
@@ -381,7 +410,7 @@ export function AgentHQ() {
     }
     const it = introRef.current;
     track("agent_hq_intro", { action: "enable_sound" });
-    if (it?.stage === "speaking") {
+    if (it?.stage === "speaking" && !it.quick) {
       setIntroPaused(false);
       setPaused(false);
       speak(it.agent, HQ_INTRO[it.agent].audioFile, HQ_INTRO[it.agent].caption, "intro-sequence", () => introNarrationDone(sim, it.index));
@@ -535,17 +564,23 @@ export function AgentHQ() {
         if (!s.intro) setLive("The meeting is over. Everyone is back at their desk.");
       } else if (e.type === "intro-approach") {
         const a = hqAgent(e.agent);
-        setIntro({ index: e.index, agent: e.agent, stage: "approach" });
+        const quick = introQuickRef.current;
+        setIntro({ index: e.index, agent: e.agent, stage: "approach", quick });
         setLive(`Introducing ${e.index + 1} of ${INTRO_ORDER.length}: ${a.name}, ${a.role}.`);
-        // Fetch this agent's clip while it walks out; nothing else is loaded ahead.
-        preload(HQ_INTRO[e.agent].audioFile);
+        // Fetch this agent's clip while it walks out; nothing else is loaded ahead (and nothing at all for captions only).
+        if (!quick) preload(HQ_INTRO[e.agent].audioFile);
       } else if (e.type === "intro-speaker") {
         const index = e.index;
-        setIntro({ index, agent: e.agent, stage: "speaking" });
-        speak(e.agent, HQ_INTRO[e.agent].audioFile, HQ_INTRO[e.agent].caption, "intro-sequence", () => introNarrationDone(s, index));
-        // While it speaks, fetch the next agent's clip.
-        const next = INTRO_ORDER[index + 1];
-        if (next) preload(HQ_INTRO[next].audioFile);
+        const quick = introQuickRef.current;
+        setIntro({ index, agent: e.agent, stage: "speaking", quick });
+        if (quick) {
+          showCaptionsOnly(e.agent, INTRO_QUICK_LINES[e.agent], "intro-sequence", () => introNarrationDone(s, index));
+        } else {
+          speak(e.agent, HQ_INTRO[e.agent].audioFile, HQ_INTRO[e.agent].caption, "intro-sequence", () => introNarrationDone(s, index));
+          // While it speaks, fetch the next agent's clip.
+          const next = INTRO_ORDER[index + 1];
+          if (next) preload(HQ_INTRO[next].audioFile);
+        }
       } else if (e.type === "intro-end") {
         if (introRef.current) {
           setIntro(null);
@@ -598,10 +633,11 @@ export function AgentHQ() {
     if (!ready || urlIntroHandled.current) return;
     urlIntroHandled.current = true;
     const url = new URL(window.location.href);
-    if (url.searchParams.get(INTRO_PARAM) !== "1") return;
+    const flag = url.searchParams.get(INTRO_PARAM);
+    if (flag !== "1" && flag !== "quick") return;
     url.searchParams.delete(INTRO_PARAM);
     window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
-    beginIntro("homepage");
+    beginIntro("homepage", flag === "quick");
   }, [ready, beginIntro]);
 
   useEffect(
@@ -885,6 +921,7 @@ export function AgentHQ() {
                 <span style={{ color: LOOK[intro.agent].accent }}>{hqAgent(intro.agent).name}</span>
               </p>
               <p className="text-xs text-slate-400" data-testid="hq-intro-role">
+                {intro.quick ? "Quick tour · captions only · " : ""}
                 {hqAgent(intro.agent).role}
                 {intro.stage === "approach" ? " · walking to the presentation area" : introPaused ? " · paused" : ""}
               </p>
@@ -932,7 +969,7 @@ export function AgentHQ() {
               <button type="button" onClick={() => introStep(1)} className="btn-ghost min-h-[44px] !px-3 text-sm" aria-label="Next agent">
                 Next <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </button>
-              <button type="button" onClick={() => beginIntro("replay")} className="btn-ghost min-h-[44px] !px-3 text-sm" aria-label="Replay introduction from the start">
+              <button type="button" onClick={() => beginIntro("replay", intro.quick)} className="btn-ghost min-h-[44px] !px-3 text-sm" aria-label="Replay introduction from the start">
                 <RotateCcw className="h-4 w-4" aria-hidden="true" /> Replay
               </button>
               <button
@@ -977,7 +1014,17 @@ export function AgentHQ() {
                 data-testid="hq-play-intro"
               >
                 <Clapperboard className="h-4 w-4" aria-hidden="true" /> Meet the team
-                <span className="text-xs font-normal opacity-80">· 7 introductions</span>
+                <span className="text-xs font-normal opacity-80">· narrated, {INTRO_FULL_LABEL}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => beginIntro("button", true)}
+                className="btn-secondary !px-4 !py-2.5 text-sm"
+                disabled={meeting?.phase === "returning"}
+                data-testid="hq-play-quick-intro"
+              >
+                <Captions className="h-4 w-4" aria-hidden="true" /> Quick tour
+                <span className="text-xs font-normal opacity-80">· captions only, {INTRO_QUICK_LABEL}</span>
               </button>
               <button
                 type="button"
@@ -1031,7 +1078,7 @@ export function AgentHQ() {
             </button>
           )}
           <p className="min-w-0 flex-1 text-right font-mono text-[11px] uppercase tracking-[0.16em] text-slate-400" data-testid="hq-phase">
-            {intro ? "Meet the team" : meeting ? PHASE_TEXT[meeting.phase] : selected ? `Focused on ${hqAgent(selected).name}` : "Office view"}
+            {intro ? (intro.quick ? "Quick tour" : "Meet the team") : meeting ? PHASE_TEXT[meeting.phase] : selected ? `Focused on ${hqAgent(selected).name}` : "Office view"}
           </p>
         </div>
 
@@ -1155,7 +1202,7 @@ export function AgentHQ() {
 
         {/* Captions */}
         <div className="mt-3 min-h-[3.5rem]" data-testid="hq-captions" aria-live={audio === "captions" || muted || caption?.source === "meeting-silent" ? "polite" : "off"}>
-          {captionsOn && caption && (
+          {(captionsOn || intro?.quick) && caption && (
             <p className="rounded-xl bg-black/50 px-3 py-2 text-sm leading-relaxed sm:text-base">
               <span className="mr-2 font-mono text-xs font-bold" style={{ color: LOOK[caption.agent].accent }}>
                 {hqAgent(caption.agent).name}
@@ -1205,7 +1252,9 @@ export function AgentHQ() {
                       ? "Speaking (muted)"
                       : "Speaking"
                     : audio === "captions"
-                      ? soundBlocked
+                      ? intro.quick
+                        ? "Captions only (quick tour)"
+                        : soundBlocked
                         ? "Captions (sound blocked by the browser)"
                         : "Captions (audio unavailable)"
                       : "Introducing"}
@@ -1221,8 +1270,9 @@ export function AgentHQ() {
               ))}
             </ul>
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
-              Each agent walks to the front, introduces itself in its existing recorded voice and returns to its desk. Esc skips the
-              introduction.
+              {intro.quick
+                ? "Each agent steps forward with a one-line caption and returns to its desk. No sound plays. Esc skips the tour."
+                : "Each agent walks to the front, introduces itself in its existing recorded voice and returns to its desk. Esc skips the introduction."}
             </p>
           </div>
         ) : selAgent && selected ? (

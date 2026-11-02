@@ -25,6 +25,12 @@ export function useAudioNarration() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
   const onLevelRef = useRef<((level: number) => void) | undefined>(undefined);
+  /**
+   * Bumped by every play() and stop(). A callback from an earlier clip (a late play() rejection,
+   * a late "playing" resolution) checks it and does nothing, so it can never report on, or
+   * start the level meter for, a clip that has since been replaced or stopped.
+   */
+  const genRef = useRef(0);
 
   useEffect(() => {
     const audio = new Audio();
@@ -87,11 +93,13 @@ export function useAudioNarration() {
     ensureGraph();
     audioCtxRef.current?.resume().catch(() => {});
     onLevelRef.current = onLevel;
+    const gen = ++genRef.current;
+    const current = () => gen === genRef.current;
 
     // A clip can fail via both `onerror` and the play() promise; report once.
     let failed = false;
     const fail = (reason: "blocked" | "error" = "error") => {
-      if (failed) return;
+      if (failed || !current()) return;
       failed = true;
       stopLevelLoop();
       onLevel?.(0);
@@ -99,6 +107,7 @@ export function useAudioNarration() {
     };
 
     audio.onended = () => {
+      if (!current()) return;
       stopLevelLoop();
       onLevel?.(0);
       onEnd?.();
@@ -108,7 +117,9 @@ export function useAudioNarration() {
     audio.src = src;
     audio
       .play()
-      .then(() => startLevelLoop(onLevel))
+      .then(() => {
+        if (current()) startLevelLoop(onLevel);
+      })
       .catch((err: unknown) => {
         // pause()/stop() before playback starts rejects with AbortError. That's
         // the user pausing, not a broken clip, so don't fall back.
@@ -126,13 +137,17 @@ export function useAudioNarration() {
     const audio = audioRef.current;
     if (!audio) return;
     audioCtxRef.current?.resume().catch(() => {});
+    const gen = genRef.current;
     audio
       .play()
-      .then(() => startLevelLoop(onLevelRef.current))
+      .then(() => {
+        if (gen === genRef.current) startLevelLoop(onLevelRef.current);
+      })
       .catch(() => {});
   }, []);
 
   const stop = useCallback(() => {
+    genRef.current++;
     const audio = audioRef.current;
     if (audio) {
       audio.onended = null;

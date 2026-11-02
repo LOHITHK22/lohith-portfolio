@@ -1,9 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
-import { HQ_INTRO } from "../../data/agentHq";
+import { HQ_INTRO, INTRO_FULL_LABEL, INTRO_QUICK_LABEL, INTRO_QUICK_LINES } from "../../data/agentHq";
 import { DESKS, HQ_AGENTS, PRESENTATION_SPOT, type HqAgentId } from "../../lib/agentHq/layout";
 
 // "Meet the team": the homepage button opens /agent-hq?intro=1 and the seven agents introduce
 // themselves one by one (walk to the front, face the visitor, speak with captions, walk back).
+// The next agent waits beside the stage while one speaks, and the two cross over together.
+// A quick captions-only tour (/agent-hq?intro=quick) uses the same choreography without sound.
 // Playback is observed through an init script that records every media element and samples
 // how many play at once. Where a test needs the whole sequence, the recordings play faster
 // (playbackRate) so it fits in a test run; the choreography itself runs at normal speed.
@@ -84,7 +86,7 @@ test.describe("Agent HQ: Meet the team introduction", () => {
 
   test("the team section's Meet the team also starts the introduction", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: /Meet the team · about 4 min/ }).click();
+    await page.getByRole("link", { name: `Meet the team · ${INTRO_FULL_LABEL}` }).click();
     await page.waitForURL(/\/agent-hq/);
     await expect(root(page)).toHaveAttribute("data-intro-agent", "astra");
   });
@@ -109,10 +111,14 @@ test.describe("Agent HQ: Meet the team introduction", () => {
       expect(Math.abs(Number(await el.getAttribute("data-face")) - PRESENTATION_SPOT.face)).toBeLessThan(0.05);
       // The camera is zoomed in on the speaker.
       expect(Number(await root(page).getAttribute("data-zoom"))).toBeGreaterThan(1.4);
-      // The previous presenter is back in its chair.
+      // The previous presenter has left the stage (two tiles or more away) on its way back to its desk.
       if (i > 0) {
         const prev = agent(page, ORDER[i - 1]);
-        await expect(prev).toHaveAttribute("data-sit", "1.00");
+        const px = Number(await prev.getAttribute("data-x"));
+        const py = Number(await prev.getAttribute("data-y"));
+        expect(Math.hypot(px - (PRESENTATION_SPOT.x + 0.5), py - (PRESENTATION_SPOT.y + 0.5)), `${ORDER[i - 1]} is clear of the stage`).toBeGreaterThanOrEqual(2);
+        // ...and gets there: back in its chair at its own desk.
+        await expect(prev).toHaveAttribute("data-sit", "1.00", { timeout: 15_000 });
         await expect(prev).toHaveAttribute("data-x", (DESKS[ORDER[i - 1]].seat.x + 0.5).toFixed(2));
         await expect(prev).toHaveAttribute("data-y", (DESKS[ORDER[i - 1]].seat.y + 0.5).toFixed(2));
       }
@@ -209,6 +215,23 @@ test.describe("Agent HQ: Meet the team introduction", () => {
     expect(await maxConcurrent(page)).toBeLessThanOrEqual(1);
   });
 
+  test("two quick presses of Next move two agents on, and only the last one speaks", async ({ page }) => {
+    await instrument(page);
+    await startFromButton(page);
+    await expect(root(page)).toHaveAttribute("data-intro-stage", "speaking", { timeout: 20_000 });
+    // Both clicks land before React re-renders.
+    await page.evaluate(() => {
+      const next = Array.from(document.querySelectorAll("button")).find((b) => b.getAttribute("aria-label") === "Next agent")!;
+      next.click();
+      next.click();
+    });
+    await expect(root(page)).toHaveAttribute("data-intro-agent", "forge");
+    await expect(page.getByTestId("hq-intro-progress")).toHaveText("Introducing 3 of 7 — FORGE");
+    await expect(root(page)).toHaveAttribute("data-intro-stage", "speaking", { timeout: 20_000 });
+    await expect.poll(() => playing(page)).toEqual([HQ_INTRO.forge.audioFile]);
+    expect(await maxConcurrent(page)).toBeLessThanOrEqual(1);
+  });
+
   test("Replay starts again from ASTRA", async ({ page }) => {
     await instrument(page);
     await startFromButton(page);
@@ -253,7 +276,11 @@ test.describe("Agent HQ: Meet the team introduction", () => {
     await expect(root(page)).toHaveAttribute("data-intro", "");
     await expect(intro(page)).toHaveCount(0);
     expect(await playing(page)).toEqual([]);
+    expect(await page.evaluate(() => (window as unknown as W).__media.length)).toBe(0);
+    // Both versions on offer, each labelled with how long it takes.
     await expect(page.getByTestId("hq-play-intro")).toBeVisible();
+    await expect(page.getByTestId("hq-play-intro")).toContainText(`narrated, ${INTRO_FULL_LABEL}`);
+    await expect(page.getByTestId("hq-play-quick-intro")).toContainText(`captions only, ${INTRO_QUICK_LABEL}`);
     // After an introduction from the homepage link, a refresh is a normal visit.
     await page.goto("/agent-hq?intro=1");
     await expect(root(page)).toHaveAttribute("data-intro-agent", "astra");
@@ -261,6 +288,60 @@ test.describe("Agent HQ: Meet the team introduction", () => {
     await expect(root(page)).toHaveAttribute("data-ready", "true");
     await page.waitForTimeout(1500);
     await expect(root(page)).toHaveAttribute("data-intro", "");
+  });
+
+  test("quick tour: captions only, all seven in order, no audio is ever played, then back to the office", async ({ page }) => {
+    test.setTimeout(150_000);
+    // Even with autoplay blocked there is nothing to block: no clip is started at all.
+    await instrument(page, { blockAutoplay: true });
+    const errors = consoleErrors(page);
+    await page.goto("/");
+    await page.getByRole("link", { name: `Quick tour · captions only, ${INTRO_QUICK_LABEL}` }).click();
+    await page.waitForURL(/\/agent-hq/);
+    await expect(root(page)).toHaveAttribute("data-intro-agent", "astra");
+    await expect.poll(() => new URL(page.url()).search).toBe("");
+    await expect(page.getByTestId("hq-intro-role")).toContainText("Quick tour · captions only");
+    await expect(page.getByTestId("hq-phase")).toHaveText("Quick tour");
+    const t0 = Date.now();
+    for (let i = 0; i < ORDER.length; i++) {
+      const id = ORDER[i];
+      await expect(root(page)).toHaveAttribute("data-intro-agent", id, { timeout: 20_000 });
+      await expect(root(page)).toHaveAttribute("data-intro-stage", "speaking", { timeout: 20_000 });
+      await expect(page.getByTestId("hq-captions")).toContainText(INTRO_QUICK_LINES[id]);
+      await expect(page.getByTestId("hq-intro-panel")).toContainText("Captions only (quick tour)");
+      await expect(page.getByTestId("hq-enable-sound")).toHaveCount(0);
+    }
+    await expect(root(page)).toHaveAttribute("data-intro", "", { timeout: 20_000 });
+    const seconds = (Date.now() - t0) / 1000;
+    test.info().annotations.push({ type: "timing", description: `quick tour ASTRA start to end: ${seconds.toFixed(1)} s` });
+    expect(seconds).toBeLessThan(90);
+    await expect(root(page)).toHaveAttribute("data-mode", "ambient");
+    expect(await page.evaluate(() => (window as unknown as W).__media.length)).toBe(0);
+    expect(errors).toEqual([]);
+  });
+
+  test("quick tour: captions stay visible even with captions switched off, and Pause, Next and Replay keep the quick version", async ({ page }) => {
+    await instrument(page);
+    await page.goto("/agent-hq");
+    await expect(root(page)).toHaveAttribute("data-ready", "true");
+    await page.getByRole("button", { name: "Hide captions" }).click();
+    await page.getByTestId("hq-play-quick-intro").click();
+    await expect(root(page)).toHaveAttribute("data-intro-stage", "speaking", { timeout: 20_000 });
+    await expect(page.getByTestId("hq-captions")).toContainText(INTRO_QUICK_LINES.astra);
+    // Pause freezes the caption timer: still ASTRA well after its reading time.
+    await page.getByTestId("hq-intro-pause").click();
+    await expect(root(page)).toHaveAttribute("data-intro-paused", "true");
+    await page.waitForTimeout(5500);
+    await expect(root(page)).toHaveAttribute("data-intro-agent", "astra");
+    await page.getByTestId("hq-intro-pause").click();
+    await page.getByRole("button", { name: "Next agent" }).click();
+    await expect(root(page)).toHaveAttribute("data-intro-agent", "nova");
+    await expect(root(page)).toHaveAttribute("data-intro-stage", "speaking", { timeout: 20_000 });
+    await expect(page.getByTestId("hq-captions")).toContainText(INTRO_QUICK_LINES.nova);
+    await page.getByRole("button", { name: "Replay introduction from the start" }).click();
+    await expect(root(page)).toHaveAttribute("data-intro-agent", "astra");
+    await expect(page.getByTestId("hq-intro-role")).toContainText("Quick tour");
+    expect(await page.evaluate(() => (window as unknown as W).__media.length)).toBe(0);
   });
 
   test("PRISM starting to talk pauses the introduction instead of overlapping it", async ({ page }) => {

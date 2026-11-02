@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, FileText, Github, Linkedin } from "lucide-react";
 import { profile } from "@/data/profile";
 import { agents } from "@/data/agentTeam";
+import { INTRO_FULL_LABEL } from "@/data/agentHq";
 import { track } from "@/lib/analytics";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { fadeUpVariants } from "@/lib/motion";
@@ -50,7 +51,8 @@ function AgentDock({ className = "" }: { className?: string }) {
       <span className="flex min-w-0 flex-col whitespace-nowrap">
         <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-teal-glow sm:text-[11px] sm:tracking-[0.18em]">AI Team · 7 agents</span>
         <span className="mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-200">
-          Meet the team <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+          Meet the team <span className="text-[11px] font-normal text-slate-400">· {INTRO_FULL_LABEL.replace("about ", "")}</span>
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>
       </span>
       <span className="relative ml-1 flex h-2.5 w-2.5" aria-hidden="true">

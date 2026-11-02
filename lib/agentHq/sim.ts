@@ -5,6 +5,7 @@ import {
   FACE,
   HQ_AGENTS,
   MEETING_SPOTS,
+  ON_DECK_SPOT,
   PRESENTATION_SPOT,
   ROUTINES,
   errandLabel,
@@ -109,10 +110,24 @@ export type Meeting = { phase: MeetingPhase; speaker: number; t: number; voiced:
 /**
  * The "Meet the team" introduction: one agent at a time walks to the presentation spot,
  * faces the visitor, waves and introduces itself, then walks back to its desk while the
- * next one comes forward. A speaker only starts once the previous one is back in its chair.
+ * next one comes forward. While an agent speaks, the next one walks over and waits beside
+ * the stage ("on deck"), so the handover is one step instead of a walk across the room.
+ * The outgoing and incoming presenters move at the same time; the next one only starts
+ * speaking once everyone heading back is clear of the stage (two tiles away, or seated).
  */
 export type IntroStage = "approach" | "speaking";
-export type Intro = { order: HqAgentId[]; index: number; stage: IntroStage; returning: HqAgentId[] };
+export type Intro = {
+  order: HqAgentId[];
+  index: number;
+  stage: IntroStage;
+  /** Former presenters (or a dismissed on-deck agent) on their way back to their desks. */
+  returning: HqAgentId[];
+  /** The agent waiting beside the stage to present next, if any. */
+  onDeck: HqAgentId | null;
+};
+
+/** How far (in tiles) everyone heading back must be from the stage before the next presenter speaks. */
+export const STAGE_CLEARANCE = 2;
 
 export type SimEvent =
   | { type: "meeting-phase"; phase: MeetingPhase }
@@ -843,17 +858,28 @@ function sendToDesk(sim: Sim, id: HqAgentId) {
   const c = charById(sim, id);
   c.level = 0;
   setTasks(c, seatTasks(id, Infinity));
+  // Stop talking or waving at once, not on the next step: the next speaker may be announced in between.
+  if (c.activity === "speaking" || c.activity === "presenting" || c.activity === "greeting") {
+    c.activity = "walking";
+    c.gesture = "none";
+  }
 }
 
-/** `index` comes forward to present; whoever was presenting goes back to its desk. */
+/** Sends `id` back to its desk and remembers it until it is clear of the stage. */
+function sendBack(sim: Sim, id: HqAgentId) {
+  const it = sim.intro!;
+  sendToDesk(sim, id);
+  if (!it.returning.includes(id)) it.returning.push(id);
+}
+
+/** `index` comes forward to present; whoever was presenting (or waiting on deck for another turn) goes back to its desk. */
 function present(sim: Sim, index: number) {
   const it = sim.intro!;
   const prev = introPresenter(sim);
   const id = it.order[index];
-  if (prev && prev !== id) {
-    sendToDesk(sim, prev);
-    if (!it.returning.includes(prev)) it.returning.push(prev);
-  }
+  if (prev && prev !== id) sendBack(sim, prev);
+  if (it.onDeck && it.onDeck !== id) sendBack(sim, it.onDeck);
+  it.onDeck = null;
   it.returning = it.returning.filter((x) => x !== id);
   it.index = index;
   it.stage = "approach";
@@ -878,22 +904,49 @@ export function startIntro(sim: Sim, order: HqAgentId[] = HQ_AGENTS) {
   if (sim.meeting) emit(sim, { type: "meeting-end" });
   sim.meeting = null;
   sim.mode = "intro";
-  sim.intro = { order: [...order], index: -1, stage: "approach", returning: [] };
+  sim.intro = { order: [...order], index: -1, stage: "approach", returning: [], onDeck: null };
   for (const c of sim.chars) if (c.id !== order[0]) sendToDesk(sim, c.id);
   present(sim, 0);
 }
 
-/** The presenter is in place and the previous one is back in its chair: it starts speaking. */
+/** True once `c` is far enough from the stage not to share the spotlight with the presenter. */
+export function clearOfStage(c: Character) {
+  return Math.hypot(c.x - (PRESENTATION_SPOT.x + 0.5), c.y - (PRESENTATION_SPOT.y + 0.5)) >= STAGE_CLEARANCE;
+}
+
+/** The next presenter walks over and waits beside the stage, facing it, while the current one speaks. */
+function callOnDeck(sim: Sim, id: HqAgentId) {
+  const it = sim.intro!;
+  it.onDeck = id;
+  it.returning = it.returning.filter((x) => x !== id);
+  const c = charById(sim, id);
+  c.level = 0;
+  setTasks(c, [
+    { k: "stand" },
+    { k: "goto", to: ON_DECK_SPOT, label: "Getting ready to present" },
+    { k: "face", angle: ON_DECK_SPOT.face },
+    { k: "hold", gesture: "listen", activity: "presenting", label: "Waiting to present next" },
+  ]);
+}
+
+/**
+ * The presenter is in place and everyone heading back is clear of the stage: it starts
+ * speaking, and the agent after it comes over to wait on deck.
+ */
 function tickIntro(sim: Sim) {
   const it = sim.intro!;
   it.returning = it.returning.filter((id) => !seatedAtDesk(charById(sim, id)));
-  if (it.stage !== "approach" || it.returning.length) return;
+  if (it.stage !== "approach") return;
+  if (!it.returning.every((r) => clearOfStage(charById(sim, r)))) return;
   const id = introPresenter(sim)!;
   const c = charById(sim, id);
   if (!isHolding(c)) return;
   it.stage = "speaking";
   c.tasks[0] = { k: "hold", gesture: "talk", activity: "speaking", label: "Introducing itself" };
   emit(sim, { type: "intro-speaker", index: it.index, agent: id });
+  // With reduced motion nobody walks, so there is nothing to save by waiting on deck.
+  const next = it.order[it.index + 1];
+  if (next && !sim.reduced) callOnDeck(sim, next);
 }
 
 /** The presenter's narration (or its captions) finished: the next agent comes forward, or the introduction ends. */
