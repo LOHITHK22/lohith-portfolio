@@ -1,0 +1,14 @@
+4.7s homepage
+5.0s navigated http://localhost:3102/agent-hq?intro=1
+7.6s astra approaching
+13.2s astra speaking (audio: playing)
+46.3s handover
+51.2s nova speaking (audio: playing)
+83.5s forge speaking (audio: playing)
+117.6s atlas speaking (audio: playing)
+153.2s pulse speaking (audio: playing)
+182.8s sentinel speaking (audio: playing)
+215.9s echo speaking (audio: playing)
+236.8s introduction complete
+240.2s final overview
+errors: []
