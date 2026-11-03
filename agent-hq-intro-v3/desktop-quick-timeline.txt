@@ -1,0 +1,39 @@
+0.2s intro=0 agent=astra stage=approach audioPlaying=1
+7.7s intro=0 agent=astra stage=speaking audioPlaying=1
+11.7s intro=1 agent=nova stage=approach audioPlaying=1
+15.4s intro=1 agent=nova stage=speaking audioPlaying=1
+19.6s intro=2 agent=forge stage=approach audioPlaying=1
+23.7s intro=2 agent=forge stage=speaking audioPlaying=1
+29.8s intro=3 agent=atlas stage=approach audioPlaying=1
+33.9s intro=3 agent=atlas stage=speaking audioPlaying=1
+38.5s intro=4 agent=pulse stage=approach audioPlaying=1
+41.1s intro=4 agent=pulse stage=speaking audioPlaying=1
+45.3s intro=5 agent=sentinel stage=approach audioPlaying=1
+48.1s intro=5 agent=sentinel stage=speaking audioPlaying=1
+52.1s intro=6 agent=echo stage=approach audioPlaying=1
+58.4s intro=6 agent=echo stage=speaking audioPlaying=1
+63.5s intro=- agent=- stage=- audioPlaying=1
+
+{
+ "tag": "desktop-quick",
+ "clickToEndSeconds": 63.5,
+ "agentsSeen": [
+  "astra",
+  "nova",
+  "forge",
+  "atlas",
+  "pulse",
+  "sentinel",
+  "echo"
+ ],
+ "audio": {
+  "maxConcurrent": 1,
+  "plays": [
+   "welcome.mp3"
+  ]
+ },
+ "errors": [
+  "Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "frames": 1882
+}
