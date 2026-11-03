@@ -1,0 +1,48 @@
+# Security regression checks on every pull request and every push to main.
+# Read-only token, no secrets: it only reads the repository and builds it.
+#   1. secret scan of the files changed by the PR (whole repository on main), redacted output
+#   2. unit tests for the security checks themselves (synthetic values only)
+#   3. production build, then a scan of everything it would send to browsers
+name: Security checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Secret scan (changed files on a PR, everything on main)
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE" ]; then node scripts/security/scan-secrets.mjs --diff "$BASE"; fi
+          node scripts/security/scan-secrets.mjs
+      - name: Security check tests
+        run: node --test scripts/security/tests/*.test.mjs
+      - run: npm ci --no-audit --no-fund --ignore-scripts
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Browser-delivered output check
+        run: node scripts/security/check-build-output.mjs

@@ -26,3 +26,16 @@ export function checkRateLimit(key: string): { allowed: boolean; remaining: numb
   entry.count += 1;
   return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW - entry.count };
 }
+
+// A ceiling on paid calls per server instance per hour, whoever asks. It caps what rotating IP
+// addresses can spend through one warm instance. Still per instance, so the OpenAI project's own
+// monthly spending limit remains the hard stop.
+const GLOBAL_MAX_PER_WINDOW = 120;
+let globalWindow = { count: 0, resetAt: 0 };
+
+export function checkGlobalBudget(now = Date.now()): boolean {
+  if (now > globalWindow.resetAt) globalWindow = { count: 0, resetAt: now + WINDOW_MS };
+  if (globalWindow.count >= GLOBAL_MAX_PER_WINDOW) return false;
+  globalWindow.count += 1;
+  return true;
+}
