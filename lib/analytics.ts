@@ -38,7 +38,8 @@ export type AnalyticsEvent =
   | "sql_challenge_check"
   | "incident_scenario_complete"
   | "agent_hq_select"
-  | "agent_hq_meeting";
+  | "agent_hq_meeting"
+  | "agent_hq_intro";
 
 type AnalyticsProps = Record<string, string | number | boolean | null>;
 
