@@ -42,6 +42,9 @@ const config: Config = {
           "sans-serif",
         ],
         mono: [
+          // The Greek face comes first: it covers only Greek (its unicode-range), so everything else
+          // falls through to JetBrains Mono, and Greek never reaches the Arial-based fallback.
+          "var(--font-jetbrains-mono-greek)",
           "var(--font-jetbrains-mono)",
           "ui-monospace",
           "SFMono-Regular",
